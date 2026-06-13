@@ -4,12 +4,8 @@ import { useNavigate } from 'react-router-dom'
 
 function VlumaFooter({ className = '' }: { className?: string }) {
   return (
-    
-      href="https://vluma.com.br"
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors ${className}`}
-    >
+    <a href="https://vluma.com.br" target="_blank" rel="noopener noreferrer"
+      className={`flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors ${className}`}>
       <span>Desenvolvido por</span>
       <img src="/logovluma.png" alt="VLUMA" className="w-5 h-5 rounded-full" />
       <span className="font-semibold text-green-400">VLUMA</span>
@@ -41,10 +37,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
         style={{ background: 'radial-gradient(ellipse 100% 80% at 0% 100%, rgba(124,58,237,0.15) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 100% 0%, rgba(6,182,212,0.10) 0%, transparent 60%), #0D1117' }}>
-
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
@@ -58,7 +52,6 @@ export default function LoginPage() {
             <p className="text-[10px] text-muted-foreground mt-0.5">Gestão de Campo</p>
           </div>
         </div>
-
         <div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Gerencie sua<br />
@@ -66,22 +59,20 @@ export default function LoginPage() {
             com eficiência
           </h1>
           <p className="text-muted-foreground text-base max-w-sm">
-            Ordens de serviço, checklists técnicos e assinatura digital — tudo em um só lugar.
+            Ordens de serviço, checklists técnicos e assinatura digital em um só lugar.
           </p>
           <div className="mt-10 flex items-start gap-3">
-            <span className="text-xl">✅</span>
+            <span className="text-xl">checkmark</span>
             <div>
               <p className="text-sm font-medium text-foreground">Checklist técnico</p>
               <p className="text-xs text-muted-foreground">Preencha e registre cada etapa do serviço em campo</p>
             </div>
           </div>
         </div>
-
         <VlumaFooter />
       </div>
 
       <div className="flex-1 flex flex-col min-h-screen lg:min-h-0">
-
         <div className="lg:hidden flex items-center gap-3 p-6 border-b border-border">
           <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
@@ -100,31 +91,27 @@ export default function LoginPage() {
           <div className="w-full max-w-sm">
             <h2 className="text-2xl font-bold mb-1">Bem-vindo de volta</h2>
             <p className="text-muted-foreground text-sm mb-8">Entre na sua conta para acessar o sistema</p>
-
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5" htmlFor="email">E-mail</label>
-                <input id="email" type="email" autoComplete="email" required
-                  value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com"
-                  className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"/>
+                <input id="email" type="email" autoComplete="email" required value={email}
+                  onChange={e => setEmail(e.target.value)} placeholder="seu@email.com"
+                  className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5" htmlFor="password">Senha</label>
-                <input id="password" type="password" autoComplete="current-password" required
-                  value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
-                  className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"/>
+                <input id="password" type="password" autoComplete="current-password" required value={password}
+                  onChange={e => setPassword(e.target.value)} placeholder="••••••••"
+                  className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition" />
               </div>
-
               {error && (
                 <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{error}</div>
               )}
-
               <button type="submit" disabled={loading}
                 className="w-full py-2.5 px-4 rounded-md text-sm font-semibold btn-cta disabled:opacity-50 disabled:cursor-not-allowed">
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
-
             <div className="flex justify-center mt-8">
               <VlumaFooter />
             </div>
