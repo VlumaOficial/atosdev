@@ -2,16 +2,6 @@ import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 
-function VlumaFooter({ className = '' }: { className?: string }) {
-  return (
-    <a href="https://vluma.com.br" target="_blank" rel="noopener noreferrer"
-      className={`flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors ${className}`}>
-      <span>Desenvolvido por</span>
-      <img src="/logovluma.png" alt="VLUMA" className="w-5 h-5 rounded-full" />
-      <span className="font-semibold text-green-400">VLUMA</span>
-    </a>
-  )
-}
 
 export default function LoginPage() {
   const { signIn } = useAuth()
