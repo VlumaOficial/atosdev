@@ -25,97 +25,111 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      {/* Background decorativo */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-green-500/5 blur-3xl" />
-      </div>
-
-      <div className="w-full max-w-sm relative">
-        {/* Logo e identidade */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 mb-4">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <path d="M4 8h20M4 14h14M4 20h8" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="22" cy="20" r="4" fill="#22c55e" fillOpacity="0.2" stroke="#22c55e" strokeWidth="1.5"/>
-              <path d="M20.5 20l1 1 2-2" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <div className="min-h-screen flex">
+      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
+        style={{background: 'radial-gradient(ellipse 100% 80% at 0% 100%, rgba(124,58,237,0.15) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 100% 0%, rgba(6,182,212,0.10) 0%, transparent 60%), #0D1117'}}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+              <path d="M4 8h20M4 14h14M4 20h8" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round"/>
+              <circle cx="22" cy="20" r="4" fill="#06B6D4" fillOpacity="0.2" stroke="#06B6D4" strokeWidth="1.5"/>
+              <path d="M20.5 20l1 1 2-2" stroke="#06B6D4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            <span className="vluma-gradient-text">ATOS</span>
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">Gestão de Campo</p>
+          <div>
+            <p className="text-base font-bold vluma-gradient-text leading-none">ATOS</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Gestão de Campo</p>
+          </div>
         </div>
 
-        {/* Card de login */}
-        <div className="vluma-card p-6">
-          <h2 className="text-base font-semibold mb-1">Entrar na plataforma</h2>
-          <p className="text-muted-foreground text-sm mb-5">
-            Acesse com suas credenciais de acesso
+        <div>
+          <h1 className="text-4xl font-bold text-white leading-tight mb-4">
+            Gerencie sua<br />
+            <span className="vluma-gradient-text">equipe de campo</span><br />
+            com eficiência
+          </h1>
+          <p className="text-muted-foreground text-base max-w-sm">
+            Ordens de serviço, checklists técnicos e assinatura digital — tudo em um só lugar.
           </p>
+          <div className="mt-10 grid grid-cols-1 gap-4">
+            {[
+              { icon: '📋', label: 'Ordens de serviço', desc: 'Abertura, atribuição e acompanhamento em tempo real' },
+              { icon: '✅', label: 'Checklists técnicos', desc: 'CFTV, rede, acesso, elétrica e preventiva' },
+              { icon: '✍️', label: 'Assinatura digital', desc: 'Cliente assina direto no celular do técnico' },
+            ].map(item => (
+              <div key={item.label} className="flex items-start gap-3">
+                <span className="text-xl">{item.icon}</span>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <a href="https://vluma.com.br" target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit">
+          <span>Desenvolvido por</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="11" stroke="#22c55e" strokeWidth="1.5"/>
+            <path d="M8 8l4 8 4-8" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span className="font-semibold text-green-400">VLUMA</span>
+        </a>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        <div className="lg:hidden flex items-center gap-3 mb-10">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+              <path d="M4 8h20M4 14h14M4 20h8" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round"/>
+              <circle cx="22" cy="20" r="4" fill="#06B6D4" fillOpacity="0.2" stroke="#06B6D4" strokeWidth="1.5"/>
+              <path d="M20.5 20l1 1 2-2" stroke="#06B6D4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-bold vluma-gradient-text leading-none">ATOS</p>
+            <p className="text-[10px] text-muted-foreground">Gestão de Campo</p>
+          </div>
+        </div>
+
+        <div className="w-full max-w-sm">
+          <h2 className="text-2xl font-bold mb-1">Bem-vindo de volta</h2>
+          <p className="text-muted-foreground text-sm mb-8">Entre na sua conta para acessar o sistema</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5" htmlFor="email">
-                E-mail
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
-              />
+              <label className="block text-sm font-medium mb-1.5" htmlFor="email">E-mail</label>
+              <input id="email" type="email" autoComplete="email" required value={email}
+                onChange={e => setEmail(e.target.value)} placeholder="seu@email.com"
+                className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"/>
             </div>
-
             <div>
-              <label className="block text-sm font-medium mb-1.5" htmlFor="password">
-                Senha
-              </label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
-              />
+              <label className="block text-sm font-medium mb-1.5" htmlFor="password">Senha</label>
+              <input id="password" type="password" autoComplete="current-password" required value={password}
+                onChange={e => setPassword(e.target.value)} placeholder="••••••••"
+                className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"/>
             </div>
-
             {error && (
-              <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
-                {error}
-              </div>
+              <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{error}</div>
             )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button type="submit" disabled={loading}
+              className="w-full py-2.5 px-4 rounded-md text-sm font-semibold transition btn-cta disabled:opacity-50 disabled:cursor-not-allowed mt-2">
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Desenvolvido por{' '}
-          <a
-            href="https://vluma.com.br"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary/70 hover:text-primary transition"
-          >
-            VLUMA Tecnologia
-          </a>
-        </p>
+        <a href="https://vluma.com.br" target="_blank" rel="noopener noreferrer"
+          className="lg:hidden flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors mt-12">
+          <span>Desenvolvido por</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="11" stroke="#22c55e" strokeWidth="1.5"/>
+            <path d="M8 8l4 8 4-8" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span className="font-semibold text-green-400">VLUMA</span>
+        </a>
       </div>
     </div>
   )
