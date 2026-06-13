@@ -35,6 +35,21 @@ export default function LoginPage() {
     }
   }
 
+  const features = [
+    {
+      title: 'Ordens de serviço',
+      desc: 'Abertura, atribuição e acompanhamento em tempo real',
+    },
+    {
+      title: 'Checklists técnicos',
+      desc: 'Crie roteiros de verificação para qualquer tipo de validação',
+    },
+    {
+      title: 'Assinatura digital',
+      desc: 'Cliente assina direto no celular do técnico',
+    },
+  ]
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
@@ -52,6 +67,7 @@ export default function LoginPage() {
             <p className="text-[10px] text-muted-foreground mt-0.5">Gestão de Campo</p>
           </div>
         </div>
+
         <div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Gerencie sua<br />
@@ -59,17 +75,25 @@ export default function LoginPage() {
             com eficiência
           </h1>
           <p className="text-muted-foreground text-base max-w-sm">
-            Ordens de serviço, checklists técnicos e assinatura digital em um só lugar.
+            Ordens de serviço, checklists técnicos e assinatura digital — tudo em um só lugar.
           </p>
-          <div className="mt-10 flex items-start gap-3">
-            <span className="text-xl">checkmark</span>
-            <div>
-              <p className="text-sm font-medium text-foreground">Checklist técnico</p>
-              <p className="text-xs text-muted-foreground">Preencha e registre cada etapa do serviço em campo</p>
-            </div>
+          <div className="mt-10 space-y-4">
+            {features.map(f => (
+              <div key={f.title} className="flex items-start gap-3">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="mt-0.5 flex-shrink-0">
+                  <rect width="24" height="24" rx="6" fill="#8B5CF6" fillOpacity="0.15"/>
+                  <path d="M7 12l4 4 6-7" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{f.title}</p>
+                  <p className="text-xs text-muted-foreground">{f.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-        <VlumaFooter />
+
+        <div />
       </div>
 
       <div className="flex-1 flex flex-col min-h-screen lg:min-h-0">
@@ -112,9 +136,6 @@ export default function LoginPage() {
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
-            <div className="flex justify-center mt-8">
-              <VlumaFooter />
-            </div>
           </div>
         </div>
       </div>
