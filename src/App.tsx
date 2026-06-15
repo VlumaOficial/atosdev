@@ -3,6 +3,8 @@ import { AuthProvider } from '@/hooks/useAuth'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
 import LoginPage from '@/pages/LoginPage'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 
 // Placeholders para fases futuras
@@ -22,6 +24,8 @@ export default function App() {
         <Routes>
           {/* Rota pública */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+          <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
 
           {/* Rotas protegidas */}
           <Route

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
@@ -136,6 +136,11 @@ export default function LoginPage() {
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
+            <div className="mt-4 text-center">
+              <Link to="/esqueci-senha" className="text-sm text-muted-foreground hover:text-primary transition">
+                Esqueceu a senha?
+              </Link>
+            </div>
           </div>
         </div>
       </div>
