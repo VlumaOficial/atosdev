@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
+import AtosLogo from '@/components/brand/AtosLogo'
 
 export default function LoginPage() {
   const { signIn, user } = useAuth()
@@ -50,18 +51,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
         style={{ background: 'radial-gradient(ellipse 100% 80% at 0% 100%, rgba(124,58,237,0.15) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 100% 0%, rgba(6,182,212,0.10) 0%, transparent 60%), #0D1117' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
-              <path d="M4 8h20M4 14h14M4 20h8" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="22" cy="20" r="4" fill="#06B6D4" fillOpacity="0.2" stroke="#06B6D4" strokeWidth="1.5"/>
-              <path d="M20.5 20l1 1 2-2" stroke="#06B6D4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <div>
-            <p className="text-base font-bold vluma-gradient-text leading-none">ATOS</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Gestão de Campo</p>
-          </div>
-        </div>
+          <AtosLogo size={36} />
 
         <div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
@@ -93,18 +83,7 @@ export default function LoginPage() {
 
       <div className="flex-1 flex flex-col min-h-screen lg:min-h-0">
         <div className="lg:hidden flex items-center gap-3 p-6 border-b border-border">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
-              <path d="M4 8h20M4 14h14M4 20h8" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="22" cy="20" r="4" fill="#06B6D4" fillOpacity="0.2" stroke="#06B6D4" strokeWidth="1.5"/>
-              <path d="M20.5 20l1 1 2-2" stroke="#06B6D4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-bold vluma-gradient-text leading-none">ATOS</p>
-            <p className="text-[10px] text-muted-foreground">Gestão de Campo</p>
-          </div>
-        </div>
+          <AtosLogo size={36} />
 
         <div className="flex-1 flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-sm">

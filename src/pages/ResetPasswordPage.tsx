@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import AtosLogo from '@/components/brand/AtosLogo'
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -57,18 +58,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
-              <path d="M4 8h20M4 14h14M4 20h8" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="22" cy="20" r="4" fill="#06B6D4" fillOpacity="0.2" stroke="#06B6D4" strokeWidth="1.5"/>
-              <path d="M20.5 20l1 1 2-2" stroke="#06B6D4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-bold vluma-gradient-text leading-none">ATOS</p>
-            <p className="text-[10px] text-muted-foreground">Gestão de Campo</p>
-          </div>
-        </div>
+          <AtosLogo size={36} />
 
         {done ? (
           <div className="text-center">
