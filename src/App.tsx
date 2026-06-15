@@ -7,6 +7,7 @@ import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 import ClientsPage from '@/pages/ClientsPage'
+import LocationsPage from '@/pages/LocationsPage'
 
 // Placeholders para fases futuras
 function PlaceholderPage({ title }: { title: string }) {
@@ -51,7 +52,7 @@ export default function App() {
 
             {/* F2 — Clientes e Locais */}
             <Route path="clientes" element={<ClientsPage />} />
-            <Route path="locais" element={<PlaceholderPage title="Locais / Unidades" />} />
+            <Route path="locais" element={<LocationsPage />} />
 
             {/* F1 — Usuários e Técnicos */}
             <Route
