@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
+import AtosLogo from '@/components/brand/AtosLogo'
+import VlumaSignature from '@/components/brand/VlumaSignature'
 import type { UserRole } from '@/types'
 import {
   LayoutDashboard, ClipboardList, Users, Building2, MapPin,
@@ -51,19 +53,7 @@ export default function Sidebar() {
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       <div className="px-4 py-5 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-            <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
-              <path d="M4 8h20M4 14h14M4 20h8" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="22" cy="20" r="4" fill="#06B6D4" fillOpacity="0.2" stroke="#06B6D4" strokeWidth="1.5"/>
-              <path d="M20.5 20l1 1 2-2" stroke="#06B6D4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-bold vluma-gradient-text leading-none">ATOS</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 leading-none">Gestão de Campo</p>
-          </div>
-        </div>
+        <AtosLogo size={32} />
       </div>
 
       {user.role !== 'super_admin' && tenant && (
@@ -100,15 +90,7 @@ export default function Sidebar() {
           <span>Sair</span>
         </button>
 
-        <a href="https://vluma.com.br" target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 mt-3 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-          <span>Desenvolvido por</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="11" stroke="#22c55e" strokeWidth="1.5"/>
-            <path d="M8 8l4 8 4-8" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span className="font-semibold text-green-400">VLUMA</span>
-        </a>
+        <VlumaSignature className="px-3 mt-3" />
       </div>
     </div>
   )
