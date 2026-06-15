@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
-
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -114,13 +115,22 @@ export default function LoginPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5" htmlFor="password">Senha</label>
-                <input id="password" type="password" autoComplete="current-password" required value={password}
-                  onChange={e => setPassword(e.target.value)} placeholder="••••••••"
-                  className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition" />
+                <div className="relative">
+                  <input id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password}
+                    onChange={e => setPassword(e.target.value)} placeholder="••••••••"
+                    className="w-full px-3 py-2.5 pr-10 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition" />
+                  <button type="button" onClick={() => setShowPassword(v => !v)}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition">
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
+
               {error && (
                 <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{error}</div>
               )}
+
               <button type="submit" disabled={loading}
                 className="w-full py-2.5 px-4 rounded-md text-sm font-semibold btn-cta disabled:opacity-50 disabled:cursor-not-allowed">
                 {loading ? 'Entrando...' : 'Entrar'}
