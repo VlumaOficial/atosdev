@@ -1,11 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, user } = useAuth()
   const navigate = useNavigate()
+
+  // Redireciona quando o usuário estiver carregado (evita corrida de timing)
+  useEffect(() => {
+    if (user) navigate('/')
+  }, [user, navigate])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -18,7 +23,6 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await signIn(email, password)
-      navigate('/')
     } catch {
       setError('E-mail ou senha incorretos. Verifique seus dados.')
     } finally {
