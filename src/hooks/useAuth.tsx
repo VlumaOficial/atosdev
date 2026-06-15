@@ -51,8 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+    // Carrega o perfil imediatamente com a sessão já ativa (evita corrida com o listener)
+    if (data.user) {
+      await loadUserProfile(data.user.id)
+    }
   }
 
   async function signOut() {
