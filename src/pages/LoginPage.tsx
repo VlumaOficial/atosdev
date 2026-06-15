@@ -8,10 +8,10 @@ export default function LoginPage() {
   const { signIn, user } = useAuth()
   const navigate = useNavigate()
 
-  // Redireciona quando o usuário estiver carregado (evita corrida de timing)
   useEffect(() => {
     if (user) navigate('/')
   }, [user, navigate])
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -32,26 +32,16 @@ export default function LoginPage() {
   }
 
   const features = [
-    {
-      title: 'Ordens de serviço',
-      desc: 'Abertura, atribuição e acompanhamento em tempo real',
-    },
-    {
-      title: 'Checklists técnicos',
-      desc: 'Crie roteiros de verificação para qualquer tipo de validação',
-    },
-    {
-      title: 'Assinatura digital',
-      desc: 'Cliente assina direto no celular do técnico',
-    },
+    { title: 'Ordens de serviço', desc: 'Abertura, atribuição e acompanhamento em tempo real' },
+    { title: 'Checklists técnicos', desc: 'Crie roteiros de verificação para qualquer tipo de validação' },
+    { title: 'Assinatura digital', desc: 'Cliente assina direto no celular do técnico' },
   ]
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
         style={{ background: 'radial-gradient(ellipse 100% 80% at 0% 100%, rgba(124,58,237,0.15) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 100% 0%, rgba(6,182,212,0.10) 0%, transparent 60%), #0D1117' }}>
-        <div className="flex items-center gap-3">
-          <AtosLogo size={36} />
+        <AtosLogo size={36} />
 
         <div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
@@ -82,8 +72,9 @@ export default function LoginPage() {
       </div>
 
       <div className="flex-1 flex flex-col min-h-screen lg:min-h-0">
-        <div className="lg:hidden flex items-center gap-3 p-6 border-b border-border">
+        <div className="lg:hidden p-6 border-b border-border">
           <AtosLogo size={36} />
+        </div>
 
         <div className="flex-1 flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-sm">

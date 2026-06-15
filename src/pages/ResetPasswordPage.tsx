@@ -15,13 +15,11 @@ export default function ResetPasswordPage() {
   const [sessionReady, setSessionReady] = useState(false)
 
   useEffect(() => {
-    // O Supabase cria uma sessão de recuperação ao abrir o link do e-mail
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
         setSessionReady(true)
       }
     })
-    // Verifica se já há sessão ativa (caso o evento já tenha ocorrido)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setSessionReady(true)
     })
@@ -57,9 +55,9 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
-        <div className="flex items-center gap-3 mb-8">
+        <div className="mb-8">
           <AtosLogo size={36} />
-
+        </div>
         {done ? (
           <div className="text-center">
             <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-4">

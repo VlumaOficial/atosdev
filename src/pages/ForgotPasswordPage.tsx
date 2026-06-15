@@ -30,9 +30,9 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
-        <div className="flex items-center gap-3 mb-8">
+        <div className="mb-8">
           <AtosLogo size={36} />
-
+        </div>
         {sent ? (
           <div className="text-center">
             <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
@@ -59,17 +59,14 @@ export default function ForgotPasswordPage() {
                   onChange={e => setEmail(e.target.value)} placeholder="seu@email.com"
                   className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition" />
               </div>
-
               {error && (
                 <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{error}</div>
               )}
-
               <button type="submit" disabled={loading}
                 className="w-full py-2.5 px-4 rounded-md text-sm font-semibold btn-cta disabled:opacity-50 disabled:cursor-not-allowed">
                 {loading ? 'Enviando...' : 'Enviar link de redefinição'}
               </button>
             </form>
-
             <div className="mt-6 text-center">
               <Link to="/login" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
                 <ArrowLeft size={16} /> Voltar para o login
