@@ -7,6 +7,7 @@ import { Input, Label } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Combobox } from '@/components/ui/combobox'
 import { MapPin, Plus, Pencil, Trash2, Building2 } from 'lucide-react'
 
 const emptyForm: LocationInput = { client_id: '', name: '', address: '', city: '', state: '' }
@@ -150,17 +151,15 @@ export default function LocationsPage() {
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <Label htmlFor="client">Cliente *</Label>
-            <select
+            <Combobox
               id="client"
+              options={clients.map(c => ({ value: c.id, label: c.name }))}
               value={form.client_id}
-              onChange={e => setForm({ ...form, client_id: e.target.value })}
-              className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
-            >
-              <option value="">Selecione o cliente</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+              onChange={v => setForm({ ...form, client_id: v })}
+              placeholder="Selecione o cliente"
+              searchPlaceholder="Buscar cliente..."
+              emptyText="Nenhum cliente encontrado."
+            />
           </div>
           <div>
             <Label htmlFor="name">Nome do local *</Label>
