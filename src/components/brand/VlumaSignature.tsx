@@ -4,7 +4,7 @@ interface VlumaSignatureProps {
 
 export default function VlumaSignature({ className = '' }: VlumaSignatureProps) {
   return (
-    
+    <a
       href="https://vluma.com.br"
       target="_blank"
       rel="noopener noreferrer"
