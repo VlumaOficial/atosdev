@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useClients, type Client, type ClientInput } from '@/hooks/useClients'
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
@@ -17,8 +18,26 @@ const chips = [
   { key: 'inactive', label: 'Inativos' },
 ]
 
+const mapClient = (row: any): Client => ({
+  ...row,
+  locations_count: row.locations?.[0]?.count ?? 0,
+})
+
 export default function ClientsPage() {
-  const { clients, loading, error, createClient, updateClient, deleteClient } = useClients()
+  const { createClient, updateClient, deleteClient } = useClients()
+  const {
+    items, loading, error, page, pageSize, total, totalPages,
+    setPage, setPageSize, search, setSearch, refetch,
+  } = usePaginatedQuery<Client>({
+    table: 'clients',
+    select: '*, locations(count)',
+    searchColumns: ['name', 'cnpj', 'email'],
+    orderBy: 'name',
+    ascending: true,
+    initialPageSize: 25,
+    mapRow: mapClient,
+  })
+
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Client | null>(null)
   const [form, setForm] = useState<ClientInput>(emptyForm)
@@ -27,10 +46,10 @@ export default function ClientsPage() {
   const [chip, setChip] = useState('all')
 
   const visible = useMemo(() => {
-    if (chip === 'active') return clients.filter(c => c.active)
-    if (chip === 'inactive') return clients.filter(c => !c.active)
-    return clients
-  }, [clients, chip])
+    if (chip === 'active') return items.filter(c => c.active)
+    if (chip === 'inactive') return items.filter(c => !c.active)
+    return items
+  }, [items, chip])
 
   function openNew() {
     setEditing(null)
@@ -61,6 +80,7 @@ export default function ClientsPage() {
         await createClient(form)
       }
       setModalOpen(false)
+      refetch()
     } catch {
       setFormError('Não foi possível salvar. Tente novamente.')
     } finally {
@@ -68,14 +88,15 @@ export default function ClientsPage() {
     }
   }
 
-  async function handleDelete(c: Client) {
+  const handleDelete = useCallback(async (c: Client) => {
     if (!confirm(`Excluir o cliente "${c.name}"? Esta ação não pode ser desfeita.`)) return
     try {
       await deleteClient(c.id)
+      refetch()
     } catch {
       alert('Não foi possível excluir o cliente.')
     }
-  }
+  }, [deleteClient, refetch])
 
   function StatusBadge({ active }: { active: boolean }) {
     return (
@@ -188,8 +209,15 @@ export default function ClientsPage() {
           items={visible}
           loading={loading}
           viewKey="clients"
-          searchText={c => `${c.name} ${c.cnpj ?? ''} ${c.email ?? ''}`}
+          search={search}
+          onSearchChange={setSearch}
           searchPlaceholder="Buscar por nome, CNPJ ou e-mail..."
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
           chips={chips}
           activeChip={chip}
           onChipChange={setChip}
