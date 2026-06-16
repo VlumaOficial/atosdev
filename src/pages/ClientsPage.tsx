@@ -75,6 +75,10 @@ export default function ClientsPage() {
       setFormError('O nome do cliente é obrigatório.')
       return
     }
+    if (!form.address?.trim()) {
+      setFormError('O endereço é obrigatório. Ele define a unidade principal do cliente.')
+      return
+    }
     setSaving(true)
     try {
       if (editing) {
@@ -277,8 +281,9 @@ export default function ClientsPage() {
             <Input id="phone" value={form.phone ?? ''} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(71) 90000-0000" />
           </div>
           <div>
-            <Label htmlFor="address">Endereço</Label>
-            <Input id="address" value={form.address ?? ''} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Rua, número, bairro, cidade" />
+            <Label htmlFor="address">Endereço *</Label>
+            <Input id="address" value={form.address ?? ''} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Rua, número, bairro, cidade — vira a unidade principal" />
+            <p className="text-xs text-muted-foreground mt-1">Este endereço será cadastrado como a unidade principal do cliente.</p>
           </div>
 
           {editing && (
