@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export interface PaginatedResult<T> {
@@ -19,23 +19,28 @@ export interface PaginatedResult<T> {
 interface UsePaginatedQueryOptions {
   table: string
   select?: string
-  searchColumns?: string[]   // colunas para busca ilike
+  searchColumns?: string[]
   orderBy?: string
   ascending?: boolean
   initialPageSize?: number
-  // mapeia cada linha bruta do banco para o tipo final (ex: contagem de locais)
   mapRow?: (row: any) => any
 }
 
-export function usePaginatedQuery<T>({
-  table,
-  select = '*',
-  searchColumns = [],
-  orderBy = 'created_at',
-  ascending = false,
-  initialPageSize = 25,
-  mapRow,
-}: UsePaginatedQueryOptions): PaginatedResult<T> {
+export function usePaginatedQuery<T>(options: UsePaginatedQueryOptions): PaginatedResult<T> {
+  // Congela as opções na primeira renderização para evitar loop de dependências.
+  // (table/select/searchColumns/orderBy não mudam em runtime nesta aplicação)
+  const optsRef = useRef(options)
+
+  const {
+    table,
+    select = '*',
+    searchColumns = [],
+    orderBy = 'created_at',
+    ascending = false,
+    initialPageSize = 25,
+    mapRow,
+  } = optsRef.current
+
   const [items, setItems] = useState<T[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -59,7 +64,6 @@ export function usePaginatedQuery<T>({
       .order(orderBy, { ascending })
       .range(from, to)
 
-    // busca: monta um OR de ilike em cada coluna
     if (search.trim() && searchColumns.length > 0) {
       const term = search.trim().replace(/[%,]/g, '')
       const orExpr = searchColumns.map(col => `${col}.ilike.%${term}%`).join(',')
@@ -78,13 +82,14 @@ export function usePaginatedQuery<T>({
       setTotal(count ?? 0)
     }
     setLoading(false)
-  }, [table, select, orderBy, ascending, page, pageSize, search, searchColumns, mapRow])
+    // Dependências apenas em valores primitivos que realmente mudam.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, search])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  // ao buscar, volta para a primeira página
   const setSearch = useCallback((q: string) => {
     setSearchRaw(q)
     setPage(1)
