@@ -16,6 +16,12 @@ const emptyForm: LocationInput = { client_id: '', name: '', address: '', city: '
 
 const mapLocation = (row: any): Location => ({ ...row })
 
+const chips = [
+  { key: 'all', label: 'Todos' },
+  { key: 'active', label: 'Ativos' },
+  { key: 'inactive', label: 'Inativos' },
+]
+
 export default function LocationsPage() {
   const { createLocation, updateLocation, deleteLocation, setLocationActive } = useLocations()
   const { clients } = useClients()
@@ -41,6 +47,13 @@ export default function LocationsPage() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [formActive, setFormActive] = useState(true)
+  const [chip, setChip] = useState('all')
+
+  const visible = useMemo(() => {
+    if (chip === 'active') return items.filter(l => l.active)
+    if (chip === 'inactive') return items.filter(l => !l.active)
+    return items
+  }, [items, chip])
 
   const clientOptions = useMemo(
     () => clients.map(c => ({ value: c.id, label: c.name })),
@@ -100,6 +113,15 @@ export default function LocationsPage() {
     }
   }
 
+  function StatusBadge({ active }: { active: boolean }) {
+    return (
+      <span className={'inline-flex items-center gap-1.5 text-xs ' + (active ? 'text-green-400' : 'text-muted-foreground')}>
+        <span className={'w-1.5 h-1.5 rounded-full ' + (active ? 'bg-green-400' : 'bg-muted-foreground')} />
+        {active ? 'Ativo' : 'Inativo'}
+      </span>
+    )
+  }
+
   async function handleToggleActive(l: Location) {
     try {
       await setLocationActive(l.id, !l.active)
@@ -155,6 +177,11 @@ export default function LocationsPage() {
           {[l.city, l.state].filter(Boolean).join(' / ') || '—'}
         </span>
       ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: l => <StatusBadge active={l.active} />,
     },
   ]
 
@@ -225,7 +252,7 @@ export default function LocationsPage() {
         <Card className="p-6 text-center text-red-400 text-sm">{error}</Card>
       ) : (
         <DataListView<Location>
-          items={items}
+          items={visible}
           loading={loading}
           viewKey="locations"
           search={search}
@@ -237,6 +264,9 @@ export default function LocationsPage() {
           totalPages={totalPages}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
+          chips={chips}
+          activeChip={chip}
+          onChipChange={setChip}
           columns={columns}
           renderCard={renderCard}
           rowActions={l => <RowActions item={l} />}
