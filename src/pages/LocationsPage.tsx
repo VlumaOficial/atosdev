@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useLocations, type Location, type LocationInput } from '@/hooks/useLocations'
 import { useClients } from '@/hooks/useClients'
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
@@ -8,18 +9,42 @@ import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Combobox } from '@/components/ui/combobox'
+import { DataListView, type Column } from '@/components/ui/data-list-view'
 import { MapPin, Plus, Pencil, Trash2, Building2 } from 'lucide-react'
 
 const emptyForm: LocationInput = { client_id: '', name: '', address: '', city: '', state: '' }
 
+const mapLocation = (row: any): Location => ({ ...row })
+
 export default function LocationsPage() {
-  const { locations, loading, error, createLocation, updateLocation, deleteLocation } = useLocations()
+  const { createLocation, updateLocation, deleteLocation } = useLocations()
   const { clients } = useClients()
+  const [clientFilter, setClientFilter] = useState('')
+
+  const {
+    items, loading, error, page, pageSize, total, totalPages,
+    setPage, setPageSize, search, setSearch, refetch,
+  } = usePaginatedQuery<Location>({
+    table: 'locations',
+    select: '*, client:clients(id, name)',
+    searchColumns: ['name', 'city'],
+    orderBy: 'name',
+    ascending: true,
+    initialPageSize: 25,
+    mapRow: mapLocation,
+    eqFilter: clientFilter ? { column: 'client_id', value: clientFilter } : null,
+  })
+
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Location | null>(null)
   const [form, setForm] = useState<LocationInput>(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+
+  const clientOptions = useMemo(
+    () => clients.map(c => ({ value: c.id, label: c.name })),
+    [clients]
+  )
 
   function openNew() {
     setEditing(null)
@@ -54,6 +79,7 @@ export default function LocationsPage() {
         await createLocation(form)
       }
       setModalOpen(false)
+      refetch()
     } catch {
       setFormError('Não foi possível salvar. Tente novamente.')
     } finally {
@@ -65,9 +91,86 @@ export default function LocationsPage() {
     if (!confirm(`Excluir o local "${l.name}"? Esta ação não pode ser desfeita.`)) return
     try {
       await deleteLocation(l.id)
+      refetch()
     } catch {
       alert('Não foi possível excluir o local.')
     }
+  }
+
+  function RowActions({ item }: { item: Location }) {
+    return (
+      <>
+        <button onClick={() => openEdit(item)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition">
+          <Pencil size={14} />
+        </button>
+        <button onClick={() => handleDelete(item)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition">
+          <Trash2 size={14} />
+        </button>
+      </>
+    )
+  }
+
+  const columns: Column<Location>[] = [
+    {
+      key: 'name',
+      header: 'Local',
+      render: l => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+            <MapPin size={15} className="text-primary" />
+          </div>
+          <p className="font-medium text-foreground truncate">{l.name}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'client',
+      header: 'Cliente',
+      render: l => (
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Building2 size={12} /> {l.client?.name ?? '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'location',
+      header: 'Cidade / UF',
+      render: l => (
+        <span className="text-xs text-muted-foreground">
+          {[l.city, l.state].filter(Boolean).join(' / ') || '—'}
+        </span>
+      ),
+    },
+  ]
+
+  function renderCard(l: Location) {
+    return (
+      <Card className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+              <MapPin size={18} className="text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-foreground truncate">{l.name}</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                <Building2 size={11} /> {l.client?.name ?? '—'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <RowActions item={l} />
+          </div>
+        </div>
+        {(l.city || l.state) && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <p className="text-xs text-muted-foreground">
+              {[l.address, l.city, l.state].filter(Boolean).join(', ')}
+            </p>
+          </div>
+        )}
+      </Card>
+    )
   }
 
   const noClients = clients.length === 0
@@ -90,56 +193,50 @@ export default function LocationsPage() {
         </Card>
       )}
 
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : error ? (
+      <div className="mb-4 max-w-xs">
+        <Label htmlFor="filter-client">Filtrar por cliente</Label>
+        <Combobox
+          id="filter-client"
+          options={[{ value: '', label: 'Todos os clientes' }, ...clientOptions]}
+          value={clientFilter}
+          onChange={v => { setClientFilter(v); setPage(1) }}
+          placeholder="Todos os clientes"
+          searchPlaceholder="Buscar cliente..."
+          emptyText="Nenhum cliente encontrado."
+        />
+      </div>
+
+      {error ? (
         <Card className="p-6 text-center text-red-400 text-sm">{error}</Card>
-      ) : locations.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={MapPin}
-            title="Nenhum local cadastrado"
-            description="Adicione unidades e endereços vinculados aos seus clientes."
-            action={!noClients ? <Button onClick={openNew} variant="cta"><Plus size={16} /> Novo local</Button> : undefined}
-          />
-        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {locations.map(l => (
-            <Card key={l.id} className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                    <MapPin size={18} className="text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground truncate">{l.name}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                      <Building2 size={11} /> {l.client?.name ?? 'Cliente'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={() => openEdit(l)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition">
-                    <Pencil size={14} />
-                  </button>
-                  <button onClick={() => handleDelete(l)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-              {(l.address || l.city || l.state) && (
-                <div className="mt-3 pt-3 border-t border-border">
-                  <p className="text-xs text-muted-foreground">
-                    {[l.address, l.city, l.state].filter(Boolean).join(', ')}
-                  </p>
-                </div>
-              )}
+        <DataListView<Location>
+          items={items}
+          loading={loading}
+          viewKey="locations"
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Buscar por nome do local ou cidade..."
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          columns={columns}
+          renderCard={renderCard}
+          rowActions={l => <RowActions item={l} />}
+          getKey={l => l.id}
+          emptyState={
+            <Card>
+              <EmptyState
+                icon={MapPin}
+                title="Nenhum local cadastrado"
+                description="Adicione unidades e endereços vinculados aos seus clientes."
+                action={!noClients ? <Button onClick={openNew} variant="cta"><Plus size={16} /> Novo local</Button> : undefined}
+              />
             </Card>
-          ))}
-        </div>
+          }
+        />
       )}
 
       <Modal
@@ -153,7 +250,7 @@ export default function LocationsPage() {
             <Label htmlFor="client">Cliente *</Label>
             <Combobox
               id="client"
-              options={clients.map(c => ({ value: c.id, label: c.name }))}
+              options={clientOptions}
               value={form.client_id}
               onChange={v => setForm({ ...form, client_id: v })}
               placeholder="Selecione o cliente"

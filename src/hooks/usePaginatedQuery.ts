@@ -24,12 +24,12 @@ interface UsePaginatedQueryOptions {
   ascending?: boolean
   initialPageSize?: number
   mapRow?: (row: any) => any
+  eqFilter?: { column: string; value: string } | null
 }
 
 export function usePaginatedQuery<T>(options: UsePaginatedQueryOptions): PaginatedResult<T> {
-  // Congela as opções na primeira renderização para evitar loop de dependências.
-  // (table/select/searchColumns/orderBy não mudam em runtime nesta aplicação)
   const optsRef = useRef(options)
+  optsRef.current.eqFilter = options.eqFilter
 
   const {
     table,
@@ -40,6 +40,9 @@ export function usePaginatedQuery<T>(options: UsePaginatedQueryOptions): Paginat
     initialPageSize = 25,
     mapRow,
   } = optsRef.current
+
+  const eqColumn = options.eqFilter?.column ?? null
+  const eqValue = options.eqFilter?.value ?? null
 
   const [items, setItems] = useState<T[]>([])
   const [total, setTotal] = useState(0)
@@ -64,6 +67,10 @@ export function usePaginatedQuery<T>(options: UsePaginatedQueryOptions): Paginat
       .order(orderBy, { ascending })
       .range(from, to)
 
+    if (eqColumn && eqValue) {
+      query = query.eq(eqColumn, eqValue)
+    }
+
     if (search.trim() && searchColumns.length > 0) {
       const term = search.trim().replace(/[%,]/g, '')
       const orExpr = searchColumns.map(col => `${col}.ilike.%${term}%`).join(',')
@@ -82,9 +89,8 @@ export function usePaginatedQuery<T>(options: UsePaginatedQueryOptions): Paginat
       setTotal(count ?? 0)
     }
     setLoading(false)
-    // Dependências apenas em valores primitivos que realmente mudam.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, search])
+  }, [page, pageSize, search, eqColumn, eqValue])
 
   useEffect(() => {
     fetchData()
