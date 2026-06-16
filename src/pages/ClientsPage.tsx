@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useClients, type Client, type ClientInput } from '@/hooks/useClients'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
@@ -6,9 +6,16 @@ import { Input, Label } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Building2, Plus, Pencil, Trash2, Mail, Phone } from 'lucide-react'
+import { DataListView, type Column } from '@/components/ui/data-list-view'
+import { Building2, Plus, Pencil, Trash2, MapPin } from 'lucide-react'
 
 const emptyForm: ClientInput = { name: '', cnpj: '', email: '', phone: '', address: '' }
+
+const chips = [
+  { key: 'all', label: 'Todos' },
+  { key: 'active', label: 'Ativos' },
+  { key: 'inactive', label: 'Inativos' },
+]
 
 export default function ClientsPage() {
   const { clients, loading, error, createClient, updateClient, deleteClient } = useClients()
@@ -17,6 +24,13 @@ export default function ClientsPage() {
   const [form, setForm] = useState<ClientInput>(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [chip, setChip] = useState('all')
+
+  const visible = useMemo(() => {
+    if (chip === 'active') return clients.filter(c => c.active)
+    if (chip === 'inactive') return clients.filter(c => !c.active)
+    return clients
+  }, [clients, chip])
 
   function openNew() {
     setEditing(null)
@@ -63,6 +77,98 @@ export default function ClientsPage() {
     }
   }
 
+  function StatusBadge({ active }: { active: boolean }) {
+    return (
+      <span className={'inline-flex items-center gap-1.5 text-xs ' + (active ? 'text-green-400' : 'text-muted-foreground')}>
+        <span className={'w-1.5 h-1.5 rounded-full ' + (active ? 'bg-green-400' : 'bg-muted-foreground')} />
+        {active ? 'Ativo' : 'Inativo'}
+      </span>
+    )
+  }
+
+  function RowActions({ item }: { item: Client }) {
+    return (
+      <>
+        <button onClick={() => openEdit(item)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition">
+          <Pencil size={14} />
+        </button>
+        <button onClick={() => handleDelete(item)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition">
+          <Trash2 size={14} />
+        </button>
+      </>
+    )
+  }
+
+  const columns: Column<Client>[] = [
+    {
+      key: 'name',
+      header: 'Cliente',
+      render: c => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+            <Building2 size={15} className="text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-foreground truncate">{c.name}</p>
+            {c.cnpj && <p className="text-xs text-muted-foreground">{c.cnpj}</p>}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'contact',
+      header: 'Contato',
+      render: c => (
+        <div className="text-xs text-muted-foreground">
+          {c.email && <p className="truncate">{c.email}</p>}
+          {c.phone && <p>{c.phone}</p>}
+          {!c.email && !c.phone && <span>—</span>}
+        </div>
+      ),
+    },
+    {
+      key: 'locations',
+      header: 'Locais',
+      render: c => (
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <MapPin size={12} /> {c.locations_count ?? 0}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: c => <StatusBadge active={c.active} />,
+    },
+  ]
+
+  function renderCard(c: Client) {
+    return (
+      <Card className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+              <Building2 size={18} className="text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-foreground truncate">{c.name}</p>
+              {c.cnpj && <p className="text-xs text-muted-foreground">{c.cnpj}</p>}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <RowActions item={c} />
+          </div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin size={12} /> {c.locations_count ?? 0} {(c.locations_count ?? 0) === 1 ? 'local' : 'locais'}
+          </span>
+          <StatusBadge active={c.active} />
+        </div>
+      </Card>
+    )
+  }
+
   return (
     <div>
       <PageHeader
@@ -75,61 +181,33 @@ export default function ClientsPage() {
         }
       />
 
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : error ? (
+      {error ? (
         <Card className="p-6 text-center text-red-400 text-sm">{error}</Card>
-      ) : clients.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={Building2}
-            title="Nenhum cliente cadastrado"
-            description="Cadastre o primeiro cliente para começar a organizar seus atendimentos."
-            action={<Button onClick={openNew} variant="cta"><Plus size={16} /> Novo cliente</Button>}
-          />
-        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {clients.map(c => (
-            <Card key={c.id} className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                    <Building2 size={18} className="text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground truncate">{c.name}</p>
-                    {c.cnpj && <p className="text-xs text-muted-foreground">{c.cnpj}</p>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={() => openEdit(c)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition">
-                    <Pencil size={14} />
-                  </button>
-                  <button onClick={() => handleDelete(c)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-              {(c.email || c.phone) && (
-                <div className="mt-3 pt-3 border-t border-border space-y-1">
-                  {c.email && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-2">
-                      <Mail size={12} /> {c.email}
-                    </p>
-                  )}
-                  {c.phone && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-2">
-                      <Phone size={12} /> {c.phone}
-                    </p>
-                  )}
-                </div>
-              )}
+        <DataListView<Client>
+          items={visible}
+          loading={loading}
+          viewKey="clients"
+          searchText={c => `${c.name} ${c.cnpj ?? ''} ${c.email ?? ''}`}
+          searchPlaceholder="Buscar por nome, CNPJ ou e-mail..."
+          chips={chips}
+          activeChip={chip}
+          onChipChange={setChip}
+          columns={columns}
+          renderCard={renderCard}
+          rowActions={c => <RowActions item={c} />}
+          getKey={c => c.id}
+          emptyState={
+            <Card>
+              <EmptyState
+                icon={Building2}
+                title="Nenhum cliente cadastrado"
+                description="Cadastre o primeiro cliente para começar a organizar seus atendimentos."
+                action={<Button onClick={openNew} variant="cta"><Plus size={16} /> Novo cliente</Button>}
+              />
             </Card>
-          ))}
-        </div>
+          }
+        />
       )}
 
       <Modal

@@ -11,6 +11,7 @@ export interface Client {
   address: string | null
   active: boolean
   created_at: string
+  locations_count?: number
 }
 
 export interface ClientInput {
@@ -31,13 +32,17 @@ export function useClients() {
     setError(null)
     const { data, error } = await supabase
       .from('clients')
-      .select('*')
+      .select('*, locations(count)')
       .order('name', { ascending: true })
     if (error) {
       setError(error.message)
       setClients([])
     } else {
-      setClients(data as Client[])
+      const mapped = (data as any[]).map(c => ({
+        ...c,
+        locations_count: c.locations?.[0]?.count ?? 0,
+      }))
+      setClients(mapped as Client[])
     }
     setLoading(false)
   }, [])
