@@ -104,12 +104,12 @@ export default function LocationsPage() {
   }
 
   async function handleDelete(l: Location) {
-    if (!confirm(`Excluir o local "${l.name}"? Esta ação não pode ser desfeita.`)) return
+    if (!confirm(`Excluir a unidade "${l.name}"? Esta ação não pode ser desfeita.`)) return
     try {
       await deleteLocation(l.id)
       refetch()
     } catch {
-      alert('Não foi possível excluir o local.')
+      alert('Não foi possível excluir a unidade.')
     }
   }
 
@@ -150,7 +150,7 @@ export default function LocationsPage() {
   const columns: Column<Location>[] = [
     {
       key: 'name',
-      header: 'Local',
+      header: 'Unidade',
       render: l => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
@@ -220,18 +220,18 @@ export default function LocationsPage() {
   return (
     <div>
       <PageHeader
-        title="Locais"
+        title="Unidades"
         description="Unidades e endereços dos seus clientes"
         actions={
           <Button onClick={openNew} variant="cta" disabled={noClients}>
-            <Plus size={16} /> Novo local
+            <Plus size={16} /> Nova unidade
           </Button>
         }
       />
 
       {noClients && !loading && (
         <Card className="p-4 mb-4 text-sm text-muted-foreground">
-          Cadastre um cliente antes de adicionar locais.
+          Cadastre um cliente antes de adicionar unidades.
         </Card>
       )}
 
@@ -275,9 +275,9 @@ export default function LocationsPage() {
             <Card>
               <EmptyState
                 icon={MapPin}
-                title="Nenhum local cadastrado"
+                title="Nenhuma unidade cadastrada"
                 description="Adicione unidades e endereços vinculados aos seus clientes."
-                action={!noClients ? <Button onClick={openNew} variant="cta"><Plus size={16} /> Novo local</Button> : undefined}
+                action={!noClients ? <Button onClick={openNew} variant="cta"><Plus size={16} /> Nova unidade</Button> : undefined}
               />
             </Card>
           }
@@ -287,8 +287,8 @@ export default function LocationsPage() {
       <Modal
         open={modalOpen}
         onOpenChange={setModalOpen}
-        title={editing ? 'Editar local' : 'Novo local'}
-        description={editing ? 'Atualize os dados do local' : 'Cadastre uma unidade vinculada a um cliente'}
+        title={editing ? 'Editar local' : 'Nova unidade'}
+        description={editing ? 'Atualize os dados da unidade' : 'Cadastre uma unidade vinculada a um cliente'}
       >
         <form onSubmit={handleSave} className="space-y-4">
           <div>
@@ -304,7 +304,7 @@ export default function LocationsPage() {
             />
           </div>
           <div>
-            <Label htmlFor="name">Nome do local *</Label>
+            <Label htmlFor="name">Nome da unidade *</Label>
             <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ex: Loja 01 - Centro" />
           </div>
           <div>
@@ -325,8 +325,8 @@ export default function LocationsPage() {
           {editing && (
             <div className="flex items-center justify-between rounded-md border border-border px-3 py-2.5">
               <div>
-                <p className="text-sm font-medium text-foreground">Local ativo</p>
-                <p className="text-xs text-muted-foreground">Locais inativos não aparecem nas seleções</p>
+                <p className="text-sm font-medium text-foreground">Unidade ativa</p>
+                <p className="text-xs text-muted-foreground">Unidades inativas não aparecem nas seleções</p>
               </div>
               <button type="button" onClick={() => setFormActive(v => !v)} className={'relative w-11 h-6 rounded-full transition ' + (formActive ? 'bg-primary' : 'bg-secondary border border-border')}>
                 <span className={'absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ' + (formActive ? 'left-[22px]' : 'left-0.5')} />
