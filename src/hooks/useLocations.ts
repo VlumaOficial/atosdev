@@ -63,11 +63,17 @@ export function useLocations(clientId?: string) {
     await fetchLocations()
   }
 
+  async function setLocationActive(id: string, active: boolean) {
+    const { error } = await supabase.from('locations').update({ active }).eq('id', id)
+    if (error) throw error
+    await fetchLocations()
+  }
+
   async function deleteLocation(id: string) {
     const { error } = await supabase.from('locations').delete().eq('id', id)
     if (error) throw error
     await fetchLocations()
   }
 
-  return { locations, loading, error, fetchLocations, createLocation, updateLocation, deleteLocation }
+  return { locations, loading, error, fetchLocations, createLocation, updateLocation, deleteLocation, setLocationActive }
 }

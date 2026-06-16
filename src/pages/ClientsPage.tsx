@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { DataListView, type Column } from '@/components/ui/data-list-view'
-import { Building2, Plus, Pencil, Trash2, MapPin } from 'lucide-react'
+import { Building2, Plus, Pencil, Trash2, MapPin, Power } from 'lucide-react'
 
 const emptyForm: ClientInput = { name: '', cnpj: '', email: '', phone: '', address: '' }
 
@@ -24,7 +24,7 @@ const mapClient = (row: any): Client => ({
 })
 
 export default function ClientsPage() {
-  const { createClient, updateClient, deleteClient } = useClients()
+  const { createClient, updateClient, deleteClient, setClientActive } = useClients()
   const {
     items, loading, error, page, pageSize, total, totalPages,
     setPage, setPageSize, search, setSearch, refetch,
@@ -43,6 +43,7 @@ export default function ClientsPage() {
   const [form, setForm] = useState<ClientInput>(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [formActive, setFormActive] = useState(true)
   const [chip, setChip] = useState('all')
 
   const visible = useMemo(() => {
@@ -53,6 +54,7 @@ export default function ClientsPage() {
 
   function openNew() {
     setEditing(null)
+    setFormActive(true)
     setForm(emptyForm)
     setFormError('')
     setModalOpen(true)
@@ -60,6 +62,7 @@ export default function ClientsPage() {
 
   function openEdit(c: Client) {
     setEditing(c)
+    setFormActive(c.active)
     setForm({ name: c.name, cnpj: c.cnpj, email: c.email, phone: c.phone, address: c.address })
     setFormError('')
     setModalOpen(true)
@@ -75,7 +78,7 @@ export default function ClientsPage() {
     setSaving(true)
     try {
       if (editing) {
-        await updateClient(editing.id, form)
+        await updateClient(editing.id, { ...form, active: formActive } as any)
       } else {
         await createClient(form)
       }
@@ -98,6 +101,15 @@ export default function ClientsPage() {
     }
   }, [deleteClient, refetch])
 
+  async function handleToggleActive(c: Client) {
+    try {
+      await setClientActive(c.id, !c.active)
+      refetch()
+    } catch {
+      alert('Não foi possível alterar o status.')
+    }
+  }
+
   function StatusBadge({ active }: { active: boolean }) {
     return (
       <span className={'inline-flex items-center gap-1.5 text-xs ' + (active ? 'text-green-400' : 'text-muted-foreground')}>
@@ -112,6 +124,9 @@ export default function ClientsPage() {
       <>
         <button onClick={() => openEdit(item)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition">
           <Pencil size={14} />
+        </button>
+        <button onClick={() => handleToggleActive(item)} title={item.active ? 'Desativar' : 'Ativar'} className={'w-7 h-7 rounded-md flex items-center justify-center transition hover:bg-secondary ' + (item.active ? 'text-muted-foreground hover:text-amber-400' : 'text-green-400 hover:text-green-300')}>
+          <Power size={14} />
         </button>
         <button onClick={() => handleDelete(item)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition">
           <Trash2 size={14} />
@@ -265,6 +280,18 @@ export default function ClientsPage() {
             <Label htmlFor="address">Endereço</Label>
             <Input id="address" value={form.address ?? ''} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Rua, número, bairro, cidade" />
           </div>
+
+          {editing && (
+            <div className="flex items-center justify-between rounded-md border border-border px-3 py-2.5">
+              <div>
+                <p className="text-sm font-medium text-foreground">Cliente ativo</p>
+                <p className="text-xs text-muted-foreground">Clientes inativos não aparecem nas seleções</p>
+              </div>
+              <button type="button" onClick={() => setFormActive(v => !v)} className={'relative w-11 h-6 rounded-full transition ' + (formActive ? 'bg-primary' : 'bg-secondary border border-border')}>
+                <span className={'absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ' + (formActive ? 'left-[22px]' : 'left-0.5')} />
+              </button>
+            </div>
+          )}
 
           {formError && (
             <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{formError}</div>
