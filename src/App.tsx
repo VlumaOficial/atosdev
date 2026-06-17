@@ -8,6 +8,7 @@ import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 import ClientsPage from '@/pages/ClientsPage'
 import LocationsPage from '@/pages/LocationsPage'
+import TechniciansPage from '@/pages/TechniciansPage'
 
 // Placeholders para fases futuras
 function PlaceholderPage({ title }: { title: string }) {
@@ -59,7 +60,7 @@ export default function App() {
               path="tecnicos"
               element={
                 <ProtectedRoute allowedRoles={['super_admin', 'admin', 'gestor']}>
-                  <PlaceholderPage title="Técnicos" />
+                  <TechniciansPage />
                 </ProtectedRoute>
               }
             />
