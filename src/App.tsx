@@ -10,6 +10,7 @@ import ClientsPage from '@/pages/ClientsPage'
 import LocationsPage from '@/pages/LocationsPage'
 import TechniciansPage from '@/pages/TechniciansPage'
 import OrdersPage from '@/pages/OrdersPage'
+import OrderDetailPage from '@/pages/OrderDetailPage'
 
 // Placeholders para fases futuras
 function PlaceholderPage({ title }: { title: string }) {
