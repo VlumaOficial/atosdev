@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useTechnicians, type Technician, type TechnicianInput } from '@/hooks/useTechnicians'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
@@ -6,7 +6,7 @@ import { Input, Label } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
-import { type Column } from '@/components/ui/data-list-view'
+import { DataListView, type Column } from '@/components/ui/data-list-view'
 import { Wrench, Plus, Pencil, Power, Mail, Phone, Eye, EyeOff } from 'lucide-react'
 
 const emptyForm: TechnicianInput = { name: '', email: '', password: '', phone: '' }
@@ -28,20 +28,19 @@ export default function TechniciansPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [query, setQuery] = useState('')
 
-  const filtered = useMemo(() => {
-    let list = technicians
-    if (chip === 'active') list = list.filter(t => t.active)
-    if (chip === 'inactive') list = list.filter(t => !t.active)
+  const visible = technicians.filter(t => {
+    if (chip === 'active' && !t.active) return false
+    if (chip === 'inactive' && t.active) return false
     if (query.trim()) {
       const q = query.toLowerCase()
-      list = list.filter(t => `${t.name} ${t.email} ${t.phone ?? ''}`.toLowerCase().includes(q))
+      return `${t.name} ${t.email} ${t.phone ?? ''}`.toLowerCase().includes(q)
     }
-    return list
-  }, [technicians, chip, query])
+    return true
+  })
 
   function openNew() {
     setEditing(null)
-    setForm(emptyForm)
+    setForm({ name: '', email: '', password: '', phone: '' })
     setFormError('')
     setShowPassword(false)
     setModalOpen(true)
@@ -51,7 +50,15 @@ export default function TechniciansPage() {
     setEditing(t)
     setForm({ name: t.name, email: t.email, password: '', phone: t.phone })
     setFormError('')
+    setShowPassword(false)
     setModalOpen(true)
+  }
+
+  function closeModal() {
+    setModalOpen(false)
+    setForm({ name: '', email: '', password: '', phone: '' })
+    setEditing(null)
+    setShowPassword(false)
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -78,7 +85,7 @@ export default function TechniciansPage() {
       } else {
         await createTechnician(form)
       }
-      setModalOpen(false)
+      closeModal()
     } catch (err: any) {
       setFormError(err?.message ?? 'Não foi possível salvar. Tente novamente.')
     } finally {
@@ -146,6 +153,33 @@ export default function TechniciansPage() {
     },
   ]
 
+  function renderCard(t: Technician) {
+    return (
+      <Card className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+              <Wrench size={18} className="text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-foreground truncate">{t.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{t.email}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <RowActions item={t} />
+          </div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+          {t.phone ? (
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5"><Phone size={11} /> {t.phone}</span>
+          ) : <span className="text-xs text-muted-foreground">—</span>}
+          <StatusBadge active={t.active} />
+        </div>
+      </Card>
+    )
+  }
+
   return (
     <div>
       <PageHeader
@@ -158,74 +192,46 @@ export default function TechniciansPage() {
         }
       />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <input
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Buscar por nome, e-mail ou telefone..."
-          className="flex-1 px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        {chips.map(c => (
-          <button
-            key={c.key}
-            onClick={() => setChip(c.key)}
-            className={'px-3 py-1.5 rounded-full text-xs font-medium border transition ' + (chip === c.key ? 'bg-primary/10 text-primary border-primary/30' : 'bg-transparent text-muted-foreground border-border hover:text-foreground')}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-
       {error ? (
         <Card className="p-6 text-center text-red-400 text-sm">{error}</Card>
-      ) : loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={Wrench}
-            title="Nenhum técnico cadastrado"
-            description="Cadastre os técnicos da sua equipe de campo para atribuir ordens de serviço."
-            action={<Button onClick={openNew} variant="cta"><Plus size={16} /> Novo técnico</Button>}
-          />
-        </Card>
       ) : (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  {columns.map(col => (
-                    <th key={col.key} className="text-left font-medium text-muted-foreground px-4 py-3 text-xs uppercase tracking-wider">{col.header}</th>
-                  ))}
-                  <th className="px-4 py-3 w-20" />
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(t => (
-                  <tr key={t.id} className="border-b border-border last:border-0 hover:bg-secondary/40 transition">
-                    {columns.map(col => (
-                      <td key={col.key} className="px-4 py-3 text-foreground">{col.render(t)}</td>
-                    ))}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1"><RowActions item={t} /></div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataListView<Technician>
+          items={visible}
+          loading={loading}
+          viewKey="technicians"
+          search={query}
+          onSearchChange={setQuery}
+          searchPlaceholder="Buscar por nome, e-mail ou telefone..."
+          page={1}
+          pageSize={visible.length || 1}
+          total={visible.length}
+          totalPages={1}
+          onPageChange={() => {}}
+          onPageSizeChange={() => {}}
+          pageSizeOptions={[visible.length || 1]}
+          chips={chips}
+          activeChip={chip}
+          onChipChange={setChip}
+          columns={columns}
+          renderCard={renderCard}
+          rowActions={t => <RowActions item={t} />}
+          getKey={t => t.id}
+          emptyState={
+            <Card>
+              <EmptyState
+                icon={Wrench}
+                title="Nenhum técnico cadastrado"
+                description="Cadastre os técnicos da sua equipe de campo para atribuir ordens de serviço."
+                action={<Button onClick={openNew} variant="cta"><Plus size={16} /> Novo técnico</Button>}
+              />
+            </Card>
+          }
+        />
       )}
 
       <Modal
         open={modalOpen}
-        onOpenChange={setModalOpen}
+        onOpenChange={(o) => { if (!o) closeModal(); else setModalOpen(true) }}
         title={editing ? 'Editar técnico' : 'Novo técnico'}
         description={editing ? 'Atualize os dados do técnico' : 'Cadastre um técnico da equipe de campo'}
       >
@@ -243,7 +249,7 @@ export default function TechniciansPage() {
             <div>
               <Label htmlFor="password">Senha provisória *</Label>
               <div className="relative">
-                <Input id="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" className="pr-10" />
+                <Input id="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" className="pr-10" autoComplete="new-password" />
                 <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -261,7 +267,7 @@ export default function TechniciansPage() {
           )}
 
           <div className="flex items-center justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button type="button" variant="ghost" onClick={closeModal}>Cancelar</Button>
             <Button type="submit" variant="cta" loading={saving}>{editing ? 'Salvar' : 'Cadastrar'}</Button>
           </div>
         </form>
