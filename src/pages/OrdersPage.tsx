@@ -148,6 +148,7 @@ export default function OrdersPage() {
     ],
     agendada: [
       { target: 'em_andamento', label: 'Iniciar' },
+      { target: 'concluida', label: 'Concluir' },
       { target: 'cancelada', label: 'Cancelar', reason: true },
     ],
     em_andamento: [
@@ -158,6 +159,7 @@ export default function OrdersPage() {
     pausada: [
       { target: 'em_andamento', label: 'Retomar' },
       { target: 'concluida', label: 'Concluir' },
+      { target: 'agendada', label: 'Agendar', reason: true, date: true },
       { target: 'cancelada', label: 'Cancelar', reason: true },
     ],
     concluida: [
