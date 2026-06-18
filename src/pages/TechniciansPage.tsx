@@ -238,11 +238,11 @@ export default function TechniciansPage() {
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <Label htmlFor="name">Nome *</Label>
-            <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nome completo" />
+            <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nome completo" autoComplete="off" />
           </div>
           <div>
             <Label htmlFor="email">E-mail {editing ? '' : '*'}</Label>
-            <Input id="email" type="email" value={form.email} disabled={!!editing} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="tecnico@email.com" />
+            <Input id="email" type="email" value={form.email} disabled={!!editing} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="tecnico@email.com" autoComplete="off" />
             {editing && <p className="text-xs text-muted-foreground mt-1">O e-mail não pode ser alterado.</p>}
           </div>
           {!editing && (
@@ -259,7 +259,7 @@ export default function TechniciansPage() {
           )}
           <div>
             <Label htmlFor="phone">Telefone</Label>
-            <Input id="phone" value={form.phone ?? ''} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(71) 90000-0000" />
+            <Input id="phone" value={form.phone ?? ''} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(71) 90000-0000" autoComplete="off" />
           </div>
 
           {formError && (
