@@ -6,7 +6,7 @@ import { Input, Label } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
-import { DataListView, type Column } from '@/components/ui/data-list-view'
+import { type Column } from '@/components/ui/data-list-view'
 import { Wrench, Plus, Pencil, Power, Mail, Phone, Eye, EyeOff } from 'lucide-react'
 
 const emptyForm: TechnicianInput = { name: '', email: '', password: '', phone: '' }
@@ -145,33 +145,6 @@ export default function TechniciansPage() {
       render: t => <StatusBadge active={t.active} />,
     },
   ]
-
-  function renderCard(t: Technician) {
-    return (
-      <Card className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-              <Wrench size={18} className="text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-foreground truncate">{t.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{t.email}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <RowActions item={t} />
-          </div>
-        </div>
-        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-          {t.phone ? (
-            <span className="text-xs text-muted-foreground flex items-center gap-1.5"><Phone size={11} /> {t.phone}</span>
-          ) : <span className="text-xs text-muted-foreground">—</span>}
-          <StatusBadge active={t.active} />
-        </div>
-      </Card>
-    )
-  }
 
   return (
     <div>
