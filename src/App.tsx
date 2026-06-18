@@ -9,6 +9,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import ClientsPage from '@/pages/ClientsPage'
 import LocationsPage from '@/pages/LocationsPage'
 import TechniciansPage from '@/pages/TechniciansPage'
+import OrdersPage from '@/pages/OrdersPage'
 
 // Placeholders para fases futuras
 function PlaceholderPage({ title }: { title: string }) {
@@ -41,7 +42,7 @@ export default function App() {
             <Route index element={<DashboardPage />} />
 
             {/* F3 — OS */}
-            <Route path="os" element={<PlaceholderPage title="Ordens de Serviço" />} />
+            <Route path="os" element={<OrdersPage />} />
             <Route path="os/nova" element={<PlaceholderPage title="Nova OS" />} />
             <Route path="os/:id" element={<PlaceholderPage title="Detalhes da OS" />} />
 
