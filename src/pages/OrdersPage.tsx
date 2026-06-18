@@ -201,12 +201,9 @@ export default function OrdersPage() {
       }
       const escolhida = new Date(dateInput)
       const agora = new Date()
-      // compara por dia: a data deve ser hoje ou futura
-      agora.setHours(0, 0, 0, 0)
-      const escolhidaDia = new Date(escolhida)
-      escolhidaDia.setHours(0, 0, 0, 0)
-      if (escolhidaDia < agora) {
-        setStatusError('O agendamento só pode ser para a data atual ou futura.')
+      // compara o instante completo (data + hora): deve ser futuro
+      if (escolhida.getTime() <= agora.getTime()) {
+        setStatusError('O agendamento deve ser para uma data e hora futura.')
         return
       }
     }
