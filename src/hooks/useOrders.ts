@@ -21,6 +21,7 @@ export interface Order {
   cancel_reason: string | null
   started_at: string | null
   completed_at: string | null
+  completion_notes: string | null
   created_at: string
   client?: { id: string; name: string } | null
   location?: { id: string; name: string } | null

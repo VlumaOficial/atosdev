@@ -33,7 +33,7 @@ export function useOrder(id: string | undefined) {
 
   async function changeStatus(
     status: OrderStatus,
-    extra?: { scheduled_at?: string; schedule_reason?: string; pause_reason?: string; cancel_reason?: string }
+    extra?: { scheduled_at?: string; schedule_reason?: string; pause_reason?: string; cancel_reason?: string; completion_notes?: string; completed_at?: string }
   ) {
     if (!id) return
     const patch: any = { status }
@@ -43,7 +43,10 @@ export function useOrder(id: string | undefined) {
     }
     if (status === 'em_andamento') patch.started_at = new Date().toISOString()
     if (status === 'pausada') patch.pause_reason = extra?.pause_reason ?? null
-    if (status === 'concluida') patch.completed_at = new Date().toISOString()
+    if (status === 'concluida') {
+      patch.completed_at = extra?.completed_at || new Date().toISOString()
+      patch.completion_notes = extra?.completion_notes ?? null
+    }
     if (status === 'cancelada') patch.cancel_reason = extra?.cancel_reason ?? null
     const { error } = await supabase.from('orders').update(patch).eq('id', id)
     if (error) throw error

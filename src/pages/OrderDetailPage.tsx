@@ -23,7 +23,7 @@ const STATUS_STYLES: Record<string, string> = {
 const PRIORITY_LABELS: Record<string, string> = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' }
 const PRIORITY_STYLES: Record<string, string> = { normal: 'text-muted-foreground', alta: 'text-amber-400', urgente: 'text-red-400' }
 
-const TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; date?: boolean }[]> = {
+const TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; date?: boolean; notes?: boolean; completeDate?: boolean }[]> = {
   aberta: [
     { target: 'agendada', label: 'Agendar', reason: true, date: true },
     { target: 'em_andamento', label: 'Iniciar' },
@@ -31,18 +31,18 @@ const TRANSITIONS: Record<string, { target: string; label: string; reason?: bool
   ],
   agendada: [
     { target: 'em_andamento', label: 'Iniciar' },
-    { target: 'concluida', label: 'Concluir' },
+    { target: 'concluida', label: 'Concluir', notes: true, completeDate: true },
     { target: 'cancelada', label: 'Cancelar', reason: true },
   ],
   em_andamento: [
     { target: 'pausada', label: 'Pausar', reason: true },
     { target: 'agendada', label: 'Agendar', reason: true, date: true },
-    { target: 'concluida', label: 'Concluir' },
+    { target: 'concluida', label: 'Concluir', notes: true, completeDate: true },
     { target: 'cancelada', label: 'Cancelar', reason: true },
   ],
   pausada: [
     { target: 'em_andamento', label: 'Retomar' },
-    { target: 'concluida', label: 'Concluir' },
+    { target: 'concluida', label: 'Concluir', notes: true, completeDate: true },
     { target: 'agendada', label: 'Agendar', reason: true, date: true },
     { target: 'cancelada', label: 'Cancelar', reason: true },
   ],
@@ -61,20 +61,24 @@ export default function OrderDetailPage() {
   const navigate = useNavigate()
   const { order, loading, error, changeStatus } = useOrder(id)
 
-  const [statusModal, setStatusModal] = useState<{ open: boolean; target: string; needsReason: boolean; needsDate: boolean }>({ open: false, target: '', needsReason: false, needsDate: false })
+  const [statusModal, setStatusModal] = useState<{ open: boolean; target: string; needsReason: boolean; needsDate: boolean; needsNotes: boolean; needsCompleteDate: boolean }>({ open: false, target: '', needsReason: false, needsDate: false, needsNotes: false, needsCompleteDate: false })
+  const [notesInput, setNotesInput] = useState('')
+  const [completeDateInput, setCompleteDateInput] = useState('')
   const [reasonInput, setReasonInput] = useState('')
   const [dateInput, setDateInput] = useState('')
   const [statusError, setStatusError] = useState('')
   const [statusSaving, setStatusSaving] = useState(false)
 
-  function requestStatusChange(target: string, reason?: boolean, date?: boolean) {
-    if (reason || date) {
+  function requestStatusChange(action: { target: string; reason?: boolean; date?: boolean; notes?: boolean; completeDate?: boolean }) {
+    if (action.reason || action.date || action.notes || action.completeDate) {
       setReasonInput('')
       setDateInput('')
+      setNotesInput('')
+      setCompleteDateInput('')
       setStatusError('')
-      setStatusModal({ open: true, target, needsReason: !!reason, needsDate: !!date })
+      setStatusModal({ open: true, target: action.target, needsReason: !!action.reason, needsDate: !!action.date, needsNotes: !!action.notes, needsCompleteDate: !!action.completeDate })
     } else {
-      applyStatusChange(target)
+      applyStatusChange(action.target)
     }
   }
 
@@ -103,10 +107,18 @@ export default function OrderDetailPage() {
       setStatusError('Informe o motivo.')
       return
     }
+    if (statusModal.needsCompleteDate && completeDateInput && new Date(completeDateInput).getTime() > new Date().getTime()) {
+      setStatusError('A data de conclusão não pode ser no futuro.')
+      return
+    }
     const extra: any = {}
     if (statusModal.target === 'agendada') { extra.scheduled_at = dateInput || null; extra.schedule_reason = reasonInput || null }
     if (statusModal.target === 'pausada') extra.pause_reason = reasonInput || null
     if (statusModal.target === 'cancelada') extra.cancel_reason = reasonInput || null
+    if (statusModal.target === 'concluida') {
+      extra.completion_notes = notesInput || null
+      if (completeDateInput) extra.completed_at = new Date(completeDateInput).toISOString()
+    }
     await applyStatusChange(statusModal.target, extra)
   }
 
@@ -193,7 +205,10 @@ export default function OrderDetailPage() {
               {order.completed_at && (
                 <div className="flex items-start gap-2">
                   <CheckCircle2 size={15} className="text-green-400 mt-0.5" />
-                  <div><span className="text-muted-foreground">Concluída em:</span> <span className="text-foreground">{fmt(order.completed_at)}</span></div>
+                  <div>
+                    <span className="text-muted-foreground">Concluída em:</span> <span className="text-foreground">{fmt(order.completed_at)}</span>
+                    {order.completion_notes && <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">Relato: {order.completion_notes}</p>}
+                  </div>
                 </div>
               )}
               {order.cancel_reason && (
@@ -216,7 +231,7 @@ export default function OrderDetailPage() {
                 {actions.map(action => (
                   <button
                     key={action.target}
-                    onClick={() => requestStatusChange(action.target, action.reason, action.date)}
+                    onClick={() => requestStatusChange(action)}
                     className={'w-full px-3 py-2 rounded-md text-sm font-medium border transition ' + (action.target === 'cancelada' ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : 'border-primary/30 text-primary hover:bg-primary/10')}
                   >
                     {action.label}
@@ -256,6 +271,32 @@ export default function OrderDetailPage() {
                 onChange={e => setReasonInput(e.target.value)}
                 placeholder="Descreva o motivo"
                 rows={3}
+                className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition resize-none"
+              />
+            </div>
+          )}
+          {statusModal.needsCompleteDate && (
+            <div>
+              <Label htmlFor="complete-date">Data/hora da conclusão</Label>
+              <input
+                id="complete-date"
+                type="datetime-local"
+                value={completeDateInput}
+                onChange={e => setCompleteDateInput(e.target.value)}
+                className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar o horário atual.</p>
+            </div>
+          )}
+          {statusModal.needsNotes && (
+            <div>
+              <Label htmlFor="notes">Relato do atendimento</Label>
+              <textarea
+                id="notes"
+                value={notesInput}
+                onChange={e => setNotesInput(e.target.value)}
+                placeholder="Descreva o que foi realizado no atendimento"
+                rows={4}
                 className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition resize-none"
               />
             </div>
