@@ -153,6 +153,7 @@ export default function OrdersPage() {
     ],
     em_andamento: [
       { target: 'pausada', label: 'Pausar', reason: true },
+      { target: 'agendada', label: 'Agendar', reason: true, date: true },
       { target: 'concluida', label: 'Concluir' },
       { target: 'cancelada', label: 'Cancelar', reason: true },
     ],
