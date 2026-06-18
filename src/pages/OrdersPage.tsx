@@ -72,6 +72,7 @@ export default function OrdersPage() {
   const [reasonInput, setReasonInput] = useState('')
   const [dateInput, setDateInput] = useState('')
   const [statusSaving, setStatusSaving] = useState(false)
+  const [statusError, setStatusError] = useState('')
 
   const [formLocations, setFormLocations] = useState<{ value: string; label: string }[]>([])
 
@@ -169,6 +170,7 @@ export default function OrdersPage() {
     if (reason || date) {
       setReasonInput('')
       setDateInput('')
+      setStatusError('')
       setStatusModal({ open: true, target, needsReason: !!reason, needsDate: !!date })
     } else {
       applyStatusChange(target)
@@ -190,7 +192,27 @@ export default function OrdersPage() {
   }
 
   async function confirmStatusModal() {
+    setStatusError('')
+    // valida data no agendamento
+    if (statusModal.needsDate) {
+      if (!dateInput) {
+        setStatusError('Informe a data do agendamento.')
+        return
+      }
+      const escolhida = new Date(dateInput)
+      const agora = new Date()
+      // compara por dia: a data deve ser hoje ou futura
+      agora.setHours(0, 0, 0, 0)
+      const escolhidaDia = new Date(escolhida)
+      escolhidaDia.setHours(0, 0, 0, 0)
+      if (escolhidaDia < agora) {
+        setStatusError('O agendamento só pode ser para a data atual ou futura.')
+        return
+      }
+    }
+    // valida motivo obrigatório
     if (statusModal.needsReason && !reasonInput.trim()) {
+      setStatusError('Informe o motivo.')
       return
     }
     const extra: any = {}
@@ -435,6 +457,9 @@ export default function OrdersPage() {
                 className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition resize-none"
               />
             </div>
+          )}
+          {statusError && (
+            <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{statusError}</div>
           )}
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setStatusModal({ open: false, target: '', needsReason: false, needsDate: false })}>Cancelar</Button>
