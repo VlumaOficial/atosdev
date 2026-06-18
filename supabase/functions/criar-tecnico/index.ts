@@ -75,8 +75,17 @@ Deno.serve(async (req) => {
     })
 
     if (createErr || !created.user) {
+      const rawMsg = createErr?.message ?? ''
+      let friendly = 'Não foi possível criar o acesso do técnico.'
+      if (rawMsg.includes('already been registered') || rawMsg.includes('already registered') || rawMsg.includes('already exists') || createErr?.code === 'email_exists') {
+        friendly = 'Já existe um usuário cadastrado com este e-mail.'
+      } else if (rawMsg.toLowerCase().includes('password')) {
+        friendly = 'A senha não atende aos requisitos mínimos (ao menos 6 caracteres).'
+      } else if (rawMsg.toLowerCase().includes('email') && rawMsg.toLowerCase().includes('invalid')) {
+        friendly = 'O e-mail informado é inválido.'
+      }
       return new Response(
-        JSON.stringify({ error: createErr?.message ?? 'Falha ao criar o acesso.' }),
+        JSON.stringify({ error: friendly }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

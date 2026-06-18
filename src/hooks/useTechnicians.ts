@@ -53,7 +53,23 @@ export function useTechnicians() {
       body: input,
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
-    if (error) throw error
+    if (error) {
+      let message = 'Não foi possível cadastrar o técnico. Tente novamente.'
+      try {
+        const ctx = (error as any).context
+        if (ctx && typeof ctx.json === 'function') {
+          const body = await ctx.json()
+          if (body?.error) message = body.error
+        } else if (ctx && typeof ctx.text === 'function') {
+          const text = await ctx.text()
+          const parsed = JSON.parse(text)
+          if (parsed?.error) message = parsed.error
+        }
+      } catch {
+        // mantém mensagem padrão se não conseguir ler o corpo
+      }
+      throw new Error(message)
+    }
     if (data?.error) throw new Error(data.error)
     await fetchTechnicians()
     return data
