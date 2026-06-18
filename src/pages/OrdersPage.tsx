@@ -56,7 +56,7 @@ const priorityOptions = [
 ]
 
 export default function OrdersPage() {
-  const { orders, loading, error, createOrder, updateOrder } = useOrders()
+  const { orders, loading, error, createOrder, updateOrder, changeStatus } = useOrders()
   const { clients } = useClients()
   const { technicians } = useTechnicians()
 
@@ -67,6 +67,11 @@ export default function OrdersPage() {
   const [formError, setFormError] = useState('')
   const [chip, setChip] = useState('all')
   const [query, setQuery] = useState('')
+  // mini-modal de transição de status
+  const [statusModal, setStatusModal] = useState<{ open: boolean; target: string; needsReason: boolean; needsDate: boolean }>({ open: false, target: '', needsReason: false, needsDate: false })
+  const [reasonInput, setReasonInput] = useState('')
+  const [dateInput, setDateInput] = useState('')
+  const [statusSaving, setStatusSaving] = useState(false)
 
   const [formLocations, setFormLocations] = useState<{ value: string; label: string }[]>([])
 
@@ -131,6 +136,71 @@ export default function OrdersPage() {
     setModalOpen(false)
     setEditing(null)
     setForm(emptyForm)
+  }
+
+  // transições permitidas por status atual
+  const TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; date?: boolean }[]> = {
+    aberta: [
+      { target: 'agendada', label: 'Agendar', reason: true, date: true },
+      { target: 'em_andamento', label: 'Iniciar' },
+      { target: 'cancelada', label: 'Cancelar', reason: true },
+    ],
+    agendada: [
+      { target: 'em_andamento', label: 'Iniciar' },
+      { target: 'cancelada', label: 'Cancelar', reason: true },
+    ],
+    em_andamento: [
+      { target: 'pausada', label: 'Pausar', reason: true },
+      { target: 'concluida', label: 'Concluir' },
+      { target: 'cancelada', label: 'Cancelar', reason: true },
+    ],
+    pausada: [
+      { target: 'em_andamento', label: 'Retomar' },
+      { target: 'concluida', label: 'Concluir' },
+      { target: 'cancelada', label: 'Cancelar', reason: true },
+    ],
+    concluida: [
+      { target: 'em_andamento', label: 'Reabrir' },
+    ],
+    cancelada: [],
+  }
+
+  function requestStatusChange(target: string, reason?: boolean, date?: boolean) {
+    if (reason || date) {
+      setReasonInput('')
+      setDateInput('')
+      setStatusModal({ open: true, target, needsReason: !!reason, needsDate: !!date })
+    } else {
+      applyStatusChange(target)
+    }
+  }
+
+  async function applyStatusChange(target: string, extra?: any) {
+    if (!editing) return
+    setStatusSaving(true)
+    try {
+      await changeStatus(editing.id, target as any, extra)
+      setStatusModal({ open: false, target: '', needsReason: false, needsDate: false })
+      closeModal()
+    } catch (err: any) {
+      setFormError(err?.message ?? 'Não foi possível mudar o status.')
+    } finally {
+      setStatusSaving(false)
+    }
+  }
+
+  async function confirmStatusModal() {
+    if (statusModal.needsReason && !reasonInput.trim()) {
+      return
+    }
+    const extra: any = {}
+    if (statusModal.target === 'agendada') {
+      extra.scheduled_at = dateInput || null
+      extra.schedule_reason = reasonInput || null
+    }
+    if (statusModal.target === 'pausada') extra.pause_reason = reasonInput || null
+    if (statusModal.target === 'cancelada') extra.cancel_reason = reasonInput || null
+    await applyStatusChange(statusModal.target, extra)
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -243,6 +313,23 @@ export default function OrdersPage() {
         description={editing ? 'Atualize os dados da OS' : 'Registre um novo atendimento de campo'}
       >
         <form onSubmit={handleSave} className="space-y-4">
+          {editing && (TRANSITIONS[editing.status] ?? []).length > 0 && (
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs text-muted-foreground mb-2">Status atual: <span className="font-medium text-foreground">{STATUS_LABELS[editing.status]}</span></p>
+              <div className="flex flex-wrap gap-2">
+                {(TRANSITIONS[editing.status] ?? []).map(action => (
+                  <button
+                    key={action.target}
+                    type="button"
+                    onClick={() => requestStatusChange(action.target, action.reason, action.date)}
+                    className={'px-3 py-1.5 rounded-md text-xs font-medium border transition ' + (action.target === 'cancelada' ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : 'border-primary/30 text-primary hover:bg-primary/10')}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <Label htmlFor="client">Cliente *</Label>
             <Combobox
@@ -316,6 +403,44 @@ export default function OrdersPage() {
             <Button type="submit" variant="cta" loading={saving}>{editing ? 'Salvar' : 'Criar OS'}</Button>
           </div>
         </form>
+      </Modal>
+      <Modal
+        open={statusModal.open}
+        onOpenChange={(o) => { if (!o) setStatusModal({ open: false, target: '', needsReason: false, needsDate: false }) }}
+        title="Confirmar mudança de status"
+        description={statusModal.target ? STATUS_LABELS[statusModal.target] : ''}
+      >
+        <div className="space-y-4">
+          {statusModal.needsDate && (
+            <div>
+              <Label htmlFor="schedule-date">Data do agendamento</Label>
+              <input
+                id="schedule-date"
+                type="datetime-local"
+                value={dateInput}
+                onChange={e => setDateInput(e.target.value)}
+                className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
+              />
+            </div>
+          )}
+          {statusModal.needsReason && (
+            <div>
+              <Label htmlFor="reason">Motivo *</Label>
+              <textarea
+                id="reason"
+                value={reasonInput}
+                onChange={e => setReasonInput(e.target.value)}
+                placeholder="Descreva o motivo"
+                rows={3}
+                className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition resize-none"
+              />
+            </div>
+          )}
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setStatusModal({ open: false, target: '', needsReason: false, needsDate: false })}>Cancelar</Button>
+            <Button type="button" variant="cta" loading={statusSaving} onClick={confirmStatusModal}>Confirmar</Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )
