@@ -286,25 +286,27 @@ export default function OrdersPage() {
         description={editing ? 'Atualize os dados da OS' : 'Registre um novo atendimento de campo'}
       >
         <form onSubmit={handleSave} className="space-y-4">
-          <div>
-            <Label htmlFor="client">Cliente *</Label>
-            <Combobox id="client" options={clientOptions} value={form.client_id} onChange={v => setForm({ ...form, client_id: v, location_id: '' })} placeholder="Selecione o cliente" searchPlaceholder="Buscar cliente..." emptyText="Nenhum cliente encontrado." />
-          </div>
-          <div>
-            <Label htmlFor="location">Unidade</Label>
-            <Combobox id="location" options={formLocations} value={form.location_id ?? ''} onChange={v => setForm({ ...form, location_id: v })} placeholder={form.client_id ? 'Selecione a unidade' : 'Escolha o cliente primeiro'} searchPlaceholder="Buscar unidade..." emptyText="Nenhuma unidade para este cliente." />
-          </div>
-          <div>
-            <Label htmlFor="technician">Técnico responsável</Label>
-            <Combobox id="technician" options={technicianOptions} value={form.technician_id ?? ''} onChange={v => setForm({ ...form, technician_id: v })} placeholder="Sem técnico (backlog)" searchPlaceholder="Buscar técnico..." emptyText="Nenhum técnico encontrado." />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="client">Cliente *</Label>
+              <Combobox id="client" options={clientOptions} value={form.client_id} onChange={v => setForm({ ...form, client_id: v, location_id: '' })} placeholder="Selecione o cliente" searchPlaceholder="Buscar cliente..." emptyText="Nenhum cliente encontrado." />
+            </div>
+            <div>
+              <Label htmlFor="location">Unidade</Label>
+              <Combobox id="location" options={formLocations} value={form.location_id ?? ''} onChange={v => setForm({ ...form, location_id: v })} placeholder={form.client_id ? 'Selecione a unidade' : 'Escolha o cliente primeiro'} searchPlaceholder="Buscar unidade..." emptyText="Nenhuma unidade para este cliente." />
+            </div>
+            <div>
+              <Label htmlFor="technician">Técnico responsável</Label>
+              <Combobox id="technician" options={technicianOptions} value={form.technician_id ?? ''} onChange={v => setForm({ ...form, technician_id: v })} placeholder="Sem técnico (backlog)" searchPlaceholder="Buscar técnico..." emptyText="Nenhum técnico encontrado." />
+            </div>
+            <div>
+              <Label htmlFor="priority">Prioridade</Label>
+              <Combobox id="priority" options={priorityOptions} value={form.priority} onChange={v => setForm({ ...form, priority: v as OrderPriority })} placeholder="Prioridade" searchPlaceholder="Buscar..." emptyText="—" />
+            </div>
           </div>
           <div>
             <Label htmlFor="title">Título *</Label>
             <Input id="title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Ex: Manutenção preventiva CFTV" />
-          </div>
-          <div>
-            <Label htmlFor="priority">Prioridade</Label>
-            <Combobox id="priority" options={priorityOptions} value={form.priority} onChange={v => setForm({ ...form, priority: v as OrderPriority })} placeholder="Prioridade" searchPlaceholder="Buscar..." emptyText="—" />
           </div>
           <div>
             <Label htmlFor="description">Descrição</Label>
