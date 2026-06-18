@@ -45,7 +45,7 @@ export default function App() {
             {/* F3 — OS */}
             <Route path="os" element={<OrdersPage />} />
             <Route path="os/nova" element={<PlaceholderPage title="Nova OS" />} />
-            <Route path="os/:id" element={<PlaceholderPage title="Detalhes da OS" />} />
+            <Route path="os/:id" element={<OrderDetailPage />} />
 
             {/* F4 — App de Campo (Técnico) */}
             <Route path="campo" element={<PlaceholderPage title="App de Campo" />} />

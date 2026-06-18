@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
-import { Input, Label } from '@/components/ui/input'
+import { Label } from '@/components/ui/input'
 import { ArrowLeft, Building2, MapPin, Wrench, Calendar, Clock, Pause, CheckCircle2, XCircle, FileText } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
