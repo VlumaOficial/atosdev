@@ -86,7 +86,7 @@ export default function OrderDetailPage() {
     setStatusSaving(true)
     try {
       await changeStatus(target as any, extra)
-      setStatusModal({ open: false, target: '', needsReason: false, needsDate: false })
+      setStatusModal({ open: false, target: '', needsReason: false, needsDate: false, needsNotes: false, needsCompleteDate: false })
     } catch (err: any) {
       setStatusError(err?.message ?? 'Não foi possível mudar o status.')
     } finally {
@@ -245,7 +245,7 @@ export default function OrderDetailPage() {
 
       <Modal
         open={statusModal.open}
-        onOpenChange={(o) => { if (!o) setStatusModal({ open: false, target: '', needsReason: false, needsDate: false }) }}
+        onOpenChange={(o) => { if (!o) setStatusModal({ open: false, target: '', needsReason: false, needsDate: false, needsNotes: false, needsCompleteDate: false }) }}
         title="Confirmar mudança de status"
         description={statusModal.target ? STATUS_LABELS[statusModal.target] : ''}
       >
@@ -305,7 +305,7 @@ export default function OrderDetailPage() {
             <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{statusError}</div>
           )}
           <div className="flex items-center justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setStatusModal({ open: false, target: '', needsReason: false, needsDate: false })}>Cancelar</Button>
+            <Button type="button" variant="ghost" onClick={() => setStatusModal({ open: false, target: '', needsReason: false, needsDate: false, needsNotes: false, needsCompleteDate: false })}>Cancelar</Button>
             <Button type="button" variant="cta" loading={statusSaving} onClick={confirmStatusModal}>Confirmar</Button>
           </div>
         </div>
