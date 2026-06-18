@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useOrder } from '@/hooks/useOrder'
+import { useOrderComments } from '@/hooks/useOrderComments'
+import { useOrderComments } from '@/hooks/useOrderComments'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { Label } from '@/components/ui/input'
-import { ArrowLeft, Building2, MapPin, Wrench, Calendar, Clock, Pause, CheckCircle2, XCircle, FileText } from 'lucide-react'
+import { ArrowLeft, Building2, MapPin, Wrench, Calendar, Clock, Pause, CheckCircle2, XCircle, FileText, MessageSquare, Send } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
@@ -60,6 +62,12 @@ export default function OrderDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { order, loading, error, changeStatus } = useOrder(id)
+  const { comments, addComment } = useOrderComments(id)
+  const [commentText, setCommentText] = useState('')
+  const [commentSaving, setCommentSaving] = useState(false)
+  const { comments, addComment } = useOrderComments(id)
+  const [commentText, setCommentText] = useState('')
+  const [commentSaving, setCommentSaving] = useState(false)
 
   const [statusModal, setStatusModal] = useState<{ open: boolean; target: string; needsReason: boolean; needsDate: boolean; needsNotes: boolean; needsCompleteDate: boolean }>({ open: false, target: '', needsReason: false, needsDate: false, needsNotes: false, needsCompleteDate: false })
   const [notesInput, setNotesInput] = useState('')
@@ -120,6 +128,23 @@ export default function OrderDetailPage() {
       if (completeDateInput) extra.completed_at = new Date(completeDateInput).toISOString()
     }
     await applyStatusChange(statusModal.target, extra)
+  }
+
+  async function handleAddComment() {
+    if (!commentText.trim()) return
+    setCommentSaving(true)
+    try {
+      await addComment(commentText.trim())
+      setCommentText('')
+    } catch {
+      alert('Não foi possível enviar o comentário.')
+    } finally {
+      setCommentSaving(false)
+    }
+  }
+
+  function fmtComment(dt: string): string {
+    return new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
 
   if (loading) {
@@ -218,6 +243,35 @@ export default function OrderDetailPage() {
                 </div>
               )}
             </div>
+          </Card>
+
+          <Card className="p-5">
+            <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-1.5"><MessageSquare size={15} /> Comentários</p>
+            <div className="flex gap-2 mb-4">
+              <input
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment() } }}
+                placeholder="Escreva um comentário..."
+                className="flex-1 px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
+              />
+              <Button type="button" variant="cta" loading={commentSaving} onClick={handleAddComment}><Send size={15} /></Button>
+            </div>
+            {comments.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhum comentário ainda.</p>
+            ) : (
+              <div className="space-y-3">
+                {comments.map(c => (
+                  <div key={c.id} className="border-l-2 border-primary/30 pl-3">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-medium text-foreground">{c.author_name ?? 'Usuário'}</span>
+                      <span className="text-muted-foreground">{fmtComment(c.created_at)}</span>
+                    </div>
+                    <p className="text-sm text-foreground whitespace-pre-wrap mt-0.5">{c.comment}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
 
