@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useOrder } from '@/hooks/useOrder'
 import { useOrderComments } from '@/hooks/useOrderComments'
-import { useOrderComments } from '@/hooks/useOrderComments'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -62,9 +61,6 @@ export default function OrderDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { order, loading, error, changeStatus } = useOrder(id)
-  const { comments, addComment } = useOrderComments(id)
-  const [commentText, setCommentText] = useState('')
-  const [commentSaving, setCommentSaving] = useState(false)
   const { comments, addComment } = useOrderComments(id)
   const [commentText, setCommentText] = useState('')
   const [commentSaving, setCommentSaving] = useState(false)
