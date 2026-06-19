@@ -14,9 +14,6 @@ import OrderDetailPage from '@/pages/OrderDetailPage'
 import FieldLayout from '@/components/layout/FieldLayout'
 import MyOrdersPage from '@/pages/field/MyOrdersPage'
 import FieldOrderPage from '@/pages/field/FieldOrderPage'
-import FieldLayout from '@/components/layout/FieldLayout'
-import MyOrdersPage from '@/pages/field/MyOrdersPage'
-import FieldOrderPage from '@/pages/field/FieldOrderPage'
 
 // Placeholders para fases futuras
 function PlaceholderPage({ title }: { title: string }) {
@@ -26,13 +23,6 @@ function PlaceholderPage({ title }: { title: string }) {
       <h2 className="text-lg font-semibold">{title}</h2>
     </div>
   )
-}
-
-// Redireciona o técnico para o app de campo; demais veem o painel
-function HomeRedirect() {
-  const { user } = useAuth()
-  if (user?.role === 'tecnico') return <Navigate to="/campo" replace />
-  return <DashboardPage />
 }
 
 // Redireciona o técnico para o app de campo; demais veem o painel
@@ -66,7 +56,6 @@ export default function App() {
             <Route path="os" element={<OrdersPage />} />
             <Route path="os/nova" element={<PlaceholderPage title="Nova OS" />} />
             <Route path="os/:id" element={<OrderDetailPage />} />
-
 
             {/* F5 — Checklists */}
             <Route path="checklists" element={<PlaceholderPage title="Checklists" />} />
