@@ -24,7 +24,7 @@ export interface Order {
   completion_notes: string | null
   created_at: string
   client?: { id: string; name: string } | null
-  location?: { id: string; name: string } | null
+  location?: { id: string; name: string; address?: string | null; city?: string | null; state?: string | null } | null
   technician?: { id: string; name: string } | null
 }
 

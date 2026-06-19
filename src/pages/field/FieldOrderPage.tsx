@@ -1,0 +1,254 @@
+import { useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useOrder } from '@/hooks/useOrder'
+import { useOrderComments } from '@/hooks/useOrderComments'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Modal } from '@/components/ui/modal'
+import { Label } from '@/components/ui/input'
+import { ArrowLeft, Building2, MapPin, Navigation, FileText, MessageSquare, Send, Calendar, Pause } from 'lucide-react'
+
+const STATUS_LABELS: Record<string, string> = {
+  aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
+  pausada: 'Pausada', concluida: 'Concluída', cancelada: 'Cancelada',
+}
+const STATUS_STYLES: Record<string, string> = {
+  aberta: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+  agendada: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+  em_andamento: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+  pausada: 'text-orange-400 bg-orange-500/10 border-orange-500/30',
+  concluida: 'text-green-400 bg-green-500/10 border-green-500/30',
+  cancelada: 'text-muted-foreground bg-secondary border-border',
+}
+const PRIORITY_LABELS: Record<string, string> = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' }
+const PRIORITY_STYLES: Record<string, string> = { normal: 'text-muted-foreground', alta: 'text-amber-400', urgente: 'text-red-400' }
+
+// ações do técnico em campo (subconjunto do fluxo do gestor)
+const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; notes?: boolean; completeDate?: boolean; danger?: boolean }[]> = {
+  aberta: [
+    { target: 'em_andamento', label: 'Iniciar atendimento' },
+    { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
+  ],
+  agendada: [
+    { target: 'em_andamento', label: 'Iniciar atendimento' },
+    { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
+  ],
+  em_andamento: [
+    { target: 'concluida', label: 'Concluir atendimento', notes: true, completeDate: true },
+    { target: 'pausada', label: 'Pausar', reason: true },
+    { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
+  ],
+  pausada: [
+    { target: 'em_andamento', label: 'Retomar' },
+    { target: 'concluida', label: 'Concluir atendimento', notes: true, completeDate: true },
+    { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
+  ],
+  concluida: [],
+  cancelada: [],
+}
+
+function fmt(dt: string | null): string {
+  if (!dt) return '—'
+  return new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+export default function FieldOrderPage() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { order, loading, error, changeStatus } = useOrder(id)
+  const { comments, addComment } = useOrderComments(id)
+
+  const [commentText, setCommentText] = useState('')
+  const [commentSaving, setCommentSaving] = useState(false)
+  const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false })
+  const [reasonInput, setReasonInput] = useState('')
+  const [notesInput, setNotesInput] = useState('')
+  const [completeDateInput, setCompleteDateInput] = useState('')
+  const [modalError, setModalError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  function requestAction(action: { target: string; reason?: boolean; notes?: boolean; completeDate?: boolean }) {
+    if (action.reason || action.notes || action.completeDate) {
+      setReasonInput(''); setNotesInput(''); setCompleteDateInput(''); setModalError('')
+      setModal({ open: true, target: action.target, reason: !!action.reason, notes: !!action.notes, completeDate: !!action.completeDate })
+    } else {
+      apply(action.target)
+    }
+  }
+
+  async function apply(target: string, extra?: any) {
+    setSaving(true)
+    try {
+      await changeStatus(target as any, extra)
+      setModal({ open: false, target: '', reason: false, notes: false, completeDate: false })
+    } catch (err: any) {
+      setModalError(err?.message ?? 'Não foi possível atualizar.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function confirmModal() {
+    setModalError('')
+    if (modal.reason && !reasonInput.trim()) { setModalError('Informe o motivo.'); return }
+    if (modal.completeDate && completeDateInput && new Date(completeDateInput).getTime() > new Date().getTime()) {
+      setModalError('A data de conclusão não pode ser no futuro.'); return
+    }
+    const extra: any = {}
+    if (modal.target === 'pausada') extra.pause_reason = reasonInput || null
+    if (modal.target === 'cancelada') extra.cancel_reason = reasonInput || null
+    if (modal.target === 'concluida') {
+      extra.completion_notes = notesInput || null
+      if (completeDateInput) extra.completed_at = new Date(completeDateInput).toISOString()
+    }
+    await apply(modal.target, extra)
+  }
+
+  async function handleAddComment() {
+    if (!commentText.trim()) return
+    setCommentSaving(true)
+    try {
+      await addComment(commentText.trim())
+      setCommentText('')
+    } catch {
+      alert('Não foi possível enviar o comentário.')
+    } finally {
+      setCommentSaving(false)
+    }
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-16"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+  }
+  if (error || !order) {
+    return (
+      <div className="max-w-lg mx-auto">
+        <button onClick={() => navigate('/campo')} className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4"><ArrowLeft size={16} /> Voltar</button>
+        <Card className="p-6 text-center text-red-400 text-sm">{error ?? 'Atendimento não encontrado.'}</Card>
+      </div>
+    )
+  }
+
+  const actions = FIELD_TRANSITIONS[order.status] ?? []
+  const enderecoPartes = [order.location?.address, order.location?.city, order.location?.state].filter(Boolean)
+  const enderecoTexto = enderecoPartes.join(', ')
+  const mapsUrl = enderecoTexto ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoTexto)}` : ''
+
+  return (
+    <div className="max-w-lg mx-auto pb-8">
+      <button onClick={() => navigate('/campo')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition mb-4">
+        <ArrowLeft size={16} /> Meus atendimentos
+      </button>
+
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <span className="text-sm font-mono text-primary">{order.number}</span>
+        <span className={'inline-block px-2.5 py-1 rounded-md text-xs font-medium border ' + STATUS_STYLES[order.status]}>{STATUS_LABELS[order.status]}</span>
+      </div>
+      <h1 className="text-xl font-semibold text-foreground mb-1">{order.title}</h1>
+      <p className={'text-xs font-medium mb-4 ' + PRIORITY_STYLES[order.priority]}>Prioridade: {PRIORITY_LABELS[order.priority]}</p>
+
+      <Card className="p-4 mb-4">
+        <div className="space-y-2.5 text-sm">
+          <div className="flex items-center gap-2 text-foreground"><Building2 size={15} className="text-muted-foreground flex-shrink-0" /> {order.client?.name ?? '—'}</div>
+          {order.location?.name && <div className="flex items-center gap-2 text-foreground"><MapPin size={15} className="text-muted-foreground flex-shrink-0" /> {order.location.name}</div>}
+          {enderecoTexto && <p className="text-xs text-muted-foreground pl-7">{enderecoTexto}</p>}
+        </div>
+        {mapsUrl && (
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border border-primary/30 text-primary text-sm font-medium active:bg-primary/10 transition">
+            <Navigation size={15} /> Abrir no mapa
+          </a>
+        )}
+      </Card>
+
+      {order.description && (
+        <Card className="p-4 mb-4">
+          <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1.5"><FileText size={12} /> O que fazer</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{order.description}</p>
+        </Card>
+      )}
+
+      {(order.scheduled_at || order.pause_reason) && (
+        <Card className="p-4 mb-4 space-y-2 text-sm">
+          {order.scheduled_at && <div className="flex items-start gap-2"><Calendar size={15} className="text-purple-400 mt-0.5" /><div><span className="text-muted-foreground">Agendado:</span> <span className="text-foreground">{fmt(order.scheduled_at)}</span></div></div>}
+          {order.pause_reason && <div className="flex items-start gap-2"><Pause size={15} className="text-orange-400 mt-0.5" /><div><span className="text-muted-foreground">Pausa:</span> <span className="text-foreground">{order.pause_reason}</span></div></div>}
+        </Card>
+      )}
+
+      {actions.length > 0 && (
+        <div className="space-y-2 mb-4">
+          {actions.map(a => (
+            <button
+              key={a.target}
+              onClick={() => requestAction(a)}
+              className={'w-full px-4 py-3 rounded-xl text-sm font-medium border transition active:opacity-80 ' + (a.danger ? 'border-red-500/30 text-red-400' : a.target === 'concluida' || a.target === 'em_andamento' ? 'bg-primary text-primary-foreground border-primary' : 'border-primary/30 text-primary')}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <Card className="p-4">
+        <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-1.5"><MessageSquare size={15} /> Comentários</p>
+        <div className="flex gap-2 mb-4">
+          <input
+            value={commentText}
+            onChange={e => setCommentText(e.target.value)}
+            placeholder="Escreva um comentário..."
+            className="flex-1 px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
+          />
+          <Button type="button" variant="cta" loading={commentSaving} onClick={handleAddComment}><Send size={15} /></Button>
+        </div>
+        {comments.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Nenhum comentário ainda.</p>
+        ) : (
+          <div className="space-y-3">
+            {comments.map(c => (
+              <div key={c.id} className="border-l-2 border-primary/30 pl-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-medium text-foreground">{c.author_name ?? 'Usuário'}</span>
+                  <span className="text-muted-foreground">{fmt(c.created_at)}</span>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap mt-0.5">{c.comment}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Modal
+        open={modal.open}
+        onOpenChange={(o) => { if (!o) setModal({ open: false, target: '', reason: false, notes: false, completeDate: false }) }}
+        title="Confirmar"
+        description={modal.target ? STATUS_LABELS[modal.target] : ''}
+      >
+        <div className="space-y-4">
+          {modal.completeDate && (
+            <div>
+              <Label htmlFor="cdate">Data/hora da conclusão</Label>
+              <input id="cdate" type="datetime-local" value={completeDateInput} onChange={e => setCompleteDateInput(e.target.value)} className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition" />
+              <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar o horário atual.</p>
+            </div>
+          )}
+          {modal.notes && (
+            <div>
+              <Label htmlFor="notes">Relato do atendimento</Label>
+              <textarea id="notes" value={notesInput} onChange={e => setNotesInput(e.target.value)} placeholder="Descreva o que foi realizado" rows={4} className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition resize-none" />
+            </div>
+          )}
+          {modal.reason && (
+            <div>
+              <Label htmlFor="reason">Motivo *</Label>
+              <textarea id="reason" value={reasonInput} onChange={e => setReasonInput(e.target.value)} placeholder="Descreva o motivo" rows={3} className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition resize-none" />
+            </div>
+          )}
+          {modalError && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{modalError}</div>}
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setModal({ open: false, target: '', reason: false, notes: false, completeDate: false })}>Cancelar</Button>
+            <Button type="button" variant="cta" loading={saving} onClick={confirmModal}>Confirmar</Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  )
+}
