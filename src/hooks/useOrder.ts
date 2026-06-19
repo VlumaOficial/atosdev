@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Order, OrderStatus } from '@/hooks/useOrders'
 
-const SELECT = '*, client:clients(id, name), location:locations(id, name), technician:users!orders_technician_id_fkey(id, name)'
+const SELECT = '*, client:clients(id, name), location:locations(id, name, address, city, state), technician:users!orders_technician_id_fkey(id, name)'
 
 export function useOrder(id: string | undefined) {
   const [order, setOrder] = useState<Order | null>(null)

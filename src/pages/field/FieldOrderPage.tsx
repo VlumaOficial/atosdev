@@ -24,9 +24,10 @@ const PRIORITY_LABELS: Record<string, string> = { normal: 'Normal', alta: 'Alta'
 const PRIORITY_STYLES: Record<string, string> = { normal: 'text-muted-foreground', alta: 'text-amber-400', urgente: 'text-red-400' }
 
 // ações do técnico em campo (subconjunto do fluxo do gestor)
-const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; notes?: boolean; completeDate?: boolean; danger?: boolean }[]> = {
+const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean; danger?: boolean }[]> = {
   aberta: [
     { target: 'em_andamento', label: 'Iniciar atendimento' },
+    { target: 'agendada', label: 'Agendar', reason: true, date: true },
     { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
   ],
   agendada: [
@@ -36,11 +37,13 @@ const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?
   em_andamento: [
     { target: 'concluida', label: 'Concluir atendimento', notes: true, completeDate: true },
     { target: 'pausada', label: 'Pausar', reason: true },
+    { target: 'agendada', label: 'Agendar', reason: true, date: true },
     { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
   ],
   pausada: [
     { target: 'em_andamento', label: 'Retomar' },
     { target: 'concluida', label: 'Concluir atendimento', notes: true, completeDate: true },
+    { target: 'agendada', label: 'Agendar', reason: true, date: true },
     { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
   ],
   concluida: [],
@@ -60,17 +63,18 @@ export default function FieldOrderPage() {
 
   const [commentText, setCommentText] = useState('')
   const [commentSaving, setCommentSaving] = useState(false)
-  const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false })
+  const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean; date: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })
   const [reasonInput, setReasonInput] = useState('')
   const [notesInput, setNotesInput] = useState('')
   const [completeDateInput, setCompleteDateInput] = useState('')
+  const [scheduleDateInput, setScheduleDateInput] = useState('')
   const [modalError, setModalError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  function requestAction(action: { target: string; reason?: boolean; notes?: boolean; completeDate?: boolean }) {
-    if (action.reason || action.notes || action.completeDate) {
-      setReasonInput(''); setNotesInput(''); setCompleteDateInput(''); setModalError('')
-      setModal({ open: true, target: action.target, reason: !!action.reason, notes: !!action.notes, completeDate: !!action.completeDate })
+  function requestAction(action: { target: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean }) {
+    if (action.reason || action.notes || action.completeDate || action.date) {
+      setReasonInput(''); setNotesInput(''); setCompleteDateInput(''); setScheduleDateInput(''); setModalError('')
+      setModal({ open: true, target: action.target, reason: !!action.reason, notes: !!action.notes, completeDate: !!action.completeDate, date: !!action.date })
     } else {
       apply(action.target)
     }
@@ -80,7 +84,7 @@ export default function FieldOrderPage() {
     setSaving(true)
     try {
       await changeStatus(target as any, extra)
-      setModal({ open: false, target: '', reason: false, notes: false, completeDate: false })
+      setModal({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })
     } catch (err: any) {
       setModalError(err?.message ?? 'Não foi possível atualizar.')
     } finally {
@@ -90,11 +94,18 @@ export default function FieldOrderPage() {
 
   async function confirmModal() {
     setModalError('')
+    if (modal.date) {
+      if (!scheduleDateInput) { setModalError('Informe a data do agendamento.'); return }
+      if (new Date(scheduleDateInput).getTime() <= new Date().getTime()) {
+        setModalError('O agendamento deve ser para uma data e hora futura.'); return
+      }
+    }
     if (modal.reason && !reasonInput.trim()) { setModalError('Informe o motivo.'); return }
     if (modal.completeDate && completeDateInput && new Date(completeDateInput).getTime() > new Date().getTime()) {
       setModalError('A data de conclusão não pode ser no futuro.'); return
     }
     const extra: any = {}
+    if (modal.target === 'agendada') { extra.scheduled_at = scheduleDateInput || null; extra.schedule_reason = reasonInput || null }
     if (modal.target === 'pausada') extra.pause_reason = reasonInput || null
     if (modal.target === 'cancelada') extra.cancel_reason = reasonInput || null
     if (modal.target === 'concluida') {
@@ -218,11 +229,17 @@ export default function FieldOrderPage() {
 
       <Modal
         open={modal.open}
-        onOpenChange={(o) => { if (!o) setModal({ open: false, target: '', reason: false, notes: false, completeDate: false }) }}
+        onOpenChange={(o) => { if (!o) setModal({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false }) }}
         title="Confirmar"
         description={modal.target ? STATUS_LABELS[modal.target] : ''}
       >
         <div className="space-y-4">
+          {modal.date && (
+            <div>
+              <Label htmlFor="sdate">Data/hora do agendamento</Label>
+              <input id="sdate" type="datetime-local" value={scheduleDateInput} onChange={e => setScheduleDateInput(e.target.value)} className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition" />
+            </div>
+          )}
           {modal.completeDate && (
             <div>
               <Label htmlFor="cdate">Data/hora da conclusão</Label>
@@ -244,7 +261,7 @@ export default function FieldOrderPage() {
           )}
           {modalError && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{modalError}</div>}
           <div className="flex items-center justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setModal({ open: false, target: '', reason: false, notes: false, completeDate: false })}>Cancelar</Button>
+            <Button type="button" variant="ghost" onClick={() => setModal({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })}>Cancelar</Button>
             <Button type="button" variant="cta" loading={saving} onClick={confirmModal}>Confirmar</Button>
           </div>
         </div>
