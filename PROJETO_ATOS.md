@@ -38,7 +38,7 @@
 |------|---------|---------|-------------|
 | F1 | Multi-tenant, auth, perfis | MVP | Feito |
 | F2 | Clientes e Locais (Unidades) | MVP | Feito |
-| F3 | Ordens de Serviço (gestor) | MVP | Em andamento |
+| F3 | Ordens de Serviço (gestor) | MVP | Feito |
 | F4 | App de campo (técnico, mobile) | MVP | Pendente |
 | F5 | Checklists dinâmicos | MVP | Pendente |
 | F6 | Assinatura digital + PDF + WhatsApp | MVP | Pendente |
@@ -55,7 +55,7 @@ Nota: "Locais" foi renomeado para "Unidades" na UI (rota /locais e tabela locati
 
 ---
 
-## 4. Estado detalhado da F3 (Ordens de Serviço — gestor)
+## 4. Estado detalhado da F3 (Ordens de Serviço — gestor) — CONCLUÍDA
 
 ### Técnicos — COMPLETO
 - Técnico é usuário que loga (role tecnico), terá app de campo na F4
@@ -64,7 +64,7 @@ Nota: "Locais" foi renomeado para "Unidades" na UI (rota /locais e tabela locati
 - Mensagens de erro amigáveis (e-mail duplicado etc.)
 - Validado: técnico loga e vê menu reduzido
 
-### Ordens de Serviço — EM ANDAMENTO
+### Ordens de Serviço — COMPLETO
 - Migration 005: tabela orders + order_sequences + número sequencial por tenant (OS-0001) + RLS
 - Migration 006: coluna completion_notes (relato de conclusão)
 - Hook useOrders (listagem + CRUD) e useOrder (detalhe por id)
@@ -84,9 +84,10 @@ Nota: "Locais" foi renomeado para "Unidades" na UI (rota /locais e tabela locati
 - Ações com modal: Agendar (data futura + motivo), Pausar (motivo), Cancelar (motivo), Concluir (relato + data/hora ajustável)
 - Validações: motivo obrigatório, agendamento só data/hora futura, conclusão não no futuro
 
-### Pendente na F3
-- Sistema de comentários na OS (autor + data/hora + texto, na linha do tempo única) — EM CONSTRUÇÃO
-- Modal de criação da OS em 2 colunas (refinamento UX) — pendente
+### Extras concluídos na F3
+- Migration 007: tabela order_comments + RLS por tenant
+- Sistema de comentários na OS (autor + data/hora + texto) — hook useOrderComments + UI na página de detalhe
+- Modal de criação da OS em 2 colunas (Cliente+Unidade, Técnico+Prioridade; Título e Descrição em largura total)
 
 ---
 
@@ -122,6 +123,7 @@ Heredoc com delimitador 'ATOSEOF' (aspas simples — bash não interpreta). Segu
 | 004_f2_unidade_principal | is_primary + trigger unidade principal | OK | Pendente |
 | 005_f3_orders | orders, order_sequences, número sequencial, RLS | OK | Pendente |
 | 006_f3_completion_notes | coluna completion_notes em orders | OK | Pendente |
+| 007_f3_order_comments | tabela order_comments + RLS | OK | Pendente |
 
 ---
 
@@ -136,9 +138,7 @@ Heredoc com delimitador 'ATOSEOF' (aspas simples — bash não interpreta). Segu
 - [ ] F11: Manual + docs
 
 ### Levantado durante o desenvolvimento
-- [ ] Sistema de comentários na OS (autor + data/hora + texto) — EM CONSTRUÇÃO na F3
 - [ ] Portal do Solicitante/Cliente — área onde o contato do cliente acompanha e comenta as OS dele (quando existir, o solicitante vira tipo de usuário e pode comentar)
-- [ ] Modal de criação da OS em 2 colunas (refinamento UX)
 - [ ] Modal/página de cliente com gestão de unidades embutida (abas Dados/Unidades)
 - [ ] Criação de técnicos via convite por e-mail (inviteUserByEmail)
 - [ ] Módulo de SLA + status e prioridades configuráveis por tenant
@@ -148,4 +148,4 @@ Heredoc com delimitador 'ATOSEOF' (aspas simples — bash não interpreta). Segu
 
 ---
 
-*Última atualização: F3 em andamento — Técnicos completos; OS com listagem, status, página de detalhe e conclusão com relato. Próximo: sistema de comentários na OS.*
+*Última atualização: F3 CONCLUÍDA (Técnicos, OS completa com status, detalhe, conclusão com relato e comentários). Próximo: F4 — App de campo do técnico (mobile).*
