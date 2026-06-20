@@ -31,6 +31,20 @@ export function useOrder(id: string | undefined) {
     fetchOrder()
   }, [fetchOrder])
 
+  // Realtime: recarrega o detalhe quando esta OS muda
+  useEffect(() => {
+    if (!id) return
+    const channel = supabase
+      .channel('order-detail-' + id)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: 'id=eq.' + id },
+        () => { fetchOrder() }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [id, fetchOrder])
+
   async function changeStatus(
     status: OrderStatus,
     extra?: { scheduled_at?: string; schedule_reason?: string; pause_reason?: string; cancel_reason?: string; completion_notes?: string; completed_at?: string }
