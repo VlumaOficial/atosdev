@@ -39,23 +39,12 @@ export function useMyOrders() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
-        (payload) => {
-          console.log('[Realtime] evento recebido:', payload.eventType, payload.new, payload.old)
-          const novo: any = payload.new
-          const velho: any = payload.old
-          const uid = userIdRef.current
-          if (!uid) return
-          if (novo?.technician_id === uid || velho?.technician_id === uid) {
-            console.log('[Realtime] OS do tecnico -> recarregando lista')
-            fetchOrders()
-          } else {
-            console.log('[Realtime] evento ignorado (nao e do tecnico). uid=', uid)
-          }
+        () => {
+          // qualquer mudança em orders -> recarrega; o fetch já filtra pelo técnico (RLS + eq)
+          fetchOrders()
         }
       )
-      .subscribe((status) => {
-        console.log('[Realtime] status do canal:', status)
-      })
+      .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
