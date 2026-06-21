@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { Label } from '@/components/ui/input'
-import { ArrowLeft, Building2, MapPin, Wrench, Calendar, Clock, Pause, CheckCircle2, XCircle, FileText, MessageSquare, Send } from 'lucide-react'
+import { ArrowLeft, Building2, MapPin, Wrench, FileText, MessageSquare, Send } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
@@ -52,11 +52,6 @@ const TRANSITIONS: Record<string, { target: string; label: string; reason?: bool
   cancelada: [],
 }
 
-function fmt(dt: string | null): string {
-  if (!dt) return '—'
-  const d = new Date(dt)
-  return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
 
 export default function OrderDetailPage() {
   const { id } = useParams()
