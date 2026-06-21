@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMyOrders } from '@/hooks/useMyOrders'
+import { useAuth } from '@/hooks/useAuth'
 import type { Order } from '@/hooks/useOrders'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
-import { ClipboardList, Building2, MapPin, ChevronRight, AlertTriangle } from 'lucide-react'
+import { ClipboardList, Building2, MapPin, ChevronRight, AlertTriangle, List, LayoutGrid } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
@@ -21,24 +22,44 @@ const STATUS_STYLES: Record<string, string> = {
 const PRIORITY_RANK: Record<string, number> = { urgente: 0, alta: 1, normal: 2 }
 const PRIORITY_LABELS: Record<string, string> = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' }
 
-const GROUPS: { key: string; label: string; statuses: string[] }[] = [
-  { key: 'andamento', label: 'Em andamento', statuses: ['em_andamento', 'pausada'] },
-  { key: 'proximas', label: 'Próximas', statuses: ['agendada', 'aberta'] },
-  { key: 'finalizadas', label: 'Finalizadas', statuses: ['concluida', 'cancelada'] },
+const STATUS_CARDS: { key: string; label: string; dot: string }[] = [
+  { key: 'aberta', label: 'Abertas', dot: 'bg-blue-400' },
+  { key: 'em_andamento', label: 'Em andamento', dot: 'bg-amber-400' },
+  { key: 'agendada', label: 'Agendadas', dot: 'bg-purple-400' },
+  { key: 'pausada', label: 'Pausadas', dot: 'bg-orange-400' },
+  { key: 'concluida', label: 'Concluídas', dot: 'bg-green-400' },
+  { key: 'cancelada', label: 'Canceladas', dot: 'bg-muted-foreground' },
 ]
+
+function saudacao(): string {
+  const h = new Date().getHours()
+  if (h < 12) return 'Bom dia'
+  if (h < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+function primeiroNome(nome?: string | null): string {
+  if (!nome) return ''
+  return nome.trim().split(' ')[0]
+}
 
 export default function MyOrdersPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { orders, loading, error } = useMyOrders()
+  const [filter, setFilter] = useState<string>('all')
+  const [view, setView] = useState<'list' | 'cards'>('cards')
 
-  const grouped = useMemo(() => {
-    return GROUPS.map(g => {
-      const items = orders
-        .filter(o => g.statuses.includes(o.status))
-        .sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9))
-      return { ...g, items }
-    }).filter(g => g.items.length > 0)
+  const counts = useMemo(() => {
+    const c: Record<string, number> = {}
+    for (const o of orders) c[o.status] = (c[o.status] ?? 0) + 1
+    return c
   }, [orders])
+
+  const visible = useMemo(() => {
+    let list = filter === 'all' ? orders : orders.filter(o => o.status === filter)
+    return [...list].sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9))
+  }, [orders, filter])
 
   function OrderCard({ o }: { o: Order }) {
     return (
@@ -71,11 +92,68 @@ export default function MyOrdersPage() {
     )
   }
 
+
+  function OrderRow({ o }: { o: Order }) {
+    return (
+      <button
+        onClick={() => navigate(`/campo/os/${o.id}`)}
+        className="w-full text-left bg-card border border-border rounded-lg px-3 py-3 active:bg-secondary/40 transition flex items-center gap-3"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-primary">{o.number}</span>
+            <span className={'inline-block px-1.5 py-0.5 rounded text-[10px] font-medium border ' + STATUS_STYLES[o.status]}>{STATUS_LABELS[o.status]}</span>
+          </div>
+          <p className="font-medium text-foreground text-sm truncate mt-0.5">{o.title}</p>
+          <p className="text-xs text-muted-foreground truncate">{o.client?.name ?? '—'}{o.location?.name ? ' · ' + o.location.name : ''}</p>
+        </div>
+        <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+      </button>
+    )
+  }
+
   return (
     <div className="max-w-lg mx-auto pb-8">
       <div className="mb-5">
-        <h1 className="text-xl font-semibold text-foreground">Meus atendimentos</h1>
-        <p className="text-sm text-muted-foreground">Ordens de serviço atribuídas a você</p>
+        <h1 className="text-xl font-semibold text-foreground">{saudacao()}{primeiroNome(user?.name) ? `, ${primeiroNome(user?.name)}` : ''} 👋</h1>
+        <p className="text-sm text-muted-foreground">Vamos organizar os atendimentos de hoje?</p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        <button
+          onClick={() => setFilter('all')}
+          className={'rounded-xl border p-3 text-left transition ' + (filter === 'all' ? 'border-primary bg-primary/10' : 'border-border bg-card active:bg-secondary/40')}
+        >
+          <p className="text-2xl font-semibold text-foreground leading-none">{orders.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">Todas</p>
+        </button>
+        {STATUS_CARDS.map(sc => (
+          <button
+            key={sc.key}
+            onClick={() => setFilter(sc.key)}
+            className={'rounded-xl border p-3 text-left transition ' + (filter === sc.key ? 'border-primary bg-primary/10' : 'border-border bg-card active:bg-secondary/40')}
+          >
+            <div className="flex items-center gap-1.5">
+              <span className={'w-2 h-2 rounded-full ' + sc.dot} />
+              <p className="text-2xl font-semibold text-foreground leading-none">{counts[sc.key] ?? 0}</p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{sc.label}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-muted-foreground">
+          {loading ? 'Carregando...' : `${visible.length} ${visible.length === 1 ? 'atendimento' : 'atendimentos'}`}
+        </p>
+        <div className="flex items-center gap-1 bg-secondary rounded-md p-1">
+          <button onClick={() => setView('cards')} title="Cards" className={'w-7 h-7 rounded flex items-center justify-center transition ' + (view === 'cards' ? 'bg-card text-foreground' : 'text-muted-foreground')}>
+            <LayoutGrid size={15} />
+          </button>
+          <button onClick={() => setView('list')} title="Lista" className={'w-7 h-7 rounded flex items-center justify-center transition ' + (view === 'list' ? 'bg-card text-foreground' : 'text-muted-foreground')}>
+            <List size={15} />
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -84,24 +162,21 @@ export default function MyOrdersPage() {
         <div className="flex items-center justify-center py-16">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : orders.length === 0 ? (
+      ) : visible.length === 0 ? (
         <Card>
           <EmptyState
             icon={ClipboardList}
             title="Nenhum atendimento"
-            description="Você não tem ordens de serviço atribuídas no momento."
+            description={filter === 'all' ? 'Você não tem ordens de serviço atribuídas no momento.' : 'Nenhum atendimento neste status.'}
           />
         </Card>
+      ) : view === 'cards' ? (
+        <div className="space-y-3">
+          {visible.map(o => <OrderCard key={o.id} o={o} />)}
+        </div>
       ) : (
-        <div className="space-y-6">
-          {grouped.map(g => (
-            <div key={g.key}>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 px-1">{g.label} ({g.items.length})</p>
-              <div className="space-y-3">
-                {g.items.map(o => <OrderCard key={o.id} o={o} />)}
-              </div>
-            </div>
-          ))}
+        <div className="space-y-2">
+          {visible.map(o => <OrderRow key={o.id} o={o} />)}
         </div>
       )}
     </div>
