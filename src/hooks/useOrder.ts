@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Order, OrderStatus } from '@/hooks/useOrders'
+import { registrarEvento } from '@/lib/orderEvents'
 
 const SELECT = '*, client:clients(id, name), location:locations(id, name, address, city, state), technician:users!orders_technician_id_fkey(id, name)'
 
@@ -64,6 +65,25 @@ export function useOrder(id: string | undefined) {
     if (status === 'cancelada') patch.cancel_reason = extra?.cancel_reason ?? null
     const { error } = await supabase.from('orders').update(patch).eq('id', id)
     if (error) throw error
+
+    // registra o evento na linha do tempo (histórico imutável)
+    const mapaEvento: Record<string, any> = {
+      agendada: 'scheduled',
+      em_andamento: order?.status === 'pausada' ? 'resumed' : (order?.status === 'concluida' ? 'reopened' : 'started'),
+      pausada: 'paused',
+      concluida: 'completed',
+      cancelada: 'cancelled',
+    }
+    const tipoEvento = mapaEvento[status]
+    if (tipoEvento) {
+      const det: Record<string, any> = {}
+      if (status === 'agendada') { det.scheduled_at = extra?.scheduled_at ?? null; det.reason = extra?.schedule_reason ?? null }
+      if (status === 'pausada') det.reason = extra?.pause_reason ?? null
+      if (status === 'cancelada') det.reason = extra?.cancel_reason ?? null
+      if (status === 'concluida') { det.completion_notes = extra?.completion_notes ?? null; det.completed_at = patch.completed_at }
+      await registrarEvento(id, tipoEvento, det)
+    }
+
     await fetchOrder()
   }
 

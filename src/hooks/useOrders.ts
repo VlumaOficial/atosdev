@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { registrarEvento } from '@/lib/orderEvents'
 
 export type OrderStatus = 'aberta' | 'agendada' | 'em_andamento' | 'pausada' | 'concluida' | 'cancelada'
 export type OrderPriority = 'normal' | 'alta' | 'urgente'
@@ -75,14 +76,32 @@ export function useOrders() {
       priority: input.priority,
       created_by: user?.id ?? null,
     }
-    const { error } = await supabase.from('orders').insert(payload)
+    const { data: created, error } = await supabase.from('orders').insert(payload).select('id').single()
     if (error) throw error
+    if (created?.id) {
+      await registrarEvento(created.id, 'created', { technician_id: payload.technician_id ?? null })
+    }
     await fetchOrders()
   }
 
   async function updateOrder(id: string, input: Partial<OrderInput>) {
+    // estado anterior para detectar transferência de técnico
+    const anterior = orders.find(o => o.id === id)
     const { error } = await supabase.from('orders').update(input).eq('id', id)
     if (error) throw error
+
+    // transferência de técnico
+    if (input.technician_id !== undefined && anterior && (input.technician_id || null) !== (anterior.technician_id || null)) {
+      await registrarEvento(id, 'transferred', {
+        from_technician_id: anterior.technician_id ?? null,
+        from_technician_name: anterior.technician?.name ?? null,
+        to_technician_id: input.technician_id ?? null,
+      })
+    } else {
+      // edição de dados (registrada, mas não destacada na linha do tempo)
+      await registrarEvento(id, 'edited', {})
+    }
+
     await fetchOrders()
   }
 
