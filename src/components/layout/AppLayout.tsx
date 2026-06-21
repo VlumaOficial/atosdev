@@ -3,7 +3,7 @@ import Sidebar from './Sidebar'
 import { useIdleTimeout } from '@/hooks/useIdleTimeout'
 
 export default function AppLayout() {
-  useIdleTimeout(1)
+  useIdleTimeout(30)
   return (
     <div className="flex min-h-screen">
       <Sidebar />

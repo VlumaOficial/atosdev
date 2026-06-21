@@ -5,7 +5,7 @@ import { LogOut } from 'lucide-react'
 
 export default function FieldLayout() {
   const { user, signOut } = useAuth()
-  useIdleTimeout(1)
+  useIdleTimeout(30)
 
   return (
     <div className="min-h-screen bg-background">
