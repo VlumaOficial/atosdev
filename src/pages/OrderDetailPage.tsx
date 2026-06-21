@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { Label } from '@/components/ui/input'
-import { ArrowLeft, Building2, MapPin, Wrench, FileText, MessageSquare, Send } from 'lucide-react'
+import { ArrowLeft, Building2, MapPin, Wrench, FileText } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',

@@ -51,10 +51,6 @@ const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?
   cancelada: [],
 }
 
-function fmt(dt: string | null): string {
-  if (!dt) return '—'
-  return new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
 
 export default function FieldOrderPage() {
   const { id } = useParams()
