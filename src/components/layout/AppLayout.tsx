@@ -1,7 +1,9 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
+import { useIdleTimeout } from '@/hooks/useIdleTimeout'
 
 export default function AppLayout() {
+  useIdleTimeout(1)
   return (
     <div className="flex min-h-screen">
       <Sidebar />
