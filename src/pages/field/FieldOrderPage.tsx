@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useOrder } from '@/hooks/useOrder'
 import { useOrderComments } from '@/hooks/useOrderComments'
+import OrderTimeline from '@/components/orders/OrderTimeline'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
@@ -180,48 +181,7 @@ export default function FieldOrderPage() {
 
       <Card className="p-4 mb-4">
         <p className="text-sm font-medium text-foreground mb-3">Linha do tempo</p>
-        <div className="space-y-2.5 text-sm">
-          <div className="flex items-start gap-2">
-            <Clock size={15} className="text-muted-foreground mt-0.5 flex-shrink-0" />
-            <div><span className="text-muted-foreground">Criada em:</span> <span className="text-foreground">{fmt(order.created_at)}</span></div>
-          </div>
-          {order.scheduled_at && (
-            <div className="flex items-start gap-2">
-              <Calendar size={15} className="text-purple-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <span className="text-muted-foreground">Agendada para:</span> <span className="text-foreground">{fmt(order.scheduled_at)}</span>
-                {order.schedule_reason && <p className="text-xs text-muted-foreground mt-0.5">Motivo: {order.schedule_reason}</p>}
-              </div>
-            </div>
-          )}
-          {order.started_at && (
-            <div className="flex items-start gap-2">
-              <Clock size={15} className="text-amber-400 mt-0.5 flex-shrink-0" />
-              <div><span className="text-muted-foreground">Iniciada em:</span> <span className="text-foreground">{fmt(order.started_at)}</span></div>
-            </div>
-          )}
-          {order.pause_reason && (
-            <div className="flex items-start gap-2">
-              <Pause size={15} className="text-orange-400 mt-0.5 flex-shrink-0" />
-              <div><span className="text-muted-foreground">Motivo da pausa:</span> <span className="text-foreground">{order.pause_reason}</span></div>
-            </div>
-          )}
-          {order.completed_at && (
-            <div className="flex items-start gap-2">
-              <CheckCircle2 size={15} className="text-green-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <span className="text-muted-foreground">Concluída em:</span> <span className="text-foreground">{fmt(order.completed_at)}</span>
-                {order.completion_notes && <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">Relato: {order.completion_notes}</p>}
-              </div>
-            </div>
-          )}
-          {order.cancel_reason && (
-            <div className="flex items-start gap-2">
-              <XCircle size={15} className="text-red-400 mt-0.5 flex-shrink-0" />
-              <div><span className="text-muted-foreground">Motivo do cancelamento:</span> <span className="text-foreground">{order.cancel_reason}</span></div>
-            </div>
-          )}
-        </div>
+        <OrderTimeline orderId={order.id} />
       </Card>
 
       {actions.length > 0 && (
