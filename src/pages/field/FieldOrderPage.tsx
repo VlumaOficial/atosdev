@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useOrder } from '@/hooks/useOrder'
-import { useOrderComments } from '@/hooks/useOrderComments'
 import OrderTimeline from '@/components/orders/OrderTimeline'
+import OrderComments from '@/components/orders/OrderComments'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { Label } from '@/components/ui/input'
-import { ArrowLeft, Building2, MapPin, Navigation, FileText, MessageSquare, Send } from 'lucide-react'
+import { ArrowLeft, Building2, MapPin, Navigation, FileText } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
@@ -60,10 +60,7 @@ export default function FieldOrderPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { order, loading, error, changeStatus } = useOrder(id)
-  const { comments, addComment } = useOrderComments(id)
 
-  const [commentText, setCommentText] = useState('')
-  const [commentSaving, setCommentSaving] = useState(false)
   const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean; date: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })
   const [reasonInput, setReasonInput] = useState('')
   const [notesInput, setNotesInput] = useState('')
@@ -116,18 +113,6 @@ export default function FieldOrderPage() {
     await apply(modal.target, extra)
   }
 
-  async function handleAddComment() {
-    if (!commentText.trim()) return
-    setCommentSaving(true)
-    try {
-      await addComment(commentText.trim())
-      setCommentText('')
-    } catch {
-      alert('Não foi possível enviar o comentário.')
-    } finally {
-      setCommentSaving(false)
-    }
-  }
 
   if (loading) {
     return <div className="flex items-center justify-center py-16"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
@@ -199,31 +184,7 @@ export default function FieldOrderPage() {
       )}
 
       <Card className="p-4">
-        <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-1.5"><MessageSquare size={15} /> Comentários</p>
-        <div className="flex gap-2 mb-4">
-          <input
-            value={commentText}
-            onChange={e => setCommentText(e.target.value)}
-            placeholder="Escreva um comentário..."
-            className="flex-1 px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
-          />
-          <Button type="button" variant="cta" loading={commentSaving} onClick={handleAddComment}><Send size={15} /></Button>
-        </div>
-        {comments.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nenhum comentário ainda.</p>
-        ) : (
-          <div className="space-y-3">
-            {comments.map(c => (
-              <div key={c.id} className="border-l-2 border-primary/30 pl-3">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="font-medium text-foreground">{c.author_name ?? 'Usuário'}</span>
-                  <span className="text-muted-foreground">{fmt(c.created_at)}</span>
-                </div>
-                <p className="text-sm text-foreground whitespace-pre-wrap mt-0.5">{c.comment}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <OrderComments orderId={order.id} />
       </Card>
 
       <Modal
