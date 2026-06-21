@@ -1,31 +1,51 @@
 import { useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 
-// Faz logout automático após X minutos sem interação do usuário
+// Logout automático por inatividade.
+// Robusto a abas em segundo plano: usa timestamp da última interação
+// e checa periodicamente + ao reganhar o foco (não depende só de setTimeout,
+// que os navegadores pausam em abas inativas).
 export function useIdleTimeout(minutes: number = 30) {
   const { user, signOut } = useAuth()
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastActivityRef = useRef<number>(Date.now())
 
   useEffect(() => {
     if (!user) return
 
-    const limite = minutes * 60 * 1000
+    const limiteMs = minutes * 60 * 1000
 
-    function reset() {
-      if (timerRef.current) clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(() => {
+    function registrarAtividade() {
+      lastActivityRef.current = Date.now()
+    }
+
+    function checarInatividade() {
+      const decorrido = Date.now() - lastActivityRef.current
+      if (decorrido >= limiteMs) {
         signOut()
-      }, limite)
+      }
     }
 
     const eventos: (keyof WindowEventMap)[] = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click', 'mousemove']
-    eventos.forEach(ev => window.addEventListener(ev, reset, { passive: true }))
+    eventos.forEach(ev => window.addEventListener(ev, registrarAtividade, { passive: true }))
 
-    reset() // inicia o timer
+    // checagem periódica (a cada 15s)
+    const intervalo = setInterval(checarInatividade, 15 * 1000)
+
+    // ao voltar o foco / aba visível, checa imediatamente
+    function onVisibilidade() {
+      if (document.visibilityState === 'visible') checarInatividade()
+    }
+    document.addEventListener('visibilitychange', onVisibilidade)
+    window.addEventListener('focus', checarInatividade)
+
+    // marca atividade inicial
+    registrarAtividade()
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-      eventos.forEach(ev => window.removeEventListener(ev, reset))
+      eventos.forEach(ev => window.removeEventListener(ev, registrarAtividade))
+      clearInterval(intervalo)
+      document.removeEventListener('visibilitychange', onVisibilidade)
+      window.removeEventListener('focus', checarInatividade)
     }
   }, [user, minutes, signOut])
 }
