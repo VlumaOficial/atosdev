@@ -39,7 +39,7 @@
 | F1 | Multi-tenant, auth, perfis | MVP | Feito |
 | F2 | Clientes e Locais (Unidades) | MVP | Feito |
 | F3 | Ordens de Serviço (gestor) | MVP | Feito |
-| F4 | App de campo (técnico, mobile) | MVP | Pendente |
+| F4 | App de campo (técnico, mobile) | MVP | Feito |
 | F5 | Checklists dinâmicos | MVP | Pendente |
 | F6 | Assinatura digital + PDF + WhatsApp | MVP | Pendente |
 | F7 | Painel gerencial | MVP | Pendente |
@@ -91,6 +91,48 @@ Nota: "Locais" foi renomeado para "Unidades" na UI (rota /locais e tabela locati
 
 ---
 
+## 4.1. Estado detalhado da F4 (App de campo do técnico — mobile) — CONCLUÍDA
+
+### Experiência dedicada do técnico
+- Layout próprio mobile (FieldLayout) — sem sidebar do gestor; cabeçalho ATOS Campo + nome + sair
+- Ao logar, técnico é redirecionado para /campo (HomeRedirect por role); demais vão ao painel
+- Técnico vê APENAS as OS atribuídas a ele (technician_id = user.id)
+
+### Tela "Meus atendimentos" (MyOrdersPage)
+- Saudação contextual por horário (Bom dia/tarde/noite) + primeiro nome + frase de boas-vindas
+- Dashboard de status: cartões com contadores (Todas + Aberta/Em andamento/Agendada/Pausada/Concluída/Cancelada) que FILTRAM a lista ao tocar
+- Toggle lista compacta / cards
+- Lista ordenada por prioridade
+
+### Detalhe da OS no campo (FieldOrderPage)
+- Cabeçalho (número, status, título, prioridade), dados do cliente/unidade
+- Endereço + botão "Abrir no mapa" (Google Maps via link; abre app nativo no celular)
+- Ações de status do técnico: Iniciar, Pausar, Retomar, Agendar, Concluir, Cancelar
+- Linha do tempo e comentários (componentes compartilhados)
+
+### Atualização em tempo real (Supabase Realtime)
+- Lista e detalhe do técnico atualizam SEM refresh quando o admin cria/altera uma OS
+- Requisitos: tabela orders na publicação supabase_realtime + REPLICA IDENTITY FULL (crítico)
+- Hooks: useMyOrders e useOrder com subscription; recarregam em qualquer mudança (o fetch filtra por técnico)
+
+### Rastreabilidade real — linha do tempo (REFORMULAÇÃO ARQUITETURAL)
+- PROBLEMA resolvido: a linha do tempo antiga era montada de campos fixos (pause_reason, scheduled_at) que se SOBRESCREVIAM — perdia histórico e não registrava o autor
+- SOLUÇÃO: tabela order_events (migration 008) — registra TODO evento de forma IMUTÁVEL, com autor (snapshot), tipo, detalhes (JSON) e data
+- Helper centralizado registrarEvento() (src/lib/orderEvents.ts) — captura o autor do usuário logado; não bloqueia a ação se falhar
+- Eventos registrados: created, started, paused, resumed, scheduled, completed, cancelled, reopened, transferred, edited
+- A OS pode ser alterada pelo técnico, pelo admin, ou transferida para outro técnico — tudo fica registrado com quem fez
+- Linha do tempo EXIBE a jornada (status + transferências + autor); oculta "edited" (fica no banco para auditoria/futura aba de histórico completo)
+
+### Componentes compartilhados (admin + técnico)
+- src/components/orders/OrderTimeline.tsx — lê order_events; traduz cada tipo em frase amigável (Criada/Agendada/Iniciada/Pausada/Retomada/Concluída/Cancelada/Reaberta/Transferida) com ícone + autor + data + detalhes; RECOLHÍVEL (mostra "X eventos · última: ...", expande ao tocar)
+- src/components/orders/OrderComments.tsx — campo de escrever sempre visível; lista de comentários RECOLHÍVEL com contador + prévia do último
+
+### Segurança — logout por inatividade
+- Hook useIdleTimeout(30) em AppLayout e FieldLayout (30 min)
+- Robusto a abas em segundo plano: usa timestamp da última interação + checagem periódica (15s) + ao reganhar foco (não depende só de setTimeout, que o navegador pausa)
+
+---
+
 ## 5. Padrões do Projeto (NÃO violar)
 
 ### Listagem
@@ -109,7 +151,13 @@ Cadastros (cliente/unidade/técnico) = ativo/inativo. OS = máquina de estados.
 Sempre com mensagem de erro visível e amigável.
 
 ### Transferência de arquivos grandes (WSL)
-Heredoc com delimitador 'ATOSEOF' (aspas simples — bash não interpreta). Seguro se o conteúdo não tiver a tag a-link literal. Validar balanceamento de chaves/parênteses após criar. Para arquivos grandes, dividir em 2 comandos (cat > e cat >>).
+Heredoc com delimitador 'ATOSEOF' (aspas simples — bash não interpreta). Seguro se o conteúdo não tiver a tag a-link literal. Validar balanceamento de chaves/parênteses após criar. Para arquivos grandes, dividir em 2 comandos (cat > e cat >>). Arquivos com tag a-link literal: usar base64 via /tmp em 2 metades. ATENÇÃO: nunca rodar o mesmo comando Python/heredoc duas vezes (duplica imports/funções e quebra o build com TS2300/TS2393).
+
+### Realtime (Supabase)
+Para uma tabela atualizar a tela sem refresh: (1) alter publication supabase_realtime add table; (2) alter table ... replica identity full (CRÍTICO); (3) subscription no hook recarregando em qualquer evento.
+
+### Componentes compartilhados
+Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTimeline, OrderComments). Editar num lugar só.
 
 ---
 
@@ -124,6 +172,7 @@ Heredoc com delimitador 'ATOSEOF' (aspas simples — bash não interpreta). Segu
 | 005_f3_orders | orders, order_sequences, número sequencial, RLS | OK | Pendente |
 | 006_f3_completion_notes | coluna completion_notes em orders | OK | Pendente |
 | 007_f3_order_comments | tabela order_comments + RLS | OK | Pendente |
+| 008_f3_order_events | tabela order_events (histórico imutável com autor) + RLS | OK | Pendente |
 
 ---
 
@@ -145,7 +194,11 @@ Heredoc com delimitador 'ATOSEOF' (aspas simples — bash não interpreta). Segu
 - [ ] Aplicar todas as migrations no PRD ao replicar
 - [ ] Campo "nome fantasia/exibição" no tenant (nome longo cortado na sidebar)
 - [ ] Ajuste de contraste do ícone ATOS na sidebar
+- [ ] **Responsividade do painel admin (acabamento pré-PRD, após F5-F7):** sidebar → menu hambúrguer; listagens no mobile com LISTA COMPACTA como padrão (não cards) + busca/filtros fortes, toggle para cards opcional; revisar modais. Aplicar em OS, Clientes, Unidades, Técnicos e Checklists
+- [ ] Aba "auditoria/histórico completo" da OS (mostrar também os eventos 'edited' ocultos da linha do tempo)
+- [ ] Auto-atribuição: técnico pegar OS do backlog (Aberta sem técnico) — F4+
+- [ ] Mapa visual embutido na tela do técnico (hoje só botão "Abrir no mapa")
 
 ---
 
-*Última atualização: F3 CONCLUÍDA (Técnicos, OS completa com status, detalhe, conclusão com relato e comentários). Próximo: F4 — App de campo do técnico (mobile).*
+*Última atualização: F4 CONCLUÍDA (app de campo mobile, dashboard de status, Realtime, rastreabilidade real via order_events com autor, linha do tempo e comentários recolhíveis compartilhados, logout por inatividade). DECISÃO: completar MVP (F5-F7) antes de subir para PRD. Próximo: F5 — Checklists dinâmicos.*
