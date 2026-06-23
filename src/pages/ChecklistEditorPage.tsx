@@ -184,7 +184,7 @@ export default function ChecklistEditorPage() {
           <select id="client" value={data.client_id ?? ''} onChange={e => setData({ ...data, client_id: e.target.value || null })}
             className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition">
             <option value="">Geral (toda a empresa)</option>
-            {clients.filter(c => c.is_active).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {clients.filter(c => c.active).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <p className="text-xs text-muted-foreground mt-1">Deixe "Geral" para usar com qualquer cliente, ou vincule a um cliente específico.</p>
         </div>
