@@ -11,6 +11,7 @@ import LocationsPage from '@/pages/LocationsPage'
 import TechniciansPage from '@/pages/TechniciansPage'
 import OrdersPage from '@/pages/OrdersPage'
 import OrderDetailPage from '@/pages/OrderDetailPage'
+import ChecklistsPage from '@/pages/ChecklistsPage'
 import FieldLayout from '@/components/layout/FieldLayout'
 import MyOrdersPage from '@/pages/field/MyOrdersPage'
 import FieldOrderPage from '@/pages/field/FieldOrderPage'
@@ -58,7 +59,7 @@ export default function App() {
             <Route path="os/:id" element={<OrderDetailPage />} />
 
             {/* F5 — Checklists */}
-            <Route path="checklists" element={<PlaceholderPage title="Checklists" />} />
+            <Route path="checklists" element={<ChecklistsPage />} />
 
             {/* F2 — Clientes e Locais */}
             <Route path="clientes" element={<ClientsPage />} />
