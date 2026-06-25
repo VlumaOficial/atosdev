@@ -1,16 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
-export type ResponseType = 'sim_nao' | 'texto' | 'numero' | 'escolha_unica' | 'escolha_multipla' | 'foto' | 'data'
+export type FieldType = 'sim_nao' | 'texto' | 'numero' | 'escolha_unica' | 'escolha_multipla' | 'foto'
+
+export interface ResponseField {
+  id: string            // id local (React)
+  type: FieldType
+  options: string[]     // só para escolha_unica/escolha_multipla
+}
 
 export interface TemplateItem {
   id: string            // id real (uuid) ou temporário (temp-...)
   label: string
-  response_type: ResponseType
-  options: string[]
+  fields: ResponseField[]
   is_required: boolean
   position: number
-  isNew?: boolean       // marca itens ainda não persistidos
 }
 
 export interface TemplateData {
@@ -42,8 +46,11 @@ export function useChecklistTemplate(templateId: string | undefined) {
     setData({
       id: tpl.id, name: tpl.name, description: tpl.description ?? '', client_id: tpl.client_id, is_active: tpl.is_active,
       items: (items ?? []).map((it: any) => ({
-        id: it.id, label: it.label, response_type: it.response_type,
-        options: Array.isArray(it.options) ? it.options : [], is_required: it.is_required, position: it.position,
+        id: it.id,
+        label: it.label,
+        fields: Array.isArray(it.fields) ? it.fields : [],
+        is_required: it.is_required,
+        position: it.position,
       })),
     })
     setLoading(false)
@@ -51,7 +58,6 @@ export function useChecklistTemplate(templateId: string | undefined) {
 
   useEffect(() => { fetchTemplate() }, [fetchTemplate])
 
-  // salva modelo + sincroniza itens (insere/atualiza/remove)
   async function save(payload: TemplateData): Promise<string> {
     let templateRealId = payload.id
 
@@ -70,24 +76,24 @@ export function useChecklistTemplate(templateId: string | undefined) {
       if (error) throw error
     }
 
-    // itens atuais no banco (para detectar remoções)
     const { data: existentes } = await supabase
       .from('checklist_template_items').select('id').eq('template_id', templateRealId)
     const idsExistentes = new Set((existentes ?? []).map((r: any) => r.id))
     const idsMantidos = new Set(payload.items.filter(i => !i.id.startsWith('temp-')).map(i => i.id))
 
-    // remover os que sumiram
     const remover = [...idsExistentes].filter(id => !idsMantidos.has(id))
     if (remover.length > 0) {
       await supabase.from('checklist_template_items').delete().in('id', remover)
     }
 
-    // upsert dos itens (insere novos, atualiza existentes) com a posição correta
     for (let idx = 0; idx < payload.items.length; idx++) {
       const it = payload.items[idx]
       const base = {
-        template_id: templateRealId, label: it.label, response_type: it.response_type,
-        options: it.options ?? [], is_required: it.is_required, position: idx,
+        template_id: templateRealId,
+        label: it.label,
+        fields: it.fields ?? [],
+        is_required: it.is_required,
+        position: idx,
       }
       if (it.id.startsWith('temp-')) {
         await supabase.from('checklist_template_items').insert(base)
