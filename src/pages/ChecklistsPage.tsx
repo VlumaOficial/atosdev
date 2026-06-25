@@ -4,11 +4,12 @@ import { useChecklistTemplates } from '@/hooks/useChecklistTemplates'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
-import { ListChecks, Plus, Search, Power, Pencil, Building2, List, LayoutGrid } from 'lucide-react'
+import { ListChecks, Plus, Search, Power, Pencil, Building2, List, LayoutGrid, Trash2 } from 'lucide-react'
+import { Modal } from '@/components/ui/modal'
 
 export default function ChecklistsPage() {
   const navigate = useNavigate()
-  const { templates, loading, error, toggleActive } = useChecklistTemplates()
+  const { templates, loading, error, toggleActive, deleteTemplate } = useChecklistTemplates()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'todos' | 'ativos' | 'inativos'>('todos')
   const [view, setView] = useState<'list' | 'cards'>('list')
@@ -26,6 +27,22 @@ export default function ChecklistsPage() {
 
   async function handleToggle(id: string, current: boolean) {
     try { await toggleActive(id, !current) } catch { alert('Não foi possível alterar o status.') }
+  }
+
+  const [toDelete, setToDelete] = useState<{ id: string; name: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function confirmDelete() {
+    if (!toDelete) return
+    setDeleting(true)
+    try {
+      await deleteTemplate(toDelete.id)
+      setToDelete(null)
+    } catch {
+      alert('Não foi possível excluir o modelo.')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -84,6 +101,7 @@ export default function ChecklistsPage() {
               </button>
               <button onClick={() => navigate(`/checklists/${t.id}`)} title="Editar" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition"><Pencil size={15} /></button>
               <button onClick={() => handleToggle(t.id, t.is_active)} title={t.is_active ? 'Desativar' : 'Ativar'} className={'w-8 h-8 rounded-md flex items-center justify-center transition hover:bg-secondary ' + (t.is_active ? 'text-green-400' : 'text-muted-foreground')}><Power size={15} /></button>
+              <button onClick={() => setToDelete({ id: t.id, name: t.name })} title="Excluir" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-secondary transition"><Trash2 size={15} /></button>
             </div>
           ))}
         </Card>
@@ -102,11 +120,18 @@ export default function ChecklistsPage() {
               <div className="flex items-center gap-2">
                 <Button variant="ghost" className="flex-1" onClick={() => navigate(`/checklists/${t.id}`)}><Pencil size={14} /> Editar</Button>
                 <button onClick={() => handleToggle(t.id, t.is_active)} className={'w-9 h-9 rounded-md flex items-center justify-center border border-border transition hover:bg-secondary ' + (t.is_active ? 'text-green-400' : 'text-muted-foreground')}><Power size={15} /></button>
+                <button onClick={() => setToDelete({ id: t.id, name: t.name })} title="Excluir" className="w-9 h-9 rounded-md flex items-center justify-center border border-border text-muted-foreground hover:text-red-400 hover:bg-secondary transition"><Trash2 size={15} /></button>
               </div>
             </Card>
           ))}
         </div>
       )}
+      <Modal open={!!toDelete} onOpenChange={(o) => { if (!o) setToDelete(null) }} title="Excluir modelo" description={toDelete ? `Tem certeza que deseja excluir "${toDelete.name}"? Esta ação não pode ser desfeita.` : ''}>
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button variant="ghost" onClick={() => setToDelete(null)}>Cancelar</Button>
+          <Button variant="cta" loading={deleting} onClick={confirmDelete}>Excluir</Button>
+        </div>
+      </Modal>
     </div>
   )
 }
