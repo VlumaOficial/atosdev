@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useOrder } from '@/hooks/useOrder'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
+import OrderChecklist from '@/components/orders/OrderChecklist'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
@@ -163,6 +164,11 @@ export default function FieldOrderPage() {
       <Card className="p-4 mb-4">
         <p className="text-sm font-medium text-foreground mb-3">Linha do tempo</p>
         <OrderTimeline orderId={order.id} />
+      </Card>
+
+      <Card className="p-4 mb-4">
+        <p className="text-sm font-medium text-foreground mb-3">Checklist</p>
+        <OrderChecklist orderId={order.id} />
       </Card>
 
       {actions.length > 0 && (

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useOrder } from '@/hooks/useOrder'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
+import OrderChecklist from '@/components/orders/OrderChecklist'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -176,6 +177,10 @@ export default function OrderDetailPage() {
           <Card className="p-5">
             <p className="text-sm font-medium text-foreground mb-3">Linha do tempo</p>
             <OrderTimeline orderId={order.id} />
+          </Card>
+          <Card className="p-5">
+            <p className="text-sm font-medium text-foreground mb-3">Checklist</p>
+            <OrderChecklist orderId={order.id} />
           </Card>
 
           <Card className="p-5">
