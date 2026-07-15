@@ -58,6 +58,7 @@ export default function OrdersPage() {
   const [editing, setEditing] = useState<Order | null>(null)
   const [form, setForm] = useState<OrderInput>(emptyForm)
   const [checklistTemplateId, setChecklistTemplateId] = useState('')
+  const [editHasChecklist, setEditHasChecklist] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [chip, setChip] = useState('all')
@@ -110,7 +111,7 @@ export default function OrdersPage() {
     setModalOpen(true)
   }
 
-  function openEdit(e: React.MouseEvent, o: Order) {
+  async function openEdit(e: React.MouseEvent, o: Order) {
     e.stopPropagation()
     setEditing(o)
     setForm({
@@ -121,6 +122,15 @@ export default function OrdersPage() {
       description: o.description ?? '',
       priority: o.priority,
     })
+    setChecklistTemplateId('')
+    // verifica se a OS ja possui checklist (um por OS)
+    const { data: inst } = await supabase
+      .from('checklist_instances')
+      .select('id')
+      .eq('order_id', o.id)
+      .eq('context_type', 'order')
+      .maybeSingle()
+    setEditHasChecklist(!!inst)
     setFormError('')
     setModalOpen(true)
   }
@@ -128,6 +138,7 @@ export default function OrdersPage() {
   function closeModal() {
     setModalOpen(false)
     setChecklistTemplateId('')
+    setEditHasChecklist(false)
     setEditing(null)
     setForm(emptyForm)
   }
@@ -141,6 +152,16 @@ export default function OrdersPage() {
     try {
       if (editing) {
         await updateOrder(editing.id, form)
+        if (!editHasChecklist && checklistTemplateId) {
+          const modelo = checklistTemplates.find(t => t.id === checklistTemplateId)
+          await supabase.from('checklist_instances').insert({
+            template_id: checklistTemplateId,
+            title_snapshot: modelo?.name ?? 'Checklist',
+            context_type: 'order',
+            order_id: editing.id,
+            status: 'pendente',
+          })
+        }
       } else {
         const novoId = await createOrder(form)
         if (novoId && checklistTemplateId) {
@@ -319,7 +340,7 @@ export default function OrdersPage() {
               <Combobox id="priority" options={priorityOptions} value={form.priority} onChange={v => setForm({ ...form, priority: v as OrderPriority })} placeholder="Prioridade" searchPlaceholder="Buscar..." emptyText="—" />
             </div>
           </div>
-          {!editing && (
+          {(!editing || !editHasChecklist) && (
             <div>
               <Label htmlFor="checklist">Checklist (opcional)</Label>
               <Combobox id="checklist" options={[{ value: '', label: 'Sem checklist' }, ...checklistTemplates.filter(t => t.is_active).map(t => ({ value: t.id, label: t.name }))]} value={checklistTemplateId} onChange={v => setChecklistTemplateId(v)} placeholder="Sem checklist" searchPlaceholder="Buscar modelo..." emptyText="Nenhum modelo ativo." />
