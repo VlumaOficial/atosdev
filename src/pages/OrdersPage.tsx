@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useOrders, type Order, type OrderInput, type OrderPriority } from '@/hooks/useOrders'
 import { useClients } from '@/hooks/useClients'
 import { useTechnicians } from '@/hooks/useTechnicians'
+import { useChecklistTemplates } from '@/hooks/useChecklistTemplates'
 import { supabase } from '@/lib/supabase'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
@@ -49,12 +50,14 @@ const priorityOptions = [
 export default function OrdersPage() {
   const navigate = useNavigate()
   const { orders, loading, error, createOrder, updateOrder } = useOrders()
+  const { templates: checklistTemplates } = useChecklistTemplates()
   const { clients } = useClients()
   const { technicians } = useTechnicians()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Order | null>(null)
   const [form, setForm] = useState<OrderInput>(emptyForm)
+  const [checklistTemplateId, setChecklistTemplateId] = useState('')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [chip, setChip] = useState('all')
@@ -102,6 +105,7 @@ export default function OrdersPage() {
   function openNew() {
     setEditing(null)
     setForm(emptyForm)
+    setChecklistTemplateId('')
     setFormError('')
     setModalOpen(true)
   }
@@ -123,6 +127,7 @@ export default function OrdersPage() {
 
   function closeModal() {
     setModalOpen(false)
+    setChecklistTemplateId('')
     setEditing(null)
     setForm(emptyForm)
   }
@@ -137,7 +142,17 @@ export default function OrdersPage() {
       if (editing) {
         await updateOrder(editing.id, form)
       } else {
-        await createOrder(form)
+        const novoId = await createOrder(form)
+        if (novoId && checklistTemplateId) {
+          const modelo = checklistTemplates.find(t => t.id === checklistTemplateId)
+          await supabase.from('checklist_instances').insert({
+            template_id: checklistTemplateId,
+            title_snapshot: modelo?.name ?? 'Checklist',
+            context_type: 'order',
+            order_id: novoId,
+            status: 'pendente',
+          })
+        }
       }
       closeModal()
     } catch (err: any) {
@@ -304,6 +319,12 @@ export default function OrdersPage() {
               <Combobox id="priority" options={priorityOptions} value={form.priority} onChange={v => setForm({ ...form, priority: v as OrderPriority })} placeholder="Prioridade" searchPlaceholder="Buscar..." emptyText="—" />
             </div>
           </div>
+          {!editing && (
+            <div>
+              <Label htmlFor="checklist">Checklist (opcional)</Label>
+              <Combobox id="checklist" options={[{ value: '', label: 'Sem checklist' }, ...checklistTemplates.filter(t => t.is_active).map(t => ({ value: t.id, label: t.name }))]} value={checklistTemplateId} onChange={v => setChecklistTemplateId(v)} placeholder="Sem checklist" searchPlaceholder="Buscar modelo..." emptyText="Nenhum modelo ativo." />
+            </div>
+          )}
           <div>
             <Label htmlFor="title">Título *</Label>
             <Input id="title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Ex: Manutenção preventiva CFTV" />

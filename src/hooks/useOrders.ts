@@ -82,6 +82,7 @@ export function useOrders() {
       await registrarEvento(created.id, 'created', { technician_id: payload.technician_id ?? null })
     }
     await fetchOrders()
+    return created?.id as string | undefined
   }
 
   async function updateOrder(id: string, input: Partial<OrderInput>) {

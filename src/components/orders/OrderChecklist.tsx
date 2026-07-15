@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useOrderChecklist, type ChecklistItemSnapshot } from '@/hooks/useOrderChecklist'
-import { useChecklistTemplates } from '@/hooks/useChecklistTemplates'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
-import { ListChecks, Plus, CheckCircle2, Circle, Trash2, X } from 'lucide-react'
+import { ListChecks, CheckCircle2, Circle, Trash2, X } from 'lucide-react'
 
 function temResposta(value: any): boolean {
   if (value === null || value === undefined) return false
@@ -75,35 +74,15 @@ const FIELD_LABELS: Record<string, string> = {
 }
 
 export default function OrderChecklist({ orderId }: { orderId: string }) {
-  const { checklist, loading, associar, desassociar, salvarResposta, obrigatoriosPendentes, concluir } = useOrderChecklist(orderId)
-  const { templates } = useChecklistTemplates()
-  const [seletorAberto, setSeletorAberto] = useState(false)
+  const { checklist, loading, desassociar, salvarResposta, obrigatoriosPendentes, concluir } = useOrderChecklist(orderId)
   const [preencherAberto, setPreencherAberto] = useState(false)
   const [respLocal, setRespLocal] = useState<Record<string, any>>({})
 
   if (loading) return <p className="text-xs text-muted-foreground">Carregando checklist...</p>
 
   if (!checklist) {
-    const ativos = templates.filter(t => t.is_active)
     return (
-      <div>
-        <button onClick={() => setSeletorAberto(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
-          <Plus size={15} /> Adicionar checklist
-        </button>
-        <Modal open={seletorAberto} onOpenChange={setSeletorAberto} title="Adicionar checklist" description="Escolha um modelo para aplicar nesta OS.">
-          <div className="space-y-2 max-h-80 overflow-y-auto">
-            {ativos.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhum modelo ativo. Crie um na seção Checklists.</p>
-            ) : ativos.map(t => (
-              <button key={t.id} onClick={async () => { await associar(t.id, t.name); setSeletorAberto(false) }}
-                className="w-full text-left px-3 py-2.5 rounded-md border border-border hover:border-primary/40 hover:bg-secondary/40 transition">
-                <p className="text-sm font-medium text-foreground">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.item_count} {t.item_count === 1 ? 'item' : 'itens'}{t.client?.name ? ' · ' + t.client.name : ''}</p>
-              </button>
-            ))}
-          </div>
-        </Modal>
-      </div>
+      <p className="text-sm text-muted-foreground text-center py-2">Nenhum checklist nesta OS. Associe um ao criar a ordem de serviço.</p>
     )
   }
 
