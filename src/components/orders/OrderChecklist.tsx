@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useOrderChecklist, type ChecklistItemSnapshot } from '@/hooks/useOrderChecklist'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { ListChecks, CheckCircle2, Circle, Trash2, X } from 'lucide-react'
@@ -74,7 +75,9 @@ const FIELD_LABELS: Record<string, string> = {
 }
 
 export default function OrderChecklist({ orderId }: { orderId: string }) {
-  const { checklist, loading, desassociar, salvarResposta, obrigatoriosPendentes, concluir } = useOrderChecklist(orderId)
+  const { checklist, loading, desassociar, salvarResposta, obrigatoriosPendentes, concluir, reabrir } = useOrderChecklist(orderId)
+  const { user } = useAuth()
+  const podeReabrir = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'super_admin'
   const [preencherAberto, setPreencherAberto] = useState(false)
   const [respLocal, setRespLocal] = useState<Record<string, any>>({})
 
@@ -104,6 +107,12 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
 
   async function salvarItem(item: ChecklistItemSnapshot) {
     await salvarResposta(item.id, item, respLocal[item.id] ?? {})
+  }
+
+  async function handleReabrir() {
+    if (confirm('Reabrir este checklist para edição? A ação ficará registrada.')) {
+      await reabrir()
+    }
   }
 
   async function handleConcluir() {
@@ -139,6 +148,7 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
         {!concluido && pendentesObrig > 0 && <p className="text-xs text-amber-400 mb-2">{pendentesObrig} {pendentesObrig === 1 ? 'item obrigatório pendente' : 'itens obrigatórios pendentes'}</p>}
         <div className="flex items-center gap-2">
           <Button variant="outline" className="flex-1" onClick={abrirPreencher}>{concluido ? 'Ver checklist' : 'Preencher'}</Button>
+          {concluido && podeReabrir && <Button variant="ghost" onClick={handleReabrir}>Reabrir</Button>}
           {!concluido && <button onClick={async () => { if (confirm('Remover o checklist desta OS?')) await desassociar() }} title="Remover" className="w-9 h-9 rounded-md flex items-center justify-center border border-border text-muted-foreground hover:text-red-400 transition"><Trash2 size={15} /></button>}
         </div>
       </div>
@@ -158,7 +168,7 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
                   </div>
                 ))}
               </div>
-              {!concluido && <button onClick={() => salvarItem(it)} className="text-xs text-primary mt-3 inline-block">Salvar resposta</button>}
+              {!concluido && <button onClick={() => salvarItem(it)} className="text-xs text-primary mt-3 inline-block">Salvar progresso</button>}
             </div>
           ))}
         </div>

@@ -122,13 +122,24 @@ export function useOrderChecklist(orderId: string | undefined) {
     if (!checklist) return
     const { error } = await supabase
       .from('checklist_instances')
-      .update({ status: 'concluido', completed_at: new Date().toISOString() })
+      .update({ status: 'concluido', completed_at: new Date().toISOString(), completed_by: (await supabase.auth.getUser()).data.user?.id ?? null })
       .eq('id', checklist.instanceId)
     if (error) throw error
     await fetchChecklist()
   }
 
-  return { checklist, loading, fetchChecklist, associar, desassociar, salvarResposta, obrigatoriosPendentes, concluir }
+  async function reabrir() {
+    if (!checklist) return
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase
+      .from('checklist_instances')
+      .update({ status: 'em_andamento', reopened_at: new Date().toISOString(), reopened_by: user?.id ?? null })
+      .eq('id', checklist.instanceId)
+    if (error) throw error
+    await fetchChecklist()
+  }
+
+  return { checklist, loading, fetchChecklist, associar, desassociar, salvarResposta, obrigatoriosPendentes, concluir, reabrir }
 }
 
 function temResposta(value: any): boolean {
