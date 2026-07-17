@@ -4,6 +4,7 @@ import { useOrder } from '@/hooks/useOrder'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
+import { checklistObrigatoriosPendentes } from '@/lib/checklistGuard'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -114,7 +115,7 @@ export default function OrderDetailPage() {
     if (statusModal.target === 'pausada') extra.pause_reason = reasonInput || null
     if (statusModal.target === 'cancelada') extra.cancel_reason = reasonInput || null
     if (statusModal.target === 'concluida') {
-      const pendentes = await checklistObrigatoriosPendentes(order.id)
+      const pendentes = await checklistObrigatoriosPendentes(order!.id)
       if (pendentes > 0) {
         setStatusError(`Conclua o checklist obrigatório antes de finalizar a OS (${pendentes} ${pendentes === 1 ? 'item pendente' : 'itens pendentes'}).`)
         return

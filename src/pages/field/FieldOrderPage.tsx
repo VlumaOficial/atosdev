@@ -105,7 +105,7 @@ export default function FieldOrderPage() {
     if (modal.target === 'pausada') extra.pause_reason = reasonInput || null
     if (modal.target === 'cancelada') extra.cancel_reason = reasonInput || null
     if (modal.target === 'concluida') {
-      const pendentes = await checklistObrigatoriosPendentes(order.id)
+      const pendentes = await checklistObrigatoriosPendentes(order!.id)
       if (pendentes > 0) {
         setModalError(`Conclua o checklist obrigatório antes de finalizar (${pendentes} ${pendentes === 1 ? 'item pendente' : 'itens pendentes'}).`)
         return
