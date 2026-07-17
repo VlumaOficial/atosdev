@@ -107,7 +107,19 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
   }
 
   async function handleConcluir() {
-    if (pendentesObrig > 0) { alert('Responda todos os itens obrigatórios antes de concluir.'); return }
+    // valida obrigatorios olhando o que esta na tela (respLocal)
+    const faltando = checklist!.items.filter(it => it.is_required && !temResposta(respLocal[it.id]))
+    if (faltando.length > 0) {
+      alert('Responda todos os itens obrigatórios antes de concluir.')
+      return
+    }
+    // salva todas as respostas preenchidas antes de concluir
+    for (const it of checklist!.items) {
+      const val = respLocal[it.id]
+      if (temResposta(val)) {
+        await salvarResposta(it.id, it, val)
+      }
+    }
     await concluir()
     setPreencherAberto(false)
   }
@@ -134,7 +146,7 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
       <Modal open={preencherAberto} onOpenChange={setPreencherAberto} title={checklist.title} description={concluido ? 'Checklist concluído.' : 'Responda os itens abaixo.'}>
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
           {checklist.items.map(it => (
-            <div key={it.id} className="border-b border-border pb-3 last:border-0">
+            <div key={it.id} className="border-b border-border pb-4 last:border-0">
               <p className="text-sm font-medium text-foreground mb-2">
                 {it.label} {it.is_required && <span className="text-red-400">*</span>}
               </p>
@@ -146,7 +158,7 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
                   </div>
                 ))}
               </div>
-              {!concluido && <button onClick={() => salvarItem(it)} className="text-xs text-primary mt-2">Salvar resposta</button>}
+              {!concluido && <button onClick={() => salvarItem(it)} className="text-xs text-primary mt-3 inline-block">Salvar resposta</button>}
             </div>
           ))}
         </div>
