@@ -245,6 +245,19 @@ Banco **free suspende por inatividade** — risco de o sistema cair.
 ### 9.6. Portal self-service para novos clientes
 Empresa se cadastra sozinha, escolhe plano, entra em trial. Depende da camada comercial (F8). Ligado ao item 8.1 (auto-cadastro + landing page).
 
+### 9.7. Módulo de Relatórios / Auditoria de Checklists
+Tela para consultar o **histórico de alterações das respostas de checklist** (rastreabilidade).
+
+**Contexto — regra de negócio definida (F5):**
+- O técnico preenche o checklist de forma **parcial** e salva (itens em branco permitidos); pode voltar e continuar depois.
+- Ao retornar, o sistema **não trava** edições anteriores — o técnico pode corrigir respostas já salvas.
+- **Toda alteração de uma resposta já salva gera um registro do estado anterior** (versionamento), preservando a trilha completa para rastreabilidade.
+- Após **Concluir**, o checklist fica travado para o técnico; **somente o Admin pode reabrir** (e toda reabertura/edição também fica registrada).
+
+**Implementação da captura (feita na F5, agora):** tabela de histórico (`checklist_answer_history`) + **trigger no banco** que grava automaticamente a versão anterior a cada alteração — garante que nenhuma mudança escape, independentemente da origem (técnico, admin, futuro app).
+
+**Pendente (este item de backlog):** a **tela de consulta/visualização** desse histórico — navegável, filtrável, para o gestor auditar quem alterou o quê e quando. Encaixa perto da **F7 (painel gerencial)** ou como módulo de auditoria dedicado. Consome os dados que já estarão sendo capturados desde a F5.
+
 ---
 
 ## 10. ECOSSISTEMA VLUMA — PRODUTO IRMÃO: CLAREZZA
