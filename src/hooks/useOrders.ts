@@ -88,15 +88,20 @@ export function useOrders() {
   async function updateOrder(id: string, input: Partial<OrderInput>) {
     // estado anterior para detectar transferência de técnico
     const anterior = orders.find(o => o.id === id)
-    const { error } = await supabase.from('orders').update(input).eq('id', id)
+    // normaliza campos UUID: string vazia -> null (Postgres rejeita "" em uuid)
+    const clean: any = { ...input }
+    if (clean.location_id !== undefined) clean.location_id = clean.location_id || null
+    if (clean.technician_id !== undefined) clean.technician_id = clean.technician_id || null
+    if (clean.description !== undefined) clean.description = clean.description || null
+    const { error } = await supabase.from('orders').update(clean).eq('id', id)
     if (error) throw error
 
     // transferência de técnico
-    if (input.technician_id !== undefined && anterior && (input.technician_id || null) !== (anterior.technician_id || null)) {
+    if (clean.technician_id !== undefined && anterior && (clean.technician_id || null) !== (anterior.technician_id || null)) {
       await registrarEvento(id, 'transferred', {
         from_technician_id: anterior.technician_id ?? null,
         from_technician_name: anterior.technician?.name ?? null,
-        to_technician_id: input.technician_id ?? null,
+        to_technician_id: clean.technician_id ?? null,
       })
     } else {
       // edição de dados (registrada, mas não destacada na linha do tempo)
