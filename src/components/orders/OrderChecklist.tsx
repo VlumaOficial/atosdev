@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useOrderChecklist, type ChecklistItemSnapshot } from '@/hooks/useOrderChecklist'
+import { useOrderChecklist } from '@/hooks/useOrderChecklist'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
