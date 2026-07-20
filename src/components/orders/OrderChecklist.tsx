@@ -80,6 +80,7 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
   const podeReabrir = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'super_admin'
   const [preencherAberto, setPreencherAberto] = useState(false)
   const [respLocal, setRespLocal] = useState<Record<string, any>>({})
+  const [salvandoProgresso, setSalvandoProgresso] = useState(false)
 
   if (loading) return <p className="text-xs text-muted-foreground">Carregando checklist...</p>
 
@@ -105,8 +106,19 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
     setRespLocal(prev => ({ ...prev, [itemId]: { ...(prev[itemId] ?? {}), [fieldId]: v } }))
   }
 
-  async function salvarItem(item: ChecklistItemSnapshot) {
-    await salvarResposta(item.id, item, respLocal[item.id] ?? {})
+  async function handleSalvarProgresso() {
+    setSalvandoProgresso(true)
+    try {
+      for (const it of checklist!.items) {
+        const val = respLocal[it.id]
+        if (temResposta(val)) await salvarResposta(it.id, it, val)
+      }
+      setPreencherAberto(false)
+    } catch {
+      alert('Não foi possível salvar o progresso.')
+    } finally {
+      setSalvandoProgresso(false)
+    }
   }
 
   async function handleReabrir() {
@@ -168,13 +180,13 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
                   </div>
                 ))}
               </div>
-              {!concluido && <button onClick={() => salvarItem(it)} className="text-xs text-primary mt-3 inline-block">Salvar progresso</button>}
             </div>
           ))}
         </div>
         {!concluido && (
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-border mt-2">
             <Button variant="ghost" onClick={() => setPreencherAberto(false)}>Fechar</Button>
+            <Button variant="outline" loading={salvandoProgresso} onClick={handleSalvarProgresso}>Salvar progresso</Button>
             <Button variant="cta" onClick={handleConcluir}>Concluir checklist</Button>
           </div>
         )}
