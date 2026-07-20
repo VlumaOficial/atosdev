@@ -67,6 +67,19 @@ export function useOrderChecklist(orderId: string | undefined) {
 
   useEffect(() => { fetchChecklist() }, [fetchChecklist])
 
+  // Realtime: recarrega quando a instancia do checklist muda (ex: admin reabre)
+  useEffect(() => {
+    if (!orderId) return
+    const canal = supabase
+      .channel('checklist-instance-' + orderId)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'checklist_instances', filter: 'order_id=eq.' + orderId },
+        () => { fetchChecklist() }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(canal) }
+  }, [orderId, fetchChecklist])
+
   // associa um modelo à OS (cria a instância)
   async function associar(templateId: string, titulo: string) {
     if (!orderId) return
