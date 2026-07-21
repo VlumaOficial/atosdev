@@ -210,13 +210,12 @@ export default function ChecklistEditorPage() {
         </div>
       </Card>
 
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-medium text-foreground">Itens do checklist</h2>
-        <Button type="button" variant="ghost" onClick={addItem}><Plus size={15} /> Adicionar item</Button>
-      </div>
+      <h2 className="text-sm font-medium text-foreground mb-3">Itens do checklist</h2>
 
       {data.items.length === 0 ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground mb-4">Nenhum item ainda. Clique em "Adicionar item".</Card>
+        <button type="button" onClick={addItem} className="w-full flex items-center justify-center gap-2 px-3 py-6 mb-4 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
+          <Plus size={15} /> Adicionar primeiro item
+        </button>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={data.items.map(i => i.id)} strategy={verticalListSortingStrategy}>
