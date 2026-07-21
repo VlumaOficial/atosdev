@@ -3,7 +3,7 @@ import { useOrderChecklist } from '@/hooks/useOrderChecklist'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
-import { ListChecks, CheckCircle2, Circle, Trash2, X } from 'lucide-react'
+import { ListChecks, CheckCircle2, Circle, Trash2, X, ChevronDown, ChevronRight } from 'lucide-react'
 
 function temResposta(value: any): boolean {
   if (value === null || value === undefined) return false
@@ -81,6 +81,7 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
   const [preencherAberto, setPreencherAberto] = useState(false)
   const [respLocal, setRespLocal] = useState<Record<string, any>>({})
   const [salvandoProgresso, setSalvandoProgresso] = useState(false)
+  const [itensAbertos, setItensAbertos] = useState<Record<string, boolean>>({})
 
   if (loading) return <p className="text-xs text-muted-foreground">Carregando checklist...</p>
 
@@ -169,10 +170,15 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
           {checklist.items.map(it => (
             <div key={it.id} className="border-b border-border pb-4 last:border-0">
-              <p className="text-sm font-medium text-foreground mb-2">
-                {it.label} {it.is_required && <span className="text-red-400">*</span>}
-              </p>
-              <div className="space-y-3">
+              <button type="button" onClick={() => setItensAbertos(prev => ({ ...prev, [it.id]: !prev[it.id] }))}
+                className="w-full flex items-center gap-2 text-left mb-2">
+                {itensAbertos[it.id] ? <ChevronDown size={15} className="text-muted-foreground flex-shrink-0" /> : <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />}
+                <span className="text-sm font-medium text-foreground flex-1 min-w-0">
+                  {it.label} {it.is_required && <span className="text-red-400">*</span>}
+                </span>
+                {temResposta(respLocal[it.id]) && <CheckCircle2 size={15} className="text-green-400 flex-shrink-0" />}
+              </button>
+              <div className={'space-y-3 pl-6 ' + (itensAbertos[it.id] ? '' : 'hidden')}>
                 {it.fields.map(f => (
                   <div key={f.id}>
                     <p className="text-xs text-muted-foreground mb-1">{FIELD_LABELS[f.type] ?? f.type}</p>
