@@ -212,7 +212,7 @@ export default function ChecklistEditorPage() {
 
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-medium text-foreground">Itens do checklist</h2>
-        <Button variant="ghost" onClick={addItem}><Plus size={15} /> Adicionar item</Button>
+        <Button type="button" variant="ghost" onClick={addItem}><Plus size={15} /> Adicionar item</Button>
       </div>
 
       {data.items.length === 0 ? (
@@ -227,6 +227,11 @@ export default function ChecklistEditorPage() {
             </div>
           </SortableContext>
         </DndContext>
+      )}
+      {data.items.length > 0 && (
+        <button type="button" onClick={addItem} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-4 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
+          <Plus size={15} /> Adicionar item
+        </button>
       )}
 
       {formError && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2 mb-4">{formError}</div>}
