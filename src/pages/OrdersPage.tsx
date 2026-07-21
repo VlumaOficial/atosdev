@@ -58,7 +58,7 @@ export default function OrdersPage() {
   const [editing, setEditing] = useState<Order | null>(null)
   const [form, setForm] = useState<OrderInput>(emptyForm)
   const [checklistTemplateId, setChecklistTemplateId] = useState('')
-  const [editHasChecklist, setEditHasChecklist] = useState(false)
+  const [checklistInstancia, setChecklistInstancia] = useState<{ id: string; template_id: string } | null>(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [chip, setChip] = useState('all')
@@ -122,15 +122,15 @@ export default function OrdersPage() {
       description: o.description ?? '',
       priority: o.priority,
     })
-    setChecklistTemplateId('')
-    // verifica se a OS ja possui checklist (um por OS)
+    // carrega o checklist atual da OS (um por OS) e pre-seleciona no campo
     const { data: inst } = await supabase
       .from('checklist_instances')
-      .select('id')
+      .select('id, template_id')
       .eq('order_id', o.id)
       .eq('context_type', 'order')
       .maybeSingle()
-    setEditHasChecklist(!!inst)
+    setChecklistInstancia(inst ? { id: inst.id, template_id: inst.template_id } : null)
+    setChecklistTemplateId(inst?.template_id ?? '')
     setFormError('')
     setModalOpen(true)
   }
@@ -138,7 +138,7 @@ export default function OrdersPage() {
   function closeModal() {
     setModalOpen(false)
     setChecklistTemplateId('')
-    setEditHasChecklist(false)
+    setChecklistInstancia(null)
     setEditing(null)
     setForm(emptyForm)
   }
@@ -152,15 +152,23 @@ export default function OrdersPage() {
     try {
       if (editing) {
         await updateOrder(editing.id, form)
-        if (!editHasChecklist && checklistTemplateId) {
-          const modelo = checklistTemplates.find(t => t.id === checklistTemplateId)
-          await supabase.from('checklist_instances').insert({
-            template_id: checklistTemplateId,
-            title_snapshot: modelo?.name ?? 'Checklist',
-            context_type: 'order',
-            order_id: editing.id,
-            status: 'pendente',
-          })
+        const templateAtual = checklistInstancia?.template_id ?? ''
+        if (checklistTemplateId !== templateAtual) {
+          // removeu ou trocou: apaga a instancia anterior
+          if (checklistInstancia) {
+            await supabase.from('checklist_instances').delete().eq('id', checklistInstancia.id)
+          }
+          // escolheu um novo modelo: cria a instancia
+          if (checklistTemplateId) {
+            const modelo = checklistTemplates.find(t => t.id === checklistTemplateId)
+            await supabase.from('checklist_instances').insert({
+              template_id: checklistTemplateId,
+              title_snapshot: modelo?.name ?? 'Checklist',
+              context_type: 'order',
+              order_id: editing.id,
+              status: 'pendente',
+            })
+          }
         }
       } else {
         const novoId = await createOrder(form)
@@ -340,12 +348,13 @@ export default function OrdersPage() {
               <Combobox id="priority" options={priorityOptions} value={form.priority} onChange={v => setForm({ ...form, priority: v as OrderPriority })} placeholder="Prioridade" searchPlaceholder="Buscar..." emptyText="—" />
             </div>
           </div>
-          {(!editing || !editHasChecklist) && (
-            <div>
-              <Label htmlFor="checklist">Checklist (opcional)</Label>
-              <Combobox id="checklist" options={[{ value: '', label: 'Sem checklist' }, ...checklistTemplates.filter(t => t.is_active).map(t => ({ value: t.id, label: t.name }))]} value={checklistTemplateId} onChange={v => setChecklistTemplateId(v)} placeholder="Sem checklist" searchPlaceholder="Buscar modelo..." emptyText="Nenhum modelo ativo." />
-            </div>
-          )}
+          <div>
+            <Label htmlFor="checklist">Checklist (opcional)</Label>
+            <Combobox id="checklist" options={[{ value: '', label: 'Sem checklist' }, ...checklistTemplates.filter(t => t.is_active).map(t => ({ value: t.id, label: t.name }))]} value={checklistTemplateId} onChange={v => setChecklistTemplateId(v)} placeholder="Sem checklist" searchPlaceholder="Buscar modelo..." emptyText="Nenhum modelo ativo." />
+            {editing && checklistInstancia && checklistTemplateId !== checklistInstancia.template_id && (
+              <p className="text-xs text-amber-400 mt-1">Trocar o checklist apaga as respostas já preenchidas.</p>
+            )}
+          </div>
           <div>
             <Label htmlFor="title">Título *</Label>
             <Input id="title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Ex: Manutenção preventiva CFTV" />
