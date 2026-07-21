@@ -124,6 +124,8 @@ Roteiros de verificação **configuráveis**, independentes de serviço específ
 - Campo de observação aberto, preenchido pelo técnico
 - **GPS capturado automaticamente** do dispositivo, nunca digitado
 - Se o GPS estiver negado/desligado: sistema **avisa e exige ativação** para continuar
+- **Decisão (jul/2026):** guarda-se **apenas a imagem carimbada** — o original sem carimbo não é armazenado (economia de Storage; a versão carimbada é a evidência válida)
+- **Base já construída na F5 (Bloco D):** bucket privado `evidencias` isolado por tenant, compressão no navegador (1600px / qualidade 80%), limite de 5MB e URL assinada. O carimbo será aplicado no mesmo canvas da compressão, antes do envio
 
 **Envio da OS**
 - **Envio opcional** — o técnico decide se envia ao cliente
