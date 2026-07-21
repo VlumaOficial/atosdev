@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useOrderChecklist } from '@/hooks/useOrderChecklist'
 import { useAuth } from '@/hooks/useAuth'
+import FotoEvidencia from '@/components/orders/FotoEvidencia'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { ListChecks, CheckCircle2, Circle, Trash2, X, ChevronDown, ChevronRight } from 'lucide-react'
@@ -13,7 +14,7 @@ function temResposta(value: any): boolean {
   return value !== ''
 }
 
-function FieldInput({ field, value, onChange }: { field: any; value: any; onChange: (v: any) => void }) {
+function FieldInput({ field, value, onChange, instanceId, readOnly }: { field: any; value: any; onChange: (v: any) => void; instanceId: string; readOnly?: boolean }) {
   const inputCls = "w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
 
   if (field.type === 'sim_nao') {
@@ -64,7 +65,7 @@ function FieldInput({ field, value, onChange }: { field: any; value: any; onChan
     )
   }
   if (field.type === 'foto') {
-    return <p className="text-xs text-muted-foreground italic">Anexo de foto disponível em breve.</p>
+    return <FotoEvidencia instanceId={instanceId} fieldId={field.id} value={value ?? null} onChange={onChange} readOnly={readOnly} />
   }
   return null
 }
@@ -182,7 +183,7 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
                 {it.fields.map(f => (
                   <div key={f.id}>
                     <p className="text-xs text-muted-foreground mb-1">{FIELD_LABELS[f.type] ?? f.type}</p>
-                    <FieldInput field={f} value={respLocal[it.id]?.[f.id]} onChange={(v) => setCampo(it.id, f.id, v)} />
+                    <FieldInput field={f} value={respLocal[it.id]?.[f.id]} onChange={(v) => setCampo(it.id, f.id, v)} instanceId={checklist.instanceId} readOnly={concluido} />
                   </div>
                 ))}
               </div>
