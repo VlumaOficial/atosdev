@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useOrder } from '@/hooks/useOrder'
+import { useAuth } from '@/hooks/useAuth'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
+import OrderSignature from '@/components/orders/OrderSignature'
 import { checklistObrigatoriosPendentes } from '@/lib/checklistGuard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -57,7 +59,8 @@ const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?
 export default function FieldOrderPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { order, loading, error, changeStatus } = useOrder(id)
+  const { order, loading, error, changeStatus, fetchOrder } = useOrder(id)
+  const { tenant } = useAuth()
 
   const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean; date: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })
   const [reasonInput, setReasonInput] = useState('')
@@ -108,6 +111,10 @@ export default function FieldOrderPage() {
       const pendentes = await checklistObrigatoriosPendentes(order!.id)
       if (pendentes > 0) {
         setModalError(`Conclua o checklist obrigatório antes de finalizar (${pendentes} ${pendentes === 1 ? 'item pendente' : 'itens pendentes'}).`)
+        return
+      }
+      if (tenant?.require_signature_to_complete && !order?.signature_path) {
+        setModalError('Colete a assinatura do cliente antes de finalizar o atendimento.')
         return
       }
       extra.completion_notes = notesInput || null
@@ -175,6 +182,17 @@ export default function FieldOrderPage() {
       <Card className="p-4 mb-4">
         <p className="text-sm font-medium text-foreground mb-3">Checklist</p>
         <OrderChecklist orderId={order.id} />
+      </Card>
+
+      <Card className="p-4 mb-4">
+        <p className="text-sm font-medium text-foreground mb-3">Assinatura do cliente</p>
+        <OrderSignature
+          orderId={order.id}
+          signaturePath={order.signature_path}
+          signerName={order.signer_name}
+          readOnly={order.status === 'concluida' || order.status === 'cancelada'}
+          onSigned={fetchOrder}
+        />
       </Card>
 
       {actions.length > 0 && (

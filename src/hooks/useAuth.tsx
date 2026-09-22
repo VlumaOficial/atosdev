@@ -65,8 +65,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTenant(null)
   }
 
+  // Recarrega tenant/perfil sem precisar de refresh da página (ex: após
+  // salvar uma configuração que o resto do app lê de useAuth().tenant)
+  async function refreshTenant() {
+    if (user) await loadUserProfile(user.id)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, tenant, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, tenant, loading, signIn, signOut, refreshTenant }}>
       {children}
     </AuthContext.Provider>
   )

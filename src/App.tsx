@@ -14,6 +14,7 @@ import OrderDetailPage from '@/pages/OrderDetailPage'
 import ChecklistsPage from '@/pages/ChecklistsPage'
 import ChecklistEditorPage from '@/pages/ChecklistEditorPage'
 import ChecklistAvulsosPage from '@/pages/ChecklistAvulsosPage'
+import ConfiguracoesPage from '@/pages/ConfiguracoesPage'
 import FieldLayout from '@/components/layout/FieldLayout'
 import MyOrdersPage from '@/pages/field/MyOrdersPage'
 import FieldOrderPage from '@/pages/field/FieldOrderPage'
@@ -107,7 +108,14 @@ export default function App() {
               }
             />
 
-            <Route path="configuracoes" element={<PlaceholderPage title="Configurações" />} />
+            <Route
+              path="configuracoes"
+              element={
+                <ProtectedRoute allowedRoles={['super_admin', 'admin']}>
+                  <ConfiguracoesPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
 
           {/* F4 — App de Campo (Técnico) — layout mobile dedicado */}

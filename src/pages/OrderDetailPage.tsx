@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useOrder } from '@/hooks/useOrder'
+import { useAuth } from '@/hooks/useAuth'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
+import OrderSignature from '@/components/orders/OrderSignature'
 import { checklistObrigatoriosPendentes } from '@/lib/checklistGuard'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
@@ -59,6 +61,7 @@ export default function OrderDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { order, loading, error, changeStatus } = useOrder(id)
+  const { tenant } = useAuth()
 
   const [statusModal, setStatusModal] = useState<{ open: boolean; target: string; needsReason: boolean; needsDate: boolean; needsNotes: boolean; needsCompleteDate: boolean }>({ open: false, target: '', needsReason: false, needsDate: false, needsNotes: false, needsCompleteDate: false })
   const [notesInput, setNotesInput] = useState('')
@@ -118,6 +121,10 @@ export default function OrderDetailPage() {
       const pendentes = await checklistObrigatoriosPendentes(order!.id)
       if (pendentes > 0) {
         setStatusError(`Conclua o checklist obrigatório antes de finalizar a OS (${pendentes} ${pendentes === 1 ? 'item pendente' : 'itens pendentes'}).`)
+        return
+      }
+      if (tenant?.require_signature_to_complete && !order?.signature_path) {
+        setStatusError('Colete a assinatura do cliente antes de finalizar a OS.')
         return
       }
       extra.completion_notes = notesInput || null
@@ -187,6 +194,11 @@ export default function OrderDetailPage() {
           <Card className="p-5">
             <p className="text-sm font-medium text-foreground mb-3">Checklist</p>
             <OrderChecklist orderId={order.id} />
+          </Card>
+
+          <Card className="p-5">
+            <p className="text-sm font-medium text-foreground mb-3">Assinatura</p>
+            <OrderSignature orderId={order.id} signaturePath={order.signature_path} signerName={order.signer_name} readOnly />
           </Card>
 
           <Card className="p-5">

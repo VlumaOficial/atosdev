@@ -23,6 +23,9 @@ export interface Order {
   started_at: string | null
   completed_at: string | null
   completion_notes: string | null
+  signature_path: string | null
+  signer_name: string | null
+  signed_at: string | null
   created_at: string
   client?: { id: string; name: string } | null
   location?: { id: string; name: string; address?: string | null; city?: string | null; state?: string | null } | null

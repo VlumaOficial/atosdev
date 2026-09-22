@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useOrderEvents } from '@/hooks/useOrderEvents'
-import { Clock, Play, Pause, RotateCcw, Calendar, CheckCircle2, XCircle, RefreshCw, UserCheck, PlusCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Clock, Play, Pause, RotateCcw, Calendar, CheckCircle2, XCircle, RefreshCw, UserCheck, PlusCircle, ChevronDown, ChevronUp, PenTool } from 'lucide-react'
 
 function fmt(dt: string): string {
   return new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -16,6 +16,7 @@ const EVENT_CONFIG: Record<string, { label: string; icon: any; color: string }> 
   cancelled: { label: 'Cancelada', icon: XCircle, color: 'text-red-400' },
   reopened: { label: 'Reaberta', icon: RefreshCw, color: 'text-blue-400' },
   transferred: { label: 'Transferida', icon: UserCheck, color: 'text-cyan-400' },
+  signed: { label: 'Assinada', icon: PenTool, color: 'text-emerald-400' },
 }
 
 const OCULTOS = new Set(['edited'])
@@ -44,6 +45,9 @@ function EventRow({ e }: { e: any }) {
           <p className="text-xs text-muted-foreground mt-0.5">
             {d.from_technician_name ? `De ${d.from_technician_name}` : 'Atribuída'} para novo técnico
           </p>
+        )}
+        {e.event_type === 'signed' && d.signer_name && (
+          <p className="text-xs text-muted-foreground mt-0.5">Assinado por: {d.signer_name}</p>
         )}
       </div>
     </div>

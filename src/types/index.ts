@@ -27,6 +27,7 @@ export interface Tenant {
   phone?: string
   status: TenantStatus
   plan: 'starter' | 'professional' | 'enterprise'
+  require_signature_to_complete: boolean
   created_at: string
   updated_at: string
 }
@@ -125,4 +126,5 @@ export interface AuthContextType {
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  refreshTenant: () => Promise<void>
 }
