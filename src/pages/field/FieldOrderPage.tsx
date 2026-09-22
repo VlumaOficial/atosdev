@@ -6,6 +6,7 @@ import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
 import OrderSignature from '@/components/orders/OrderSignature'
+import OrderEvidences from '@/components/orders/OrderEvidences'
 import { checklistObrigatoriosPendentes } from '@/lib/checklistGuard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -182,6 +183,11 @@ export default function FieldOrderPage() {
       <Card className="p-4 mb-4">
         <p className="text-sm font-medium text-foreground mb-3">Checklist</p>
         <OrderChecklist orderId={order.id} />
+      </Card>
+
+      <Card className="p-4 mb-4">
+        <p className="text-sm font-medium text-foreground mb-3">Evidências fotográficas</p>
+        <OrderEvidences orderId={order.id} readOnly={order.status === 'concluida' || order.status === 'cancelada'} />
       </Card>
 
       <Card className="p-4 mb-4">

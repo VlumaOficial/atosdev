@@ -81,15 +81,15 @@ export interface UploadResult {
   erro?: string
 }
 
-// Envia a evidencia carimbada para o bucket, no caminho {tenant}/checklist/{instanceId}/{arquivo}
-export async function uploadEvidenciaChecklist(
-  file: File,
-  instanceId: string,
-  fieldId: string,
-  coords: Coordenadas
-): Promise<UploadResult> {
+interface DadosTenant {
+  tenantId: string
+  tenantName: string
+  logoUrl: string | null
+}
+
+async function buscarDadosTenant(): Promise<DadosTenant | { erro: string }> {
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { path: '', erro: 'Sessão expirada. Faça login novamente.' }
+  if (!user) return { erro: 'Sessão expirada. Faça login novamente.' }
 
   const { data: perfil } = await supabase
     .from('users')
@@ -98,19 +98,58 @@ export async function uploadEvidenciaChecklist(
     .single()
 
   const tenantId = perfil?.tenant_id
-  if (!tenantId) return { path: '', erro: 'Usuário sem empresa vinculada.' }
+  if (!tenantId) return { erro: 'Usuário sem empresa vinculada.' }
   const tenantName = (perfil as any)?.tenants?.name ?? ''
-
   const logoUrl = await urlLogoEmpresa()
-  const carimbada = await comprimirECarimbar(file, { tenantName, logoUrl, coords })
+
+  return { tenantId, tenantName, logoUrl }
+}
+
+// Envia a evidencia carimbada para o bucket, no caminho {tenant}/checklist/{instanceId}/{arquivo}
+export async function uploadEvidenciaChecklist(
+  file: File,
+  instanceId: string,
+  fieldId: string,
+  coords: Coordenadas
+): Promise<UploadResult> {
+  const dados = await buscarDadosTenant()
+  if ('erro' in dados) return { path: '', erro: dados.erro }
+
+  const carimbada = await comprimirECarimbar(file, { tenantName: dados.tenantName, logoUrl: dados.logoUrl, coords })
 
   if (carimbada.size > TAMANHO_MAX) {
     return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
   }
 
-  const ext = 'jpg'
-  const nome = `${fieldId}-${Date.now()}.${ext}`
-  const caminho = `${tenantId}/checklist/${instanceId}/${nome}`
+  const nome = `${fieldId}-${Date.now()}.jpg`
+  const caminho = `${dados.tenantId}/checklist/${instanceId}/${nome}`
+
+  const { error } = await supabase.storage
+    .from('evidencias')
+    .upload(caminho, carimbada, { contentType: 'image/jpeg', upsert: false })
+
+  if (error) return { path: '', erro: error.message }
+  return { path: caminho }
+}
+
+// Envia uma evidencia carimbada vinculada direto a uma OS (sem checklist),
+// no caminho {tenant}/os/{orderId}/{arquivo}
+export async function uploadEvidenciaOS(
+  file: File,
+  orderId: string,
+  coords: Coordenadas
+): Promise<UploadResult> {
+  const dados = await buscarDadosTenant()
+  if ('erro' in dados) return { path: '', erro: dados.erro }
+
+  const carimbada = await comprimirECarimbar(file, { tenantName: dados.tenantName, logoUrl: dados.logoUrl, coords })
+
+  if (carimbada.size > TAMANHO_MAX) {
+    return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
+  }
+
+  const nome = `${Date.now()}.jpg`
+  const caminho = `${dados.tenantId}/os/${orderId}/${nome}`
 
   const { error } = await supabase.storage
     .from('evidencias')

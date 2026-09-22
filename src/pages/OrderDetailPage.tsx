@@ -6,6 +6,7 @@ import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
 import OrderSignature from '@/components/orders/OrderSignature'
+import OrderEvidences from '@/components/orders/OrderEvidences'
 import { checklistObrigatoriosPendentes } from '@/lib/checklistGuard'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
@@ -194,6 +195,11 @@ export default function OrderDetailPage() {
           <Card className="p-5">
             <p className="text-sm font-medium text-foreground mb-3">Checklist</p>
             <OrderChecklist orderId={order.id} />
+          </Card>
+
+          <Card className="p-5">
+            <p className="text-sm font-medium text-foreground mb-3">Evidências fotográficas</p>
+            <OrderEvidences orderId={order.id} readOnly />
           </Card>
 
           <Card className="p-5">
