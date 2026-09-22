@@ -1,11 +1,31 @@
 import { supabase } from '@/lib/supabase'
+import { urlLogoEmpresa } from '@/lib/uploadLogo'
+import type { Coordenadas } from '@/lib/geolocation'
 
 const LARGURA_MAX = 1600
 const QUALIDADE = 0.8
 const TAMANHO_MAX = 5 * 1024 * 1024 // 5MB
 
-// Comprime a imagem no navegador antes de enviar
-async function comprimirImagem(file: File): Promise<Blob> {
+interface DadosCarimbo {
+  tenantName: string
+  logoUrl: string | null
+  coords: Coordenadas
+}
+
+function carregarImagem(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = url
+  })
+}
+
+// Comprime a imagem e desenha o carimbo (logo + nome da empresa +
+// data/hora + GPS) no mesmo canvas, antes de exportar — só a versão
+// carimbada é guardada, o original nunca sai do navegador.
+async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<Blob> {
   if (!file.type.startsWith('image/')) return file
 
   const bitmap = await createImageBitmap(file)
@@ -20,12 +40,39 @@ async function comprimirImagem(file: File): Promise<Blob> {
   if (!ctx) return file
   ctx.drawImage(bitmap, 0, 0, largura, altura)
 
+  // barra semi-transparente na base, pra garantir contraste com o texto
+  // independente do conteúdo da foto
+  const alturaBarra = Math.max(48, Math.round(altura * 0.14))
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+  ctx.fillRect(0, altura - alturaBarra, largura, alturaBarra)
+
+  let xTexto = 10
+  const logoTamanho = alturaBarra - 12
+  if (dados.logoUrl) {
+    try {
+      const logo = await carregarImagem(dados.logoUrl)
+      const yLogo = altura - alturaBarra + 6
+      ctx.drawImage(logo, xTexto, yLogo, logoTamanho, logoTamanho)
+      xTexto += logoTamanho + 10
+    } catch {
+      // segue sem logo se a imagem falhar ao carregar (ex: CORS, arquivo corrompido)
+    }
+  }
+
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 13px sans-serif'
+  ctx.textBaseline = 'top'
+  const yLinha1 = altura - alturaBarra + 6
+  const yLinha2 = yLinha1 + 17
+  ctx.fillText(dados.tenantName, xTexto, yLinha1)
+
+  ctx.font = '12px sans-serif'
+  const agora = new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const coordsTexto = `${dados.coords.lat.toFixed(6)}, ${dados.coords.lng.toFixed(6)}`
+  ctx.fillText(`${agora} · ${coordsTexto}`, xTexto, yLinha2)
+
   return new Promise((resolve) => {
-    canvas.toBlob(
-      (blob) => resolve(blob ?? file),
-      'image/jpeg',
-      QUALIDADE
-    )
+    canvas.toBlob((blob) => resolve(blob ?? file), 'image/jpeg', QUALIDADE)
   })
 }
 
@@ -34,28 +81,30 @@ export interface UploadResult {
   erro?: string
 }
 
-// Envia a evidencia para o bucket, no caminho {tenant}/checklist/{instanceId}/{arquivo}
+// Envia a evidencia carimbada para o bucket, no caminho {tenant}/checklist/{instanceId}/{arquivo}
 export async function uploadEvidenciaChecklist(
   file: File,
   instanceId: string,
-  fieldId: string
+  fieldId: string,
+  coords: Coordenadas
 ): Promise<UploadResult> {
-  // tenant do usuario logado
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { path: '', erro: 'Sessão expirada. Faça login novamente.' }
 
   const { data: perfil } = await supabase
     .from('users')
-    .select('tenant_id')
+    .select('tenant_id, tenants(name)')
     .eq('id', user.id)
     .single()
 
   const tenantId = perfil?.tenant_id
   if (!tenantId) return { path: '', erro: 'Usuário sem empresa vinculada.' }
+  const tenantName = (perfil as any)?.tenants?.name ?? ''
 
-  const comprimido = await comprimirImagem(file)
+  const logoUrl = await urlLogoEmpresa()
+  const carimbada = await comprimirECarimbar(file, { tenantName, logoUrl, coords })
 
-  if (comprimido.size > TAMANHO_MAX) {
+  if (carimbada.size > TAMANHO_MAX) {
     return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
   }
 
@@ -65,7 +114,7 @@ export async function uploadEvidenciaChecklist(
 
   const { error } = await supabase.storage
     .from('evidencias')
-    .upload(caminho, comprimido, { contentType: 'image/jpeg', upsert: false })
+    .upload(caminho, carimbada, { contentType: 'image/jpeg', upsert: false })
 
   if (error) return { path: '', erro: error.message }
   return { path: caminho }

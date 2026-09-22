@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useIdleTimeout } from '@/hooks/useIdleTimeout'
 import { cn } from '@/lib/utils'
@@ -43,6 +43,11 @@ export default function FieldLayout() {
       </header>
       <main className="px-4 py-5">
         <Outlet />
+        <div className="max-w-lg mx-auto text-center pt-6">
+          <Link to="/privacidade" target="_blank" className="text-xs text-muted-foreground hover:text-foreground transition">
+            Aviso de privacidade
+          </Link>
+        </div>
       </main>
     </div>
   )

@@ -15,6 +15,7 @@ import ChecklistsPage from '@/pages/ChecklistsPage'
 import ChecklistEditorPage from '@/pages/ChecklistEditorPage'
 import ChecklistAvulsosPage from '@/pages/ChecklistAvulsosPage'
 import ConfiguracoesPage from '@/pages/ConfiguracoesPage'
+import AvisoPrivacidadePage from '@/pages/AvisoPrivacidadePage'
 import FieldLayout from '@/components/layout/FieldLayout'
 import MyOrdersPage from '@/pages/field/MyOrdersPage'
 import FieldOrderPage from '@/pages/field/FieldOrderPage'
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
           <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+          <Route path="/privacidade" element={<AvisoPrivacidadePage />} />
 
           {/* Rotas protegidas */}
           <Route
