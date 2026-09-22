@@ -121,7 +121,7 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - Geração de **relatório PDF** com: dados da OS + checklist preenchido + evidências + assinatura — pendente
 
 **Evidências Fotográficas — ✅ concluído (2026-09-22)**
-- Campo para cadastro de evidências em foto na OS (via campo "foto" do checklist)
+- Campo para cadastro de evidências em foto na OS — próprio da OS, **independente de ter checklist** (via campo "foto" do checklist também, quando existir um)
 - **Carimbo automático** em cada foto: logo e nome da empresa, **localização (GPS)**, data e hora
 - Campo de observação aberto, preenchido pelo técnico
 - **GPS capturado automaticamente** do dispositivo, nunca digitado — leitura pontual (`getCurrentPosition`, sem `watchPosition`), nunca em segundo plano

@@ -237,6 +237,24 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
   corretamente na foto (logo+nome+data+GPS visíveis), consentimento
   persistindo, e bloqueio confirmado com permissão de GPS negada
 
+### Extensão — Evidências fotográficas independentes de checklist (2026-09-22)
+- **Achado pelo usuário em produção (OS-0010)**: OS sem checklist
+  associado não tinha nenhum lugar pra anexar foto — o único mecanismo
+  existente era o campo "foto" dentro de um item de checklist
+- Migration 022: tabela `order_evidences` (RLS idêntica a
+  `order_comments`) — foto + observação direto na OS, sem depender de
+  checklist
+- Reaproveita 100% a infra do Bloco B sem duplicar código: mesma função
+  de carimbo (`comprimirECarimbar`), mesmo modal de consentimento,
+  mesmo wrapper de GPS — só uma nova porta de upload
+  (`uploadEvidenciaOS`, path `{tenant}/os/{orderId}/...`)
+- Novo card "Evidências fotográficas" em `FieldOrderPage` (editável) e
+  `OrderDetailPage` (somente leitura), com observação por foto editável
+  e remoção (autor ou admin)
+- Testado ponta a ponta direto na OS-0010 real do usuário: card passou
+  a aparecer, upload+carimbo ok, observação persiste, GPS negado
+  bloqueia igual ao fluxo do checklist, visão admin confirmada
+
 ### Próximos blocos
 - **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura)
 - **D** — Envio (WhatsApp/e-mail) — **pendente de detalhamento técnico**:
@@ -306,6 +324,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 019_f6_assinatura_por_os | orders.require_signature (nullable) — override por OS do padrão do tenant | OK | Pendente | Sim |
 | 020_f6_preferencias_rpc | função atualizar_minhas_preferencias() (SECURITY DEFINER) — corrige usuário sem permissão de UPDATE na própria linha em users | OK | Pendente | Sim |
 | 021_f6_storage_update_policy | policy evidencias_update em storage.objects — corrige "Trocar logo"/re-upload no mesmo path | OK | Pendente | Sim |
+| 022_f6_order_evidences | tabela order_evidences (foto+observação direto na OS, sem depender de checklist) + RLS | OK | Pendente | Sim |
 
 ---
 
@@ -338,6 +357,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 
 *2026-09-22: F6 Bloco A (assinatura digital) CONCLUÍDO e testado ponta a ponta — ver seção 4.3, incluindo extensão de assinatura obrigatória configurável por OS.*
 
-*2026-09-22: F6 Bloco B (carimbo de evidências + LGPD) CONCLUÍDO e testado ponta a ponta — ver seção 4.3. Logo de teste (placeholder) ficou configurada em Configurações — trocar pela logo real da Infoxtec quando quiser. Próximo: Bloco C (PDF).*
+*2026-09-22: F6 Bloco B (carimbo de evidências + LGPD) CONCLUÍDO e testado ponta a ponta — ver seção 4.3. Logo de teste (placeholder) ficou configurada em Configurações — trocar pela logo real da Infoxtec quando quiser.*
+
+*2026-09-22: evidências fotográficas passam a existir direto na OS, independentes de checklist (achado reportado pelo usuário na OS-0010 real) — ver seção 4.3. Também corrigida policy de UPDATE faltante no bucket `evidencias` (afetava "Trocar logo"). Próximo: Bloco C (PDF).*
 
 *2026-09-22: migrations 004–016 reconstruídas/adicionadas e versionadas em `supabase/migrations/` (ver seção 6). Achados de segurança pendentes (token de acesso do Supabase usado nessas migrations, e Personal Access Token do GitHub embutido no remote git da pasta `C:\vluma\atosdev`) — revogar/trocar ambos **ao final de todo o desenvolvimento do MVP**, não antes (decisão do time, para não gerar atrito de credencial a cada sessão de trabalho).*
