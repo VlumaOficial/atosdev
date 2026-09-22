@@ -81,7 +81,8 @@ export default function OrderEvidences({ orderId, readOnly }: { orderId: string;
       await adicionar(file, resultado.coords!)
       setArquivoPendente(null)
     } catch (e: any) {
-      setErro(e?.message ?? 'Falha ao enviar a foto.')
+      setErro((e?.message ?? 'Falha ao enviar a foto.') + ' Se persistir, tente uma foto já salva na galeria em vez da câmera, ou reduza a qualidade da câmera nas configurações do aparelho.')
+      setArquivoPendente(file)
     } finally {
       setEnviando(false)
       if (inputRef.current) inputRef.current.value = ''

@@ -29,13 +29,18 @@ async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<Blob
   if (!file.type.startsWith('image/')) return file
 
   // Fotos de câmera de celular podem vir em resolução muito alta
-  // (12MP+). Decodificar o arquivo inteiro em memória antes de
-  // redimensionar pode estourar a memória em aparelhos mais fracos.
-  // Acima de 2MB, pede pro navegador já decodificar redimensionado
-  // (um passo só, sem nunca materializar a imagem em resolução total).
-  const bitmap = file.size > 2 * 1024 * 1024
-    ? await createImageBitmap(file, { resizeWidth: LARGURA_MAX, resizeQuality: 'medium' })
-    : await createImageBitmap(file)
+  // (12MP+) mesmo quando o arquivo em si não é grande em bytes (câmeras
+  // modernas comprimem bem) — então NÃO dá pra decidir pelo tamanho do
+  // arquivo se é seguro decodificar inteiro. Sempre pede pro navegador
+  // já decodificar redimensionado (um passo só, nunca materializa a
+  // imagem em resolução total em memória). Se o navegador não suportar
+  // esses parâmetros, cai pro modo normal (mais lento, mas funcional).
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await createImageBitmap(file, { resizeWidth: LARGURA_MAX, resizeQuality: 'medium' })
+  } catch {
+    bitmap = await createImageBitmap(file)
+  }
 
   const escala = Math.min(1, LARGURA_MAX / bitmap.width)
   const largura = Math.round(bitmap.width * escala)

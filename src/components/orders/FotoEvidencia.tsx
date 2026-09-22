@@ -57,7 +57,8 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
         setArquivoPendente(null)
       }
     } catch {
-      setErro('Falha ao enviar a foto.')
+      setErro('Falha ao enviar a foto. Se persistir, tente uma foto já salva na galeria em vez da câmera, ou reduza a qualidade da câmera nas configurações do aparelho.')
+      setArquivoPendente(file)
     } finally {
       setEnviando(false)
       if (inputRef.current) inputRef.current.value = ''
