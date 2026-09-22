@@ -135,6 +135,8 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - WhatsApp disparado **pelo número da empresa** (instância Z-API/Evolution configurada **por tenant**)
 - E-mail enviado do **remetente próprio de cada empresa** (SMTP configurável por tenant)
 
+> **Refinamento (set/2026) — pendente de detalhamento técnico antes do Bloco D:** por ser SaaS multi-tenant, WhatsApp não pode ser uma credencial fixa da VLUMA. Cada tenant precisa de um **painel próprio de configuração** onde: (1) insere seus dados (remetente de e-mail/SMTP), (2) conecta sua **própria instância WhatsApp** via **leitura de QR Code** (fluxo de criação de instância + pareamento da Evolution API), e (3) **liga/desliga o canal WhatsApp** conforme o negócio dele precisa (nem todo cliente vai querer usar). Ou seja: o canal de envio é **configurável e opcional por tenant**, não um toggle binário só de "permitir/bloquear" do Admin VLUMA — isso é adicional ao controle de bloqueio já descrito abaixo, não substitui. Detalhar esse fluxo (gestão de instâncias Evolution multi-tenant, onde ficam as credenciais, reconexão se cair) antes de iniciar o Bloco D.
+
 **Painel do Gestor — Disparo Manual**
 - Gestor dispara WhatsApp informando o número na hora
 - Gestor envia e-mail (destinatário, assunto, texto) **anexando uma ou várias OS**
