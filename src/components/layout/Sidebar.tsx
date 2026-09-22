@@ -7,7 +7,7 @@ import VlumaSignature from '@/components/brand/VlumaSignature'
 import type { UserRole } from '@/types'
 import {
   LayoutDashboard, ClipboardList, Users, Building2, MapPin,
-  Settings, LogOut, Menu, X, ShieldCheck, Wrench, CheckSquare,
+  Settings, LogOut, Menu, X, ShieldCheck, Wrench, CheckSquare, ClipboardCheck,
 } from 'lucide-react'
 
 interface NavItem {
@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard, roles: ['super_admin','admin','gestor','tecnico'] },
   { label: 'Ordens de Serviço', to: '/os', icon: ClipboardList, roles: ['super_admin','admin','gestor','tecnico'] },
   { label: 'Checklists', to: '/checklists', icon: CheckSquare, roles: ['super_admin','admin','gestor'] },
+  { label: 'Checklists avulsos', to: '/checklists/avulsos', icon: ClipboardCheck, roles: ['super_admin','admin','gestor'] },
   { label: 'Técnicos', to: '/tecnicos', icon: Wrench, roles: ['super_admin','admin','gestor'] },
   { label: 'Clientes', to: '/clientes', icon: Building2, roles: ['super_admin','admin','gestor'] },
   { label: 'Unidades', to: '/locais', icon: MapPin, roles: ['super_admin','admin','gestor'] },
@@ -64,14 +65,19 @@ export default function Sidebar() {
       )}
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {visibleItems.map(item => (
-          <NavLink key={item.to} to={item.to} end={item.to === '/'}
-            onClick={() => setMobileOpen(false)}
-            className={({ isActive }) => cn('vluma-sidebar-item', isActive && 'active')}>
-            <item.icon size={16} className="flex-shrink-0" />
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
+        {visibleItems.map(item => {
+          // evita destacar "Checklists" junto com um item-irmão mais específico
+          // (ex: /checklists/avulsos não deve ativar o link /checklists)
+          const hasSpecificSibling = visibleItems.some(o => o.to !== item.to && o.to.startsWith(item.to + '/'))
+          return (
+            <NavLink key={item.to} to={item.to} end={item.to === '/' || hasSpecificSibling}
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) => cn('vluma-sidebar-item', isActive && 'active')}>
+              <item.icon size={16} className="flex-shrink-0" />
+              <span>{item.label}</span>
+            </NavLink>
+          )
+        })}
       </nav>
 
       <div className="px-3 py-4 border-t border-border">

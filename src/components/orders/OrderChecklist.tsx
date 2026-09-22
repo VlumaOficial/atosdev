@@ -1,79 +1,11 @@
 import { useState } from 'react'
 import { useOrderChecklist } from '@/hooks/useOrderChecklist'
 import { useAuth } from '@/hooks/useAuth'
-import FotoEvidencia from '@/components/orders/FotoEvidencia'
+import { temResposta } from '@/components/checklists/checklistFields'
+import ChecklistFillList from '@/components/checklists/ChecklistFillList'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
-import { ListChecks, CheckCircle2, Circle, Trash2, X, ChevronDown, ChevronRight } from 'lucide-react'
-
-function temResposta(value: any): boolean {
-  if (value === null || value === undefined) return false
-  if (typeof value === 'object') {
-    return Object.values(value).some(v => Array.isArray(v) ? v.length > 0 : (v !== null && v !== undefined && v !== ''))
-  }
-  return value !== ''
-}
-
-function FieldInput({ field, value, onChange, instanceId, readOnly }: { field: any; value: any; onChange: (v: any) => void; instanceId: string; readOnly?: boolean }) {
-  const inputCls = "w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
-
-  if (field.type === 'sim_nao') {
-    return (
-      <div className="flex gap-2">
-        {['Sim', 'Não'].map(op => (
-          <button key={op} type="button" onClick={() => onChange(op)}
-            className={'px-4 py-1.5 rounded-md text-sm border transition ' + (value === op ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground')}>
-            {op}
-          </button>
-        ))}
-      </div>
-    )
-  }
-  if (field.type === 'texto') {
-    return <textarea value={value ?? ''} onChange={e => onChange(e.target.value)} rows={2} placeholder="Resposta..." className={inputCls + ' resize-none'} />
-  }
-  if (field.type === 'numero') {
-    return <input type="number" value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder="0" className={inputCls} />
-  }
-  if (field.type === 'escolha_unica') {
-    return (
-      <div className="space-y-1.5">
-        {field.options.map((op: string, i: number) => (
-          <button key={i} type="button" onClick={() => onChange(op)}
-            className={'w-full text-left px-3 py-2 rounded-md text-sm border transition flex items-center gap-2 ' + (value === op ? 'border-primary text-foreground' : 'border-border text-muted-foreground hover:text-foreground')}>
-            {value === op ? <CheckCircle2 size={15} className="text-primary" /> : <Circle size={15} />} {op}
-          </button>
-        ))}
-      </div>
-    )
-  }
-  if (field.type === 'escolha_multipla') {
-    const arr: string[] = Array.isArray(value) ? value : []
-    function toggle(op: string) {
-      if (arr.includes(op)) onChange(arr.filter(x => x !== op))
-      else onChange([...arr, op])
-    }
-    return (
-      <div className="space-y-1.5">
-        {field.options.map((op: string, i: number) => (
-          <button key={i} type="button" onClick={() => toggle(op)}
-            className={'w-full text-left px-3 py-2 rounded-md text-sm border transition flex items-center gap-2 ' + (arr.includes(op) ? 'border-primary text-foreground' : 'border-border text-muted-foreground hover:text-foreground')}>
-            <span className={'w-4 h-4 rounded border flex items-center justify-center ' + (arr.includes(op) ? 'bg-primary border-primary' : 'border-border')}>{arr.includes(op) && <X size={11} className="text-primary-foreground" />}</span> {op}
-          </button>
-        ))}
-      </div>
-    )
-  }
-  if (field.type === 'foto') {
-    return <FotoEvidencia instanceId={instanceId} fieldId={field.id} value={value ?? null} onChange={onChange} readOnly={readOnly} />
-  }
-  return null
-}
-
-const FIELD_LABELS: Record<string, string> = {
-  sim_nao: 'Sim / Não', texto: 'Observação', numero: 'Número',
-  escolha_unica: 'Escolha uma', escolha_multipla: 'Selecione', foto: 'Foto',
-}
+import { ListChecks, Trash2 } from 'lucide-react'
 
 export default function OrderChecklist({ orderId }: { orderId: string }) {
   const { checklist, loading, desassociar, salvarResposta, obrigatoriosPendentes, concluir, reabrir } = useOrderChecklist(orderId)
@@ -168,27 +100,16 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
       </div>
 
       <Modal open={preencherAberto} onOpenChange={setPreencherAberto} title={checklist.title} description={concluido ? 'Checklist concluído.' : 'Responda os itens abaixo.'}>
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-          {checklist.items.map(it => (
-            <div key={it.id} className="border-b border-border pb-4 last:border-0">
-              <button type="button" onClick={() => setItensAbertos(prev => ({ ...prev, [it.id]: !prev[it.id] }))}
-                className="w-full flex items-center gap-2 text-left mb-2">
-                {itensAbertos[it.id] ? <ChevronDown size={15} className="text-muted-foreground flex-shrink-0" /> : <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />}
-                <span className="text-sm font-medium text-foreground flex-1 min-w-0">
-                  {it.label} {it.is_required && <span className="text-red-400">*</span>}
-                </span>
-                {temResposta(respLocal[it.id]) && <CheckCircle2 size={15} className="text-green-400 flex-shrink-0" />}
-              </button>
-              <div className={'space-y-3 pl-6 ' + (itensAbertos[it.id] ? '' : 'hidden')}>
-                {it.fields.map(f => (
-                  <div key={f.id}>
-                    <p className="text-xs text-muted-foreground mb-1">{FIELD_LABELS[f.type] ?? f.type}</p>
-                    <FieldInput field={f} value={respLocal[it.id]?.[f.id]} onChange={(v) => setCampo(it.id, f.id, v)} instanceId={checklist.instanceId} readOnly={concluido} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+        <div className="max-h-[60vh] overflow-y-auto pr-1">
+          <ChecklistFillList
+            items={checklist.items}
+            respostas={respLocal}
+            itensAbertos={itensAbertos}
+            onToggleItem={(itemId) => setItensAbertos(prev => ({ ...prev, [itemId]: !prev[itemId] }))}
+            onCampo={setCampo}
+            instanceId={checklist.instanceId}
+            readOnly={concluido}
+          />
         </div>
         {!concluido && (
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-border mt-2">

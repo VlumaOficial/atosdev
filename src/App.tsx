@@ -13,9 +13,12 @@ import OrdersPage from '@/pages/OrdersPage'
 import OrderDetailPage from '@/pages/OrderDetailPage'
 import ChecklistsPage from '@/pages/ChecklistsPage'
 import ChecklistEditorPage from '@/pages/ChecklistEditorPage'
+import ChecklistAvulsosPage from '@/pages/ChecklistAvulsosPage'
 import FieldLayout from '@/components/layout/FieldLayout'
 import MyOrdersPage from '@/pages/field/MyOrdersPage'
 import FieldOrderPage from '@/pages/field/FieldOrderPage'
+import MyChecklistsPage from '@/pages/field/MyChecklistsPage'
+import FieldChecklistPage from '@/pages/field/FieldChecklistPage'
 
 // Placeholders para fases futuras
 function PlaceholderPage({ title }: { title: string }) {
@@ -62,6 +65,14 @@ export default function App() {
             {/* F5 — Checklists */}
             <Route path="checklists" element={<ChecklistsPage />} />
             <Route path="checklists/novo" element={<ChecklistEditorPage />} />
+            <Route
+              path="checklists/avulsos"
+              element={
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'gestor']}>
+                  <ChecklistAvulsosPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="checklists/:id" element={<ChecklistEditorPage />} />
 
             {/* F2 — Clientes e Locais */}
@@ -109,18 +120,8 @@ export default function App() {
           >
             <Route path="campo" element={<MyOrdersPage />} />
             <Route path="campo/os/:id" element={<FieldOrderPage />} />
-          </Route>
-
-          {/* F4 — App de Campo (Técnico) — layout mobile dedicado */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <FieldLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="campo" element={<MyOrdersPage />} />
-            <Route path="campo/os/:id" element={<FieldOrderPage />} />
+            <Route path="campo/checklists" element={<MyChecklistsPage />} />
+            <Route path="campo/checklists/:id" element={<FieldChecklistPage />} />
           </Route>
 
           {/* Fallback */}

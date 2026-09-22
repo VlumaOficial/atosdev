@@ -1,7 +1,13 @@
-import { Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useIdleTimeout } from '@/hooks/useIdleTimeout'
-import { LogOut } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { LogOut, ClipboardList, ClipboardCheck } from 'lucide-react'
+
+const TABS = [
+  { to: '/campo', label: 'Atendimentos', icon: ClipboardList },
+  { to: '/campo/checklists', label: 'Checklists', icon: ClipboardCheck },
+]
 
 export default function FieldLayout() {
   const { user, signOut } = useAuth()
@@ -22,6 +28,18 @@ export default function FieldLayout() {
             </button>
           </div>
         </div>
+        <nav className="max-w-lg mx-auto px-4 flex items-center gap-1 border-t border-border">
+          {TABS.map(tab => (
+            <NavLink key={tab.to} to={tab.to} end
+              className={({ isActive }) => cn(
+                'flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition',
+                isActive ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-foreground'
+              )}>
+              <tab.icon size={15} />
+              {tab.label}
+            </NavLink>
+          ))}
+        </nav>
       </header>
       <main className="px-4 py-5">
         <Outlet />
