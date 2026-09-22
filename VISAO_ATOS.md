@@ -82,7 +82,7 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 | **F3** | Ordens de Serviço (visão do Gestor) | Sim | ✅ Concluída |
 | **F4** | App de Campo (visão do Técnico, mobile) | Sim | ✅ Concluída |
 | **F5** | Checklists dinâmicos de verificação | Sim | ✅ Concluída |
-| **F6** | Assinatura digital, evidências, PDF e envio | Sim | ⏳ Pendente |
+| **F6** | Assinatura digital, evidências, PDF e envio | Sim | 🔄 Em andamento (Bloco A feito) |
 | **F7** | Painel gerencial e indicadores | Sim | ⏳ Pendente |
 | **F8** | Planos, Asaas, cobrança, trial | Não | 📋 Backlog |
 | **F9** | Integração GLPI | Não | 📋 Backlog |
@@ -113,12 +113,12 @@ Roteiros de verificação **configuráveis**, independentes de serviço específ
 
 Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um modelo na criação/edição da ordem) e checklist **avulso**, sem OS — vínculo opcional a Cliente/Unidade, atribuível a um ou mais técnicos, com recorrência como etiqueta informativa (ex: "mensal"), acessível numa aba própria no app de campo. Rastreabilidade completa das respostas (histórico versionado por trigger) e evidências fotográficas com compressão já implementadas; carimbo (logo/GPS/data na foto) fica para a F6.
 
-### F6 — Assinatura Digital, Evidências e Envio ⏳
+### F6 — Assinatura Digital, Evidências e Envio 🔄 (EM ANDAMENTO)
 **A fase mais rica do MVP.** Definições refinadas:
 
 **Assinatura e PDF**
-- Captura de assinatura digital do cliente **via toque na tela** do celular do técnico
-- Geração de **relatório PDF** com: dados da OS + checklist preenchido + evidências + assinatura
+- Captura de assinatura digital do cliente **via toque na tela** do celular do técnico — **✅ concluído (2026-09-22)**, obrigatoriedade configurável por tenant (Configurações)
+- Geração de **relatório PDF** com: dados da OS + checklist preenchido + evidências + assinatura — pendente
 
 **Evidências Fotográficas**
 - Campo para cadastro de evidências em foto na OS

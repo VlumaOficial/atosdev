@@ -41,7 +41,7 @@
 | F3 | Ordens de Serviço (gestor) | MVP | Feito |
 | F4 | App de campo (técnico, mobile) | MVP | Feito |
 | F5 | Checklists dinâmicos | MVP | Feito |
-| F6 | Assinatura digital + PDF + WhatsApp | MVP | Pendente |
+| F6 | Assinatura digital + PDF + WhatsApp | MVP | Em andamento (Bloco A feito) |
 | F7 | Painel gerencial | MVP | Pendente |
 | — | Tenant Infoxtec criado manualmente | MVP | Feito |
 | F8 | Planos, Asaas, cobrança, trial | Backlog | — |
@@ -164,6 +164,43 @@ Nota: "Locais" foi renomeado para "Unidades" na UI (rota /locais e tabela locati
 
 ---
 
+## 4.3. Estado detalhado da F6 (Assinatura, evidências, PDF, envio) — EM ANDAMENTO
+
+F6 dividida em blocos (A a E) para não planejar/entregar tudo de uma vez —
+ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
+
+### Bloco A — Assinatura digital — CONCLUÍDO (2026-09-22)
+- Migration 017: `orders.signature_path/signer_name/signed_at`,
+  `tenants.require_signature_to_complete` (default false)
+- Migration 018: função `atualizar_config_tenant()` (SECURITY DEFINER) —
+  **achado testando**: policy de RLS de `tenants` só libera UPDATE pra
+  `super_admin`; um `admin` normal não conseguia salvar Configurações
+  (silenciosamente, sem erro — RLS filtra a linha, não retorna 403).
+  Corrigido com função seção de UPDATE controlado, sem abrir policy geral
+  (evita admin poder editar `plan`/`status`, campos comerciais)
+- Componente `OrderSignature` (src/components/orders/) — captura por
+  toque/mouse com `signature_pad`, aparece em `OrderDetailPage` (admin,
+  só leitura) e `FieldOrderPage` (técnico, onde captura de fato)
+- Armazenamento reaproveita o bucket `evidencias` já existente (F5),
+  path `{tenant}/assinaturas/{orderId}.png`
+- Primeira versão real da tela **Configurações** (era só placeholder):
+  toggle "Exigir assinatura do cliente para concluir OS", por tenant
+- Evento `signed` na linha do tempo da OS
+- Testado ponta a ponta com Playwright: bloqueio de conclusão sem
+  assinatura quando o toggle está ligado, captura + conclusão com
+  assinatura, visualização no painel admin, e regressão (toggle
+  desligado = comportamento antigo preservado)
+
+### Próximos blocos
+- **B** — Evidências fotográficas da OS com carimbo (logo/GPS/data) + LGPD
+- **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura)
+- **D** — Envio (WhatsApp/e-mail) — **pendente de detalhamento técnico**:
+  painel multi-tenant com QR Code para conectar instância Evolution
+  própria de cada cliente (ver nota em `VISAO_ATOS.md`, seção F6)
+- **E** — Painel do gestor (disparo manual) + controle admin de bloqueio
+
+---
+
 ## 5. Padrões do Projeto (NÃO violar)
 
 ### Listagem
@@ -219,6 +256,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 014_f5_evidencias_storage | bucket privado "evidencias" + RLS de storage.objects por tenant | OK | Pendente | Sim (reconstruída) |
 | 015_keepalive | tabela keepalive_ping (anti-suspensão Supabase free) | OK | Pendente | Sim (reconstruída) |
 | 016_f5_checklist_avulso | client_id/location_id nullable em checklist_instances (checklist sem OS) | OK | Pendente | Sim |
+| 017_f6_assinatura | orders.signature_path/signer_name/signed_at, tenants.require_signature_to_complete | OK | Pendente | Sim |
+| 018_f6_config_tenant_rpc | função atualizar_config_tenant() (SECURITY DEFINER) — corrige admin sem permissão de UPDATE em tenants | OK | Pendente | Sim |
 
 ---
 
@@ -247,6 +286,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 
 ---
 
-*Última atualização: F5 CONCLUÍDA (checklists dinâmicos completos — modelos, preenchimento vinculado à OS, rastreabilidade de respostas, evidências fotográficas, e checklist avulso sem OS com vínculo opcional a cliente/unidade e atribuição a múltiplos técnicos). Testado ponta a ponta na URL pública. DECISÃO: completar MVP (F6-F7) antes de subir para PRD. Próximo: F6 — Assinatura digital, evidências com carimbo GPS, PDF e envio.*
+*Última atualização: F5 CONCLUÍDA (checklists dinâmicos completos — modelos, preenchimento vinculado à OS, rastreabilidade de respostas, evidências fotográficas, e checklist avulso sem OS com vínculo opcional a cliente/unidade e atribuição a múltiplos técnicos). Testado ponta a ponta na URL pública. DECISÃO: completar MVP (F6-F7) antes de subir para PRD.*
+
+*2026-09-22: F6 Bloco A (assinatura digital) CONCLUÍDO e testado ponta a ponta — ver seção 4.3. Próximo: Bloco B (evidências fotográficas com carimbo GPS/logo/data) ou Bloco C (PDF), a decidir.*
 
 *2026-09-22: migrations 004–016 reconstruídas/adicionadas e versionadas em `supabase/migrations/` (ver seção 6). Achados de segurança pendentes (token de acesso do Supabase usado nessas migrations, e Personal Access Token do GitHub embutido no remote git da pasta `C:\vluma\atosdev`) — revogar/trocar ambos **ao final de todo o desenvolvimento do MVP**, não antes (decisão do time, para não gerar atrito de credencial a cada sessão de trabalho).*
