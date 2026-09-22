@@ -46,7 +46,9 @@ export default function ChecklistAvulsosPage() {
   const [deleting, setDeleting] = useState(false)
 
   const clientOptions = useMemo(() => clients.map(c => ({ value: c.id, label: c.name })), [clients])
-  const locationOptions = useMemo(() => formLocations.map(l => ({ value: l.id, label: l.name })), [formLocations])
+  // useLocations(undefined) busca TODAS as unidades do tenant — só mostramos
+  // opções depois que um cliente é escolhido (mesmo comportamento do placeholder)
+  const locationOptions = useMemo(() => (form.client_id ? formLocations.map(l => ({ value: l.id, label: l.name })) : []), [formLocations, form.client_id])
   const templateOptions = useMemo(() => templates.filter(t => t.is_active).map(t => ({ value: t.id, label: t.name })), [templates])
   const technicianOptions = useMemo(() => technicians.filter(t => t.active).map(t => ({ value: t.id, label: t.name })), [technicians])
 
