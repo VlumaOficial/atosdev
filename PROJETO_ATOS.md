@@ -258,14 +258,25 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
   memória" ao anexar foto. Causa: `createImageBitmap(file)` decodifica
   a foto em **resolução total** antes de redimensionar — uma foto de
   câmera moderna (12MP+) pode estourar memória em aparelhos mais fracos
-  nesse passo, antes mesmo de chegar no canvas de compressão. Corrigido
-  em `uploadEvidencia.ts`/`uploadLogo.ts`: acima de 2MB, usa
-  `createImageBitmap(file, { resizeWidth, resizeQuality })` — decodifica
-  já redimensionado, num passo só, nunca materializando a imagem em
-  resolução total; `bitmap.close()` libera a memória assim que copiado
-  pro canvas. Sem migration, só código. Testado com foto sintética de
-  14MB/4032×3024 (mesma ordem de grandeza de uma foto real de celular)
-  em perfil mobile emulado — sem erro.
+  nesse passo, antes mesmo de chegar no canvas de compressão.
+  **Primeira correção (insuficiente)**: só aplicava o decode
+  redimensionado quando `file.size > 2MB`. **Usuário reportou que o
+  erro persistiu** testando de novo com a câmera real — gap
+  encontrado: câmeras de celular comprimem bem, uma foto de 12MP+ pode
+  sair com menos de 2MB em bytes, então o gate por tamanho de arquivo
+  simplesmente não disparava para fotos assim, e o decode continuava
+  em resolução total. **Correção final**: removido o gate — SEMPRE usa
+  `createImageBitmap(file, { resizeWidth, resizeQuality })` (com
+  fallback pro modo normal se o navegador não suportar), já que o
+  tamanho do arquivo não é indicador confiável de resolução.
+  `bitmap.close()` libera a memória assim que copiado pro canvas. Sem
+  migration, só código. Testado com duas fotos sintéticas em perfil
+  mobile emulado: 14MB/4032×3024 (arquivo grande) e 218KB/4032×3024
+  bem comprimida (o cenário exato que escapava da primeira correção) —
+  ambas sem erro. **Limitação da verificação**: o ambiente de teste é
+  Chromium desktop headless, não reproduz de verdade a restrição de
+  memória de um aparelho físico específico — validação final depende
+  de teste no celular real do usuário.
 
 ### Próximos blocos
 - **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura)
