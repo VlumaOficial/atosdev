@@ -15,10 +15,7 @@ export default function ConfiguracoesPage() {
     setSaving(true)
     setErro('')
     try {
-      const { error } = await supabase
-        .from('tenants')
-        .update({ require_signature_to_complete: valor })
-        .eq('id', tenant.id)
+      const { error } = await supabase.rpc('atualizar_config_tenant', { p_require_signature: valor })
       if (error) throw error
       await refreshTenant()
     } catch (err: any) {
