@@ -254,6 +254,18 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
 - Testado ponta a ponta direto na OS-0010 real do usuário: card passou
   a aparecer, upload+carimbo ok, observação persiste, GPS negado
   bloqueia igual ao fluxo do checklist, visão admin confirmada
+- **Achado pelo usuário testando por celular real**: erro de "falta de
+  memória" ao anexar foto. Causa: `createImageBitmap(file)` decodifica
+  a foto em **resolução total** antes de redimensionar — uma foto de
+  câmera moderna (12MP+) pode estourar memória em aparelhos mais fracos
+  nesse passo, antes mesmo de chegar no canvas de compressão. Corrigido
+  em `uploadEvidencia.ts`/`uploadLogo.ts`: acima de 2MB, usa
+  `createImageBitmap(file, { resizeWidth, resizeQuality })` — decodifica
+  já redimensionado, num passo só, nunca materializando a imagem em
+  resolução total; `bitmap.close()` libera a memória assim que copiado
+  pro canvas. Sem migration, só código. Testado com foto sintética de
+  14MB/4032×3024 (mesma ordem de grandeza de uma foto real de celular)
+  em perfil mobile emulado — sem erro.
 
 ### Próximos blocos
 - **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura)
