@@ -28,7 +28,15 @@ function carregarImagem(url: string): Promise<HTMLImageElement> {
 async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<Blob> {
   if (!file.type.startsWith('image/')) return file
 
-  const bitmap = await createImageBitmap(file)
+  // Fotos de câmera de celular podem vir em resolução muito alta
+  // (12MP+). Decodificar o arquivo inteiro em memória antes de
+  // redimensionar pode estourar a memória em aparelhos mais fracos.
+  // Acima de 2MB, pede pro navegador já decodificar redimensionado
+  // (um passo só, sem nunca materializar a imagem em resolução total).
+  const bitmap = file.size > 2 * 1024 * 1024
+    ? await createImageBitmap(file, { resizeWidth: LARGURA_MAX, resizeQuality: 'medium' })
+    : await createImageBitmap(file)
+
   const escala = Math.min(1, LARGURA_MAX / bitmap.width)
   const largura = Math.round(bitmap.width * escala)
   const altura = Math.round(bitmap.height * escala)
@@ -39,6 +47,7 @@ async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<Blob
   const ctx = canvas.getContext('2d')
   if (!ctx) return file
   ctx.drawImage(bitmap, 0, 0, largura, altura)
+  bitmap.close()
 
   // barra semi-transparente na base, pra garantir contraste com o texto
   // independente do conteúdo da foto

@@ -5,7 +5,10 @@ const LARGURA_MAX = 400
 // Redimensiona a logo antes de subir — ela vai ser embutida em toda
 // foto carimbada, então precisa ser pequena.
 async function redimensionarLogo(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file)
+  // mesma proteção de memória do carimbo de evidências (uploadEvidencia.ts)
+  const bitmap = file.size > 2 * 1024 * 1024
+    ? await createImageBitmap(file, { resizeWidth: LARGURA_MAX, resizeQuality: 'medium' })
+    : await createImageBitmap(file)
   const escala = Math.min(1, LARGURA_MAX / bitmap.width)
   const largura = Math.round(bitmap.width * escala)
   const altura = Math.round(bitmap.height * escala)
@@ -16,6 +19,7 @@ async function redimensionarLogo(file: File): Promise<Blob> {
   const ctx = canvas.getContext('2d')
   if (!ctx) return file
   ctx.drawImage(bitmap, 0, 0, largura, altura)
+  bitmap.close()
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob ?? file), 'image/png')
