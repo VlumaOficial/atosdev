@@ -123,7 +123,7 @@ export default function OrderDetailPage() {
         setStatusError(`Conclua o checklist obrigatório antes de finalizar a OS (${pendentes} ${pendentes === 1 ? 'item pendente' : 'itens pendentes'}).`)
         return
       }
-      if (tenant?.require_signature_to_complete && !order?.signature_path) {
+      if ((order?.require_signature ?? tenant?.require_signature_to_complete) && !order?.signature_path) {
         setStatusError('Colete a assinatura do cliente antes de finalizar a OS.')
         return
       }
@@ -198,6 +198,9 @@ export default function OrderDetailPage() {
 
           <Card className="p-5">
             <p className="text-sm font-medium text-foreground mb-3">Assinatura</p>
+            {(order.require_signature ?? tenant?.require_signature_to_complete) && !order.signature_path && (
+              <p className="text-xs text-amber-400 mb-2">Obrigatória para concluir esta OS</p>
+            )}
             <OrderSignature orderId={order.id} signaturePath={order.signature_path} signerName={order.signer_name} readOnly />
           </Card>
 

@@ -14,7 +14,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Combobox } from '@/components/ui/combobox'
 import { ClipboardList, Plus, Pencil, Building2, MapPin, Wrench, LayoutGrid, List } from 'lucide-react'
 
-const emptyForm: OrderInput = { client_id: '', location_id: '', technician_id: '', title: '', description: '', priority: 'normal' }
+const emptyForm: OrderInput = { client_id: '', location_id: '', technician_id: '', title: '', description: '', priority: 'normal', require_signature: null }
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
@@ -46,6 +46,22 @@ const priorityOptions = [
   { value: 'alta', label: 'Alta' },
   { value: 'urgente', label: 'Urgente' },
 ]
+
+const signatureOptions = [
+  { value: '', label: 'Padrão do tenant' },
+  { value: 'sim', label: 'Exigir assinatura' },
+  { value: 'nao', label: 'Não exigir' },
+]
+function requireSignatureParaStr(v: boolean | null | undefined): string {
+  if (v === true) return 'sim'
+  if (v === false) return 'nao'
+  return ''
+}
+function strParaRequireSignature(v: string): boolean | null {
+  if (v === 'sim') return true
+  if (v === 'nao') return false
+  return null
+}
 
 export default function OrdersPage() {
   const navigate = useNavigate()
@@ -121,6 +137,7 @@ export default function OrdersPage() {
       title: o.title,
       description: o.description ?? '',
       priority: o.priority,
+      require_signature: o.require_signature,
     })
     // carrega o checklist atual da OS (um por OS) e pre-seleciona no campo
     const { data: inst } = await supabase
@@ -346,6 +363,10 @@ export default function OrdersPage() {
             <div>
               <Label htmlFor="priority">Prioridade</Label>
               <Combobox id="priority" options={priorityOptions} value={form.priority} onChange={v => setForm({ ...form, priority: v as OrderPriority })} placeholder="Prioridade" searchPlaceholder="Buscar..." emptyText="—" />
+            </div>
+            <div>
+              <Label htmlFor="require-signature">Assinatura obrigatória</Label>
+              <Combobox id="require-signature" options={signatureOptions} value={requireSignatureParaStr(form.require_signature)} onChange={v => setForm({ ...form, require_signature: strParaRequireSignature(v) })} placeholder="Padrão do tenant" searchPlaceholder="Buscar..." emptyText="—" />
             </div>
           </div>
           <div>

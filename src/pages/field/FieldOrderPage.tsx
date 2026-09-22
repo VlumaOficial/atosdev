@@ -113,7 +113,7 @@ export default function FieldOrderPage() {
         setModalError(`Conclua o checklist obrigatório antes de finalizar (${pendentes} ${pendentes === 1 ? 'item pendente' : 'itens pendentes'}).`)
         return
       }
-      if (tenant?.require_signature_to_complete && !order?.signature_path) {
+      if ((order?.require_signature ?? tenant?.require_signature_to_complete) && !order?.signature_path) {
         setModalError('Colete a assinatura do cliente antes de finalizar o atendimento.')
         return
       }
@@ -186,6 +186,9 @@ export default function FieldOrderPage() {
 
       <Card className="p-4 mb-4">
         <p className="text-sm font-medium text-foreground mb-3">Assinatura do cliente</p>
+        {(order.require_signature ?? tenant?.require_signature_to_complete) && !order.signature_path && (
+          <p className="text-xs text-amber-400 mb-2">Obrigatória para concluir este atendimento</p>
+        )}
         <OrderSignature
           orderId={order.id}
           signaturePath={order.signature_path}

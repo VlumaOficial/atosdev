@@ -26,6 +26,7 @@ export interface Order {
   signature_path: string | null
   signer_name: string | null
   signed_at: string | null
+  require_signature: boolean | null
   created_at: string
   client?: { id: string; name: string } | null
   location?: { id: string; name: string; address?: string | null; city?: string | null; state?: string | null } | null
@@ -39,6 +40,7 @@ export interface OrderInput {
   title: string
   description?: string | null
   priority: OrderPriority
+  require_signature?: boolean | null
 }
 
 const SELECT = '*, client:clients(id, name), location:locations(id, name), technician:users!orders_technician_id_fkey(id, name)'
@@ -77,6 +79,7 @@ export function useOrders() {
       title: input.title,
       description: input.description || null,
       priority: input.priority,
+      require_signature: input.require_signature ?? null,
       created_by: user?.id ?? null,
     }
     const { data: created, error } = await supabase.from('orders').insert(payload).select('id').single()
