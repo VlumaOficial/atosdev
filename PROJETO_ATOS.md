@@ -225,6 +225,14 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
   também `useViewPreference.ts`, preexistente). Migration 020: função
   `atualizar_minhas_preferencias()` (SECURITY DEFINER, restrita a
   `id = auth.uid()`)
+- **Achado pelo usuário em produção (DEV)**: "Trocar logo" quebrava com
+  "new row violates row-level security policy" — o bucket `evidencias`
+  (migration 014) só tinha policies de SELECT/INSERT/DELETE, faltava
+  UPDATE. Upload com `upsert:true` (logo, e também a assinatura em
+  `uploadSignature.ts`) faz UPDATE quando o arquivo já existe no path —
+  funcionava na primeira vez, quebrava da segunda em diante. Migration
+  021 adiciona a policy `evidencias_update`. Só policy, sem mudança de
+  código — re-testado trocando a logo duas vezes seguidas, confirmado ok
 - Testado ponta a ponta: upload de logo, carimbo aparecendo
   corretamente na foto (logo+nome+data+GPS visíveis), consentimento
   persistindo, e bloqueio confirmado com permissão de GPS negada
@@ -297,6 +305,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 018_f6_config_tenant_rpc | função atualizar_config_tenant() (SECURITY DEFINER) — corrige admin sem permissão de UPDATE em tenants | OK | Pendente | Sim |
 | 019_f6_assinatura_por_os | orders.require_signature (nullable) — override por OS do padrão do tenant | OK | Pendente | Sim |
 | 020_f6_preferencias_rpc | função atualizar_minhas_preferencias() (SECURITY DEFINER) — corrige usuário sem permissão de UPDATE na própria linha em users | OK | Pendente | Sim |
+| 021_f6_storage_update_policy | policy evidencias_update em storage.objects — corrige "Trocar logo"/re-upload no mesmo path | OK | Pendente | Sim |
 
 ---
 
