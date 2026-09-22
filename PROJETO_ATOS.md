@@ -191,6 +191,16 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
   assinatura, visualização no painel admin, e regressão (toggle
   desligado = comportamento antigo preservado)
 
+### Extensão — Assinatura obrigatória por OS (2026-09-22)
+- Migration 019: `orders.require_signature` (nullable) — `null` = usa o
+  padrão do tenant, `true`/`false` força exigir/não exigir nessa OS
+  específica, independente do toggle em Configurações
+- Combobox "Assinatura obrigatória" no modal de criar/editar OS
+  (`OrdersPage.tsx`), 3 opções: Padrão do tenant / Exigir / Não exigir
+- Testado ponta a ponta os 3 cenários (padrão segue o toggle; força
+  exigir bloqueia mesmo com toggle desligado; força não exigir libera
+  mesmo com toggle ligado)
+
 ### Próximos blocos
 - **B** — Evidências fotográficas da OS com carimbo (logo/GPS/data) + LGPD
 - **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura)
