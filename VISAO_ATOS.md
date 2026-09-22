@@ -81,7 +81,7 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 | **F2** | Clientes e Locais (Unidades) | Sim | ✅ Concluída |
 | **F3** | Ordens de Serviço (visão do Gestor) | Sim | ✅ Concluída |
 | **F4** | App de Campo (visão do Técnico, mobile) | Sim | ✅ Concluída |
-| **F5** | Checklists dinâmicos de verificação | Sim | 🔄 **Em andamento** |
+| **F5** | Checklists dinâmicos de verificação | Sim | ✅ Concluída |
 | **F6** | Assinatura digital, evidências, PDF e envio | Sim | ⏳ Pendente |
 | **F7** | Painel gerencial e indicadores | Sim | ⏳ Pendente |
 | **F8** | Planos, Asaas, cobrança, trial | Não | 📋 Backlog |
@@ -108,8 +108,10 @@ O gestor abre a OS, descreve o serviço, define tipo, prioridade e prazo, atribu
 ### F4 — App de Campo (Técnico) ✅
 Interface **mobile-first**. O técnico vê as ordens do dia, inicia e encerra atendimentos com registro de data/hora. Responsividade é requisito desde o início.
 
-### F5 — Checklists 🔄 (EM ANDAMENTO)
+### F5 — Checklists ✅
 Roteiros de verificação **configuráveis**, independentes de serviço específico. Servem para vistoria, validação de ambiente, inspeção ou levantamento. O técnico preenche durante o atendimento, garantindo padronização.
+
+Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um modelo na criação/edição da ordem) e checklist **avulso**, sem OS — vínculo opcional a Cliente/Unidade, atribuível a um ou mais técnicos, com recorrência como etiqueta informativa (ex: "mensal"), acessível numa aba própria no app de campo. Rastreabilidade completa das respostas (histórico versionado por trigger) e evidências fotográficas com compressão já implementadas; carimbo (logo/GPS/data na foto) fica para a F6.
 
 ### F6 — Assinatura Digital, Evidências e Envio ⏳
 **A fase mais rica do MVP.** Definições refinadas:

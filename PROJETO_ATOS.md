@@ -40,7 +40,7 @@
 | F2 | Clientes e Locais (Unidades) | MVP | Feito |
 | F3 | Ordens de Serviço (gestor) | MVP | Feito |
 | F4 | App de campo (técnico, mobile) | MVP | Feito |
-| F5 | Checklists dinâmicos | MVP | Pendente |
+| F5 | Checklists dinâmicos | MVP | Feito |
 | F6 | Assinatura digital + PDF + WhatsApp | MVP | Pendente |
 | F7 | Painel gerencial | MVP | Pendente |
 | — | Tenant Infoxtec criado manualmente | MVP | Feito |
@@ -133,6 +133,37 @@ Nota: "Locais" foi renomeado para "Unidades" na UI (rota /locais e tabela locati
 
 ---
 
+## 4.2. Estado detalhado da F5 (Checklists) — CONCLUÍDA
+
+### Checklists vinculados a uma OS — COMPLETO
+- Migrations 010-011: checklist_templates, checklist_template_items, checklist_instances, checklist_instance_targets, checklist_answers + RLS
+- Editor de modelo (ChecklistEditorPage): itens arrastáveis (dnd-kit), cada item com um ou mais campos de resposta (sim/não, texto, número, escolha única, escolha múltipla, foto), item marcável como obrigatório
+- Associação do checklist à OS na criação/edição (combobox de modelo, igual padrão Cliente/Unidade/Técnico)
+- Preenchimento pelo técnico ou gestor: parcial (salva progresso, permite voltar depois), itens recolhíveis, indicador de obrigatórios pendentes
+- Migration 012: Realtime em checklist_instances (reabertura pelo admin aparece pro técnico sem refresh)
+- Bloqueio de conclusão da OS com checklist obrigatório pendente (checklistGuard.ts)
+
+### Rastreabilidade das respostas — COMPLETO
+- Migration 013: tabela checklist_answer_history + trigger no banco (fn_checklist_answer_history) — grava o estado ANTERIOR sempre que uma resposta já salva é alterada, capturando quem mudou
+- Reabertura de checklist concluído: só admin/gestor
+- Pendente (backlog 9.7 do VISAO_ATOS.md): tela de consulta desse histórico
+
+### Evidências fotográficas — COMPLETO (base, sem carimbo ainda)
+- Migration 014: bucket privado `evidencias` (5MB, RLS por tenant via pasta = tenant_id)
+- Compressão no navegador antes do upload (FotoEvidencia.tsx), URL assinada
+- Carimbo (logo/GPS/data na foto) fica para a F6, junto com assinatura digital e PDF
+
+### Checklist avulso (sem OS) — COMPLETO — 2026-09-22
+- A visão original (VISAO_ATOS.md) previa checklist independente de OS (vistoria, inspeção, levantamento); schema já tinha `context_type`/`recurrence`/`checklist_instance_targets` reservados desde a F5 original, mas sem uso em código
+- Migration 016: `client_id`/`location_id` nullable em checklist_instances (vínculo opcional a Cliente/Unidade, mesmo padrão de checklist_templates.client_id = "geral" quando vazio)
+- `useChecklistInstance` generaliza o antigo `useOrderChecklist` (aceita orderId OU instanceId) — checklist-em-OS e avulso compartilham o mesmo núcleo de preenchimento/conclusão/reabertura sem duplicar lógica
+- Componentes de preenchimento extraídos para src/components/checklists/ (checklistFields.tsx, ChecklistFillList.tsx), reaproveitados pelos dois fluxos
+- Admin: página `/checklists/avulsos` (criação com Combobox Cliente→Unidade, MultiCombobox de técnicos — componente novo, `src/components/ui/multi-combobox.tsx` — e modelo de checklist; recorrência como etiqueta de texto livre, sem geração automática)
+- Técnico: nova aba "Checklists" em FieldLayout (ao lado de "Atendimentos"), lista MyChecklistsPage + preenchimento em tela cheia FieldChecklistPage
+- Testado ponta a ponta com Playwright na URL pública (login real, criar/preencher/concluir, mais regressão do checklist-em-OS) — ver commits `442df97` e `c99daf1`. Um bug real foi encontrado e corrigido nesse teste (combobox de Unidade listava todas as unidades do tenant mesmo sem cliente escolhido)
+
+---
+
 ## 5. Padrões do Projeto (NÃO violar)
 
 ### Listagem
@@ -187,6 +218,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 013_f5_checklist_answer_history | checklist_answer_history + trigger de versionamento (rastreabilidade) | OK | Pendente | Sim (reconstruída) |
 | 014_f5_evidencias_storage | bucket privado "evidencias" + RLS de storage.objects por tenant | OK | Pendente | Sim (reconstruída) |
 | 015_keepalive | tabela keepalive_ping (anti-suspensão Supabase free) | OK | Pendente | Sim (reconstruída) |
+| 016_f5_checklist_avulso | client_id/location_id nullable em checklist_instances (checklist sem OS) | OK | Pendente | Sim |
 
 ---
 
@@ -215,6 +247,6 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 
 ---
 
-*Última atualização: F4 CONCLUÍDA (app de campo mobile, dashboard de status, Realtime, rastreabilidade real via order_events com autor, linha do tempo e comentários recolhíveis compartilhados, logout por inatividade). DECISÃO: completar MVP (F5-F7) antes de subir para PRD. Próximo: F5 — Checklists dinâmicos.*
+*Última atualização: F5 CONCLUÍDA (checklists dinâmicos completos — modelos, preenchimento vinculado à OS, rastreabilidade de respostas, evidências fotográficas, e checklist avulso sem OS com vínculo opcional a cliente/unidade e atribuição a múltiplos técnicos). Testado ponta a ponta na URL pública. DECISÃO: completar MVP (F6-F7) antes de subir para PRD. Próximo: F6 — Assinatura digital, evidências com carimbo GPS, PDF e envio.*
 
-*2026-09-22: migrations 004–015 reconstruídas e versionadas em `supabase/migrations/` (ver seção 6). Token de acesso do Supabase usado nessa reconstrução deve ser revogado após uso (não é permanente). Achado de segurança à parte: remote git da pasta `C:\vluma\atosdev` tinha um Personal Access Token do GitHub embutido na URL — recomenda-se revogar e trocar por credential helper/SSH.*
+*2026-09-22: migrations 004–016 reconstruídas/adicionadas e versionadas em `supabase/migrations/` (ver seção 6). Achados de segurança pendentes (token de acesso do Supabase usado nessas migrations, e Personal Access Token do GitHub embutido no remote git da pasta `C:\vluma\atosdev`) — revogar/trocar ambos **ao final de todo o desenvolvimento do MVP**, não antes (decisão do time, para não gerar atrito de credencial a cada sessão de trabalho).*
