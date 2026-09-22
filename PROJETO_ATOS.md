@@ -201,8 +201,35 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
   exigir bloqueia mesmo com toggle desligado; força não exigir libera
   mesmo com toggle ligado)
 
+### Bloco B — Carimbo em evidências + LGPD — CONCLUÍDO (2026-09-22)
+- Sem migration de schema pra GPS/logo (decisão de privacidade: a
+  coordenada só existe dentro do pixel da foto, nunca separada no
+  banco). Migration 020 foi necessária por outro motivo (ver achado
+  abaixo).
+- Fotos do campo "foto" do checklist (F5) passam a sair carimbadas:
+  logo da empresa + nome do tenant + data/hora + coordenadas GPS,
+  desenhadas no mesmo canvas da compressão (`src/lib/uploadEvidencia.ts`)
+- GPS lido sob demanda (`getCurrentPosition`, `maximumAge: 0`), nunca
+  `watchPosition` — `src/lib/geolocation.ts`
+- LGPD: modal de consentimento na primeira foto (aceite gravado em
+  `users.preferences.location_consent_at`), página pública
+  `/privacidade` com aviso completo, bloqueio com "Tentar novamente"
+  se a localização for negada (obrigatório, não é opcional como a
+  assinatura)
+- Logo da empresa configurável em Configurações — path fixo
+  `{tenant}/logo.png` no bucket `evidencias` já existente, sem coluna
+  nova (a existência do arquivo já é a config)
+- **Achado testando**: mesma classe de bug da migration 018 — RLS de
+  `public.users` só libera UPDATE pra admin/super_admin, então nem o
+  próprio usuário conseguia salvar sua coluna `preferences` (afetava
+  também `useViewPreference.ts`, preexistente). Migration 020: função
+  `atualizar_minhas_preferencias()` (SECURITY DEFINER, restrita a
+  `id = auth.uid()`)
+- Testado ponta a ponta: upload de logo, carimbo aparecendo
+  corretamente na foto (logo+nome+data+GPS visíveis), consentimento
+  persistindo, e bloqueio confirmado com permissão de GPS negada
+
 ### Próximos blocos
-- **B** — Evidências fotográficas da OS com carimbo (logo/GPS/data) + LGPD
 - **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura)
 - **D** — Envio (WhatsApp/e-mail) — **pendente de detalhamento técnico**:
   painel multi-tenant com QR Code para conectar instância Evolution
@@ -268,6 +295,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 016_f5_checklist_avulso | client_id/location_id nullable em checklist_instances (checklist sem OS) | OK | Pendente | Sim |
 | 017_f6_assinatura | orders.signature_path/signer_name/signed_at, tenants.require_signature_to_complete | OK | Pendente | Sim |
 | 018_f6_config_tenant_rpc | função atualizar_config_tenant() (SECURITY DEFINER) — corrige admin sem permissão de UPDATE em tenants | OK | Pendente | Sim |
+| 019_f6_assinatura_por_os | orders.require_signature (nullable) — override por OS do padrão do tenant | OK | Pendente | Sim |
+| 020_f6_preferencias_rpc | função atualizar_minhas_preferencias() (SECURITY DEFINER) — corrige usuário sem permissão de UPDATE na própria linha em users | OK | Pendente | Sim |
 
 ---
 
@@ -298,6 +327,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 
 *Última atualização: F5 CONCLUÍDA (checklists dinâmicos completos — modelos, preenchimento vinculado à OS, rastreabilidade de respostas, evidências fotográficas, e checklist avulso sem OS com vínculo opcional a cliente/unidade e atribuição a múltiplos técnicos). Testado ponta a ponta na URL pública. DECISÃO: completar MVP (F6-F7) antes de subir para PRD.*
 
-*2026-09-22: F6 Bloco A (assinatura digital) CONCLUÍDO e testado ponta a ponta — ver seção 4.3. Próximo: Bloco B (evidências fotográficas com carimbo GPS/logo/data) ou Bloco C (PDF), a decidir.*
+*2026-09-22: F6 Bloco A (assinatura digital) CONCLUÍDO e testado ponta a ponta — ver seção 4.3, incluindo extensão de assinatura obrigatória configurável por OS.*
+
+*2026-09-22: F6 Bloco B (carimbo de evidências + LGPD) CONCLUÍDO e testado ponta a ponta — ver seção 4.3. Logo de teste (placeholder) ficou configurada em Configurações — trocar pela logo real da Infoxtec quando quiser. Próximo: Bloco C (PDF).*
 
 *2026-09-22: migrations 004–016 reconstruídas/adicionadas e versionadas em `supabase/migrations/` (ver seção 6). Achados de segurança pendentes (token de acesso do Supabase usado nessas migrations, e Personal Access Token do GitHub embutido no remote git da pasta `C:\vluma\atosdev`) — revogar/trocar ambos **ao final de todo o desenvolvimento do MVP**, não antes (decisão do time, para não gerar atrito de credencial a cada sessão de trabalho).*

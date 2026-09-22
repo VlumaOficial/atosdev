@@ -120,14 +120,15 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - Captura de assinatura digital do cliente **via toque na tela** do celular do técnico — **✅ concluído (2026-09-22)**, obrigatoriedade configurável por tenant (Configurações)
 - Geração de **relatório PDF** com: dados da OS + checklist preenchido + evidências + assinatura — pendente
 
-**Evidências Fotográficas**
-- Campo para cadastro de evidências em foto na OS
+**Evidências Fotográficas — ✅ concluído (2026-09-22)**
+- Campo para cadastro de evidências em foto na OS (via campo "foto" do checklist)
 - **Carimbo automático** em cada foto: logo e nome da empresa, **localização (GPS)**, data e hora
 - Campo de observação aberto, preenchido pelo técnico
-- **GPS capturado automaticamente** do dispositivo, nunca digitado
-- Se o GPS estiver negado/desligado: sistema **avisa e exige ativação** para continuar
-- **Decisão (jul/2026):** guarda-se **apenas a imagem carimbada** — o original sem carimbo não é armazenado (economia de Storage; a versão carimbada é a evidência válida)
-- **Base já construída na F5 (Bloco D):** bucket privado `evidencias` isolado por tenant, compressão no navegador (1600px / qualidade 80%), limite de 5MB e URL assinada. O carimbo será aplicado no mesmo canvas da compressão, antes do envio
+- **GPS capturado automaticamente** do dispositivo, nunca digitado — leitura pontual (`getCurrentPosition`, sem `watchPosition`), nunca em segundo plano
+- Se o GPS estiver negado/desligado: sistema **avisa e exige ativação** para continuar (bloqueia o anexo)
+- **Decisão (jul/2026), implementada:** guarda-se **apenas a imagem carimbada** — o original sem carimbo não é armazenado. A coordenada só existe dentro do pixel da foto, nunca gravada separada no banco (reforço de privacidade além do inicialmente decidido)
+- Logo da empresa configurável em Configurações (branding por tenant)
+- Base construída na F5 (Bloco D): bucket privado `evidencias` isolado por tenant, compressão no navegador (1600px / qualidade 80%), limite de 5MB e URL assinada. O carimbo é aplicado no mesmo canvas da compressão, antes do envio
 
 **Envio da OS**
 - **Envio opcional** — o técnico decide se envia ao cliente
