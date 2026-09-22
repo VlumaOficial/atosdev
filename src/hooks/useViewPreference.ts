@@ -39,10 +39,7 @@ export function useViewPreference(key: string, defaultMode: ViewMode = 'table') 
       .single()
     const prefs = data?.preferences ?? {}
     const views = { ...(prefs.views ?? {}), [key]: newMode }
-    await supabase
-      .from('users')
-      .update({ preferences: { ...prefs, views } })
-      .eq('id', user.id)
+    await supabase.rpc('atualizar_minhas_preferencias', { p_preferences: { ...prefs, views } })
   }, [user, key])
 
   return { mode, setMode: updateMode, loaded }

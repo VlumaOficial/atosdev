@@ -37,10 +37,9 @@ export function useLocationConsent() {
       .eq('id', user.id)
       .single()
     const prefs = data?.preferences ?? {}
-    await supabase
-      .from('users')
-      .update({ preferences: { ...prefs, location_consent_at: new Date().toISOString() } })
-      .eq('id', user.id)
+    await supabase.rpc('atualizar_minhas_preferencias', {
+      p_preferences: { ...prefs, location_consent_at: new Date().toISOString() },
+    })
   }, [user])
 
   return { aceito, loaded, aceitar }
