@@ -163,16 +163,30 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 
 ## 6. Migrations Aplicadas (DEV)
 
-| Arquivo | Conteúdo | DEV | PRD |
-|---------|----------|-----|-----|
-| 001_f1_multitenant | tenants, users, triggers, RLS inicial | OK | Pendente |
-| 002_fix_rls_recursion | funções get_meu_role/get_meu_tenant (SECURITY DEFINER) | OK | Pendente |
-| 003_f2_clients_locations | tabelas clients, locations + RLS | OK | Pendente |
-| 004_f2_unidade_principal | is_primary + trigger unidade principal | OK | Pendente |
-| 005_f3_orders | orders, order_sequences, número sequencial, RLS | OK | Pendente |
-| 006_f3_completion_notes | coluna completion_notes em orders | OK | Pendente |
-| 007_f3_order_comments | tabela order_comments + RLS | OK | Pendente |
-| 008_f3_order_events | tabela order_events (histórico imutável com autor) + RLS | OK | Pendente |
+> **2026-09-22:** migrations 004–015 estavam aplicadas no banco DEV mas nunca
+> tinham sido salvas como arquivo (SQL colado direto no Dashboard). Foram
+> reconstruídas por introspecção do schema real e agora estão versionadas em
+> `supabase/migrations/`. Ver `supabase/migrations/README.md` para o detalhe
+> dessa reconstrução. Nenhuma informação de fase/funcionalidade foi perdida —
+> o agrupamento dos arquivos segue as fases já descritas neste documento.
+
+| Arquivo | Conteúdo | DEV | PRD | Versionado no git |
+|---------|----------|-----|-----|--------------------|
+| 001_f1_multitenant | tenants, users, triggers, RLS inicial | OK | Pendente | Sim |
+| 002_fix_rls_recursion | funções get_meu_role/get_meu_tenant (SECURITY DEFINER) | OK | Pendente | Sim |
+| 003_f2_clients_locations | tabelas clients, locations + RLS | OK | Pendente | Sim |
+| 004_f2_unidade_principal | is_primary + trigger unidade principal | OK | Pendente | Sim (reconstruída) |
+| 005_f3_orders | orders, order_sequences, número sequencial, RLS | OK | Pendente | Sim (reconstruída) |
+| 006_f3_completion_notes | coluna completion_notes em orders | OK | Pendente | Sim (reconstruída) |
+| 007_f3_order_comments | tabela order_comments + RLS | OK | Pendente | Sim (reconstruída) |
+| 008_f3_order_events | tabela order_events (histórico imutável com autor) + RLS | OK | Pendente | Sim (reconstruída) |
+| 009_f4_realtime_orders | Realtime + REPLICA IDENTITY FULL em orders | OK | Pendente | Sim (reconstruída) |
+| 010_f5_checklist_templates | checklist_templates, checklist_template_items + RLS | OK | Pendente | Sim (reconstruída) |
+| 011_f5_checklist_instances | checklist_instances, checklist_instance_targets, checklist_answers + RLS | OK | Pendente | Sim (reconstruída) |
+| 012_f5_checklist_realtime | Realtime + REPLICA IDENTITY FULL em checklist_instances | OK | Pendente | Sim (reconstruída) |
+| 013_f5_checklist_answer_history | checklist_answer_history + trigger de versionamento (rastreabilidade) | OK | Pendente | Sim (reconstruída) |
+| 014_f5_evidencias_storage | bucket privado "evidencias" + RLS de storage.objects por tenant | OK | Pendente | Sim (reconstruída) |
+| 015_keepalive | tabela keepalive_ping (anti-suspensão Supabase free) | OK | Pendente | Sim (reconstruída) |
 
 ---
 
@@ -202,3 +216,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 ---
 
 *Última atualização: F4 CONCLUÍDA (app de campo mobile, dashboard de status, Realtime, rastreabilidade real via order_events com autor, linha do tempo e comentários recolhíveis compartilhados, logout por inatividade). DECISÃO: completar MVP (F5-F7) antes de subir para PRD. Próximo: F5 — Checklists dinâmicos.*
+
+*2026-09-22: migrations 004–015 reconstruídas e versionadas em `supabase/migrations/` (ver seção 6). Token de acesso do Supabase usado nessa reconstrução deve ser revogado após uso (não é permanente). Achado de segurança à parte: remote git da pasta `C:\vluma\atosdev` tinha um Personal Access Token do GitHub embutido na URL — recomenda-se revogar e trocar por credential helper/SSH.*
