@@ -494,6 +494,33 @@ Timemark) e aprovou o plano em 3 incrementos — ver VISAO_ATOS.md, F6.**
   Para validar a unidade, a OS-0018 (de teste) recebeu a unidade
   principal do "Cliente Trigger Teste"
 - Config do tenant Infoxtec devolvida ao padrão (`{}`) ao fim dos testes
+
+### 🔴 Auditoria de armazenamento das fotos (2026-09-23, pedido do usuário)
+Contexto: Supabase free (1 GB de storage); usuário quer o método que
+ocupe menos espaço também no plano pago. Ambiente DEV = HML, sem dados
+reais (confirmado pelo usuário — fotos de teste na OS-0010 não precisam
+ser limpas por esse motivo).
+- **Como está hoje**: banco guarda só o caminho do arquivo (texto,
+  ~100 bytes/linha — banco inteiro 13 MB); a foto fica no bucket privado
+  `evidencias` como JPEG qualidade 0.8, **só a versão carimbada**.
+  Assinatura PNG (~20 KB), logo PNG 400px (~56 KB, uma por tenant).
+  Bucket hoje: 31 arquivos, 5,3 MB
+- **Achado 1 — limite de tamanho só na largura**: `LARGURA_MAX = 1600`
+  limita a largura; foto retrato sai 1600×2845 (4,5 MP) enquanto
+  paisagem sai 1600×900 (1,4 MP) — retrato ocupa ~3× mais sem ganho
+  real. Maior foto real do bucket: 875 KB
+- **Achado 2 — arquivos órfãos (vazamento de espaço)**: 8 arquivos sem
+  nenhum registro apontando pra eles (3 de OS, 5 de checklist). Causas:
+  (a) foto do checklist sobe na hora, mas o caminho só é gravado quando
+  o técnico toca em "Salvar" — saiu sem salvar, o arquivo fica perdido
+  (também perde a foto do ponto de vista do técnico); (b) exclusão de
+  instância de checklist/registro não remove o arquivo do bucket
+- **Achado 3 — tráfego (egress)**: miniaturas das listas baixam a foto
+  inteira; cada abertura de OS com fotos consome a foto cheia de cada uma
+- Proposta levada ao usuário (aguardando decisão): limite no MAIOR
+  lado, miniatura separada para listas, auto-salvar a foto do
+  checklist, rotina de limpeza de órfãos; WebP e política de retenção
+  por plano como opções
 - Sem migration
 
 ### Próximos blocos
