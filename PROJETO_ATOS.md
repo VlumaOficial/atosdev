@@ -608,6 +608,8 @@ exportação ZIP → código de verificação → "liberar espaço"
   vazia até mexer num campo — o canvas só monta com a seção aberta e o
   desenho (useEffect com useRef) já tinha rodado antes, sem canvas.
   Corrigido com ref por estado (callback ref) nas dependências do desenho
+  — testado na URL pública: seção fechada → expandir → prévia já
+  desenhada, sem tocar em campo
 - Sem migration
 
 ### Próximos blocos
