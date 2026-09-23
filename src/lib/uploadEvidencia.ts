@@ -10,6 +10,7 @@ interface DadosCarimbo {
   tenantName: string
   logoUrl: string | null
   coords: Coordenadas
+  endereco?: string | null
 }
 
 function carregarImagem(url: string): Promise<HTMLImageElement> {
@@ -20,6 +21,152 @@ function carregarImagem(url: string): Promise<HTMLImageElement> {
     img.onerror = reject
     img.src = url
   })
+}
+
+// Carimbo no padrão "foto de prova de campo" (modelo aprovado pelo usuário
+// em 2026-09-23): sem faixa sólida — texto branco com sombra sobre a foto,
+// hora em destaque, divisor amarelo, data/dia, endereço e coordenadas no
+// canto inferior esquerdo; logo da empresa num cartão branco acima; marca
+// ATOS no canto superior direito. Todas as medidas são proporcionais ao
+// MENOR lado da foto, pra ficar igual em retrato e paisagem.
+const COR_ATOS = '#8b5cf6'
+const COR_ATOS_SUB = '#cbd5e1'
+const COR_DIVISOR = '#facc15'
+
+function comSombra(ctx: CanvasRenderingContext2D, u: number) {
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.75)'
+  ctx.shadowBlur = 0.8 * u
+  ctx.shadowOffsetX = 0.15 * u
+  ctx.shadowOffsetY = 0.15 * u
+}
+
+function semSombra(ctx: CanvasRenderingContext2D) {
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = 0
+}
+
+function quebrarLinhas(ctx: CanvasRenderingContext2D, texto: string, larguraMax: number): string[] {
+  const palavras = texto.split(/\s+/)
+  const linhas: string[] = []
+  let atual = ''
+  for (const p of palavras) {
+    const teste = atual ? atual + ' ' + p : p
+    if (ctx.measureText(teste).width > larguraMax && atual) {
+      linhas.push(atual)
+      atual = p
+    } else {
+      atual = teste
+    }
+  }
+  if (atual) linhas.push(atual)
+  return linhas
+}
+
+function retanguloArredondado(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, w, h, r)
+  else ctx.rect(x, y, w, h)
+  ctx.fill()
+}
+
+function desenharCarimbo(
+  ctx: CanvasRenderingContext2D,
+  largura: number,
+  altura: number,
+  dados: DadosCarimbo,
+  logo: HTMLImageElement | null,
+  quando: Date
+) {
+  const u = Math.min(largura, altura) / 100
+  const margem = 3.5 * u
+  const fonte = 'Roboto, "Segoe UI", Arial, sans-serif'
+
+  // degradê leve na base — garante leitura sobre fundo claro sem a faixa sólida
+  const alturaDegrade = Math.min(altura * 0.45, 45 * u)
+  const grad = ctx.createLinearGradient(0, altura - alturaDegrade, 0, altura)
+  grad.addColorStop(0, 'rgba(0, 0, 0, 0)')
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0.45)')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, altura - alturaDegrade, largura, alturaDegrade)
+
+  // --- marca ATOS (canto superior direito)
+  comSombra(ctx, u)
+  ctx.textAlign = 'right'
+  ctx.textBaseline = 'top'
+  ctx.fillStyle = COR_ATOS
+  ctx.font = `bold ${4.6 * u}px ${fonte}`
+  ctx.fillText('ATOS', largura - margem, margem)
+  ctx.fillStyle = COR_ATOS_SUB
+  ctx.font = `${2.6 * u}px ${fonte}`
+  ctx.fillText('Gestão de Campo', largura - margem, margem + 5.2 * u)
+
+  // --- bloco inferior esquerdo, desenhado de baixo pra cima
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+  const larguraTexto = largura - 2 * margem
+  let y = altura - margem
+
+  // coordenadas (linha pequena — é a prova "dura" da localização)
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+  ctx.font = `${2.6 * u}px ${fonte}`
+  ctx.fillText(`${dados.coords.lat.toFixed(6)}, ${dados.coords.lng.toFixed(6)}`, margem, y)
+  y -= 2.6 * u + 1.8 * u
+
+  // endereço (opcional — preenchido quando houver geocodificação)
+  if (dados.endereco) {
+    const tamEnd = 4 * u
+    ctx.fillStyle = '#ffffff'
+    ctx.font = `${tamEnd}px ${fonte}`
+    const linhas = quebrarLinhas(ctx, dados.endereco, Math.min(larguraTexto, 75 * u)).slice(0, 3)
+    for (let i = linhas.length - 1; i >= 0; i--) {
+      ctx.fillText(linhas[i], margem, y)
+      y -= tamEnd * 1.2
+    }
+    y -= 1.2 * u
+  }
+
+  // hora em destaque + divisor amarelo + data / dia da semana
+  const tamHora = 12 * u
+  const capHora = tamHora * 0.72
+  const hora = quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const data = quando.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const diaBruto = quando.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
+  const dia = diaBruto.charAt(0).toUpperCase() + diaBruto.slice(1)
+
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `bold ${tamHora}px ${fonte}`
+  ctx.fillText(hora, margem, y)
+  const xDivisor = margem + ctx.measureText(hora).width + 2.2 * u
+  semSombra(ctx)
+  ctx.fillStyle = COR_DIVISOR
+  ctx.fillRect(xDivisor, y - capHora, 0.55 * u, capHora)
+  comSombra(ctx, u)
+  const tamData = 4.4 * u
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `${tamData}px ${fonte}`
+  ctx.fillText(data, xDivisor + 2.2 * u, y - capHora + tamData * 0.8)
+  ctx.fillText(dia, xDivisor + 2.2 * u, y)
+  y -= capHora + 3 * u
+
+  // logo da empresa num cartão branco (ou o nome, se não houver logo)
+  if (logo && logo.naturalWidth && logo.naturalHeight) {
+    const alturaCartao = 8 * u
+    const pad = 0.9 * u
+    const alturaLogo = alturaCartao - 2 * pad
+    const larguraLogo = Math.min(alturaLogo * (logo.naturalWidth / logo.naturalHeight), 30 * u)
+    const larguraCartao = larguraLogo + 2 * pad
+    ctx.fillStyle = '#ffffff'
+    retanguloArredondado(ctx, margem, y - alturaCartao, larguraCartao, alturaCartao, 1 * u)
+    semSombra(ctx)
+    ctx.drawImage(logo, margem + pad, y - alturaCartao + pad, larguraLogo, alturaLogo)
+  } else if (dados.tenantName) {
+    ctx.fillStyle = '#ffffff'
+    ctx.font = `bold ${4.4 * u}px ${fonte}`
+    ctx.fillText(dados.tenantName, margem, y)
+  }
+  semSombra(ctx)
 }
 
 // Comprime a imagem e desenha o carimbo (logo + nome da empresa +
@@ -54,36 +201,15 @@ async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<Blob
   ctx.drawImage(bitmap, 0, 0, largura, altura)
   bitmap.close()
 
-  // barra semi-transparente na base, pra garantir contraste com o texto
-  // independente do conteúdo da foto
-  const alturaBarra = Math.max(48, Math.round(altura * 0.14))
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
-  ctx.fillRect(0, altura - alturaBarra, largura, alturaBarra)
-
-  let xTexto = 10
-  const logoTamanho = alturaBarra - 12
+  let logo: HTMLImageElement | null = null
   if (dados.logoUrl) {
     try {
-      const logo = await carregarImagem(dados.logoUrl)
-      const yLogo = altura - alturaBarra + 6
-      ctx.drawImage(logo, xTexto, yLogo, logoTamanho, logoTamanho)
-      xTexto += logoTamanho + 10
+      logo = await carregarImagem(dados.logoUrl)
     } catch {
       // segue sem logo se a imagem falhar ao carregar (ex: CORS, arquivo corrompido)
     }
   }
-
-  ctx.fillStyle = '#ffffff'
-  ctx.font = 'bold 13px sans-serif'
-  ctx.textBaseline = 'top'
-  const yLinha1 = altura - alturaBarra + 6
-  const yLinha2 = yLinha1 + 17
-  ctx.fillText(dados.tenantName, xTexto, yLinha1)
-
-  ctx.font = '12px sans-serif'
-  const agora = new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-  const coordsTexto = `${dados.coords.lat.toFixed(6)}, ${dados.coords.lng.toFixed(6)}`
-  ctx.fillText(`${agora} · ${coordsTexto}`, xTexto, yLinha2)
+  desenharCarimbo(ctx, largura, altura, dados, logo, new Date())
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob ?? file), 'image/jpeg', QUALIDADE)
@@ -178,6 +304,17 @@ export async function urlEvidencia(path: string, segundos = 3600): Promise<strin
   const { data, error } = await supabase.storage
     .from('evidencias')
     .createSignedUrl(path, segundos)
+  if (error) return null
+  return data.signedUrl
+}
+
+// URL assinada que força download (Content-Disposition: attachment),
+// com nome de arquivo amigável
+export async function urlDownloadEvidencia(path: string, nomeArquivo?: string): Promise<string | null> {
+  const nome = nomeArquivo ?? ('evidencia-' + (path.split('/').pop() ?? 'foto.jpg'))
+  const { data, error } = await supabase.storage
+    .from('evidencias')
+    .createSignedUrl(path, 3600, { download: nome })
   if (error) return null
   return data.signedUrl
 }

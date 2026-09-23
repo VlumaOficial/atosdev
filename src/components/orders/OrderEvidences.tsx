@@ -5,6 +5,7 @@ import { obterLocalizacao, type ErroLocalizacao } from '@/lib/geolocation'
 import { useLocationConsent } from '@/hooks/useLocationConsent'
 import LocationConsentModal from '@/components/LocationConsentModal'
 import CameraCaptura from '@/components/orders/CameraCaptura'
+import EvidenceViewer from '@/components/orders/EvidenceViewer'
 import { X, Loader2, MapPin, RotateCcw, Image as ImageIcon } from 'lucide-react'
 
 const ERRO_LOCALIZACAO_MSG: Record<ErroLocalizacao, string> = {
@@ -22,6 +23,7 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
 }) {
   const [preview, setPreview] = useState<string | null>(null)
   const [texto, setTexto] = useState(evidencia.observacao ?? '')
+  const [ampliada, setAmpliada] = useState(false)
 
   useEffect(() => {
     let ativo = true
@@ -33,7 +35,12 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
     <div className="bg-card border border-border rounded-lg overflow-hidden">
       <div className="relative bg-black/20">
         {preview
-          ? <img src={preview} alt="Evidência" className="w-full h-40 object-cover" />
+          ? (
+            <button type="button" onClick={() => setAmpliada(true)} className="block w-full" aria-label="Ver evidência em tela cheia">
+              {/* object-contain: a foto inteira aparece (retrato ou paisagem) — com object-cover o carimbo sumia em foto retrato */}
+              <img src={preview} alt="Evidência" className="w-full h-40 object-contain" />
+            </button>
+          )
           : <div className="w-full h-40 flex items-center justify-center"><Loader2 size={18} className="animate-spin text-muted-foreground" /></div>}
         {!readOnly && (
           <button type="button" onClick={onRemover}
@@ -42,6 +49,7 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
           </button>
         )}
       </div>
+      <EvidenceViewer path={ampliada ? evidencia.file_path : null} url={preview} onFechar={() => setAmpliada(false)} />
       <div className="p-2">
         {readOnly ? (
           texto && <p className="text-xs text-muted-foreground whitespace-pre-wrap">{texto}</p>

@@ -4,6 +4,7 @@ import { obterLocalizacao, type ErroLocalizacao } from '@/lib/geolocation'
 import { useLocationConsent } from '@/hooks/useLocationConsent'
 import LocationConsentModal from '@/components/LocationConsentModal'
 import CameraCaptura from '@/components/orders/CameraCaptura'
+import EvidenceViewer from '@/components/orders/EvidenceViewer'
 import { Camera, X, Loader2, MapPin, RotateCcw } from 'lucide-react'
 
 interface Props {
@@ -28,6 +29,7 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
   const [arquivoPendente, setArquivoPendente] = useState<File | null>(null)
   const [consentModalAberto, setConsentModalAberto] = useState(false)
   const [cameraAberta, setCameraAberta] = useState(false)
+  const [ampliada, setAmpliada] = useState(false)
   const { aceito, loaded, aceitar } = useLocationConsent()
 
   useEffect(() => {
@@ -105,7 +107,10 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
   if (preview) {
     return (
       <div className="relative inline-block">
-        <img src={preview} alt="Evidência" className="max-h-48 rounded-md border border-border" />
+        <button type="button" onClick={() => setAmpliada(true)} className="block" aria-label="Ver evidência em tela cheia">
+          <img src={preview} alt="Evidência" className="max-h-48 rounded-md border border-border" />
+        </button>
+        <EvidenceViewer path={ampliada ? value : null} url={preview} onFechar={() => setAmpliada(false)} />
         {!readOnly && (
           <button type="button" onClick={handleRemover}
             className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-red-500/80 transition">

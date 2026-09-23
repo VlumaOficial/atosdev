@@ -129,6 +129,13 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - **Captura só pela câmera embutida no app (2026-09-23)** — sem escolher foto da galeria, para que o carimbo de data/GPS corresponda de fato ao momento da foto. Motivo técnico adicional: abrir o app de Câmera nativo fazia o Android fechar o navegador em aparelhos com pouca memória
 - **Decisão (jul/2026), implementada:** guarda-se **apenas a imagem carimbada** — o original sem carimbo não é armazenado. A coordenada só existe dentro do pixel da foto, nunca gravada separada no banco (reforço de privacidade além do inicialmente decidido)
 - Logo da empresa configurável em Configurações (branding por tenant)
+- **Carimbo v2 (2026-09-23, modelo enviado pelo usuário, estilo Timemark)** — decisões:
+  - Layout padrão: logo em cartão, hora em destaque, data/dia, endereço e coordenadas no canto inferior esquerdo; marca "ATOS · Gestão de Campo" no superior direito
+  - Coordenadas **mantidas** em linha pequena (o endereço é o legível; a coordenada é a prova) — desligável na configuração
+  - Endereço por geocodificação reversa via Edge Function (provedor trocável). **Começa com Nominatim/OpenStreetMap**; avaliar Google antes do PRD. Usuário quer discutir o tema mais a fundo pensando em SaaS (custo por tenant, cota, cache)
+  - **Configuração de campos do carimbo por tenant** (liga/desliga, posições fixas, prévia ao vivo) — Incremento 3
+  - Evidência pode ser vista em tela cheia e **baixada** (técnico e admin)
+  - **Em discussão:** marca ATOS removível (white-label) ou fixa; código de verificação de autenticidade da foto (padrão Timemark)
 - Base construída na F5 (Bloco D): bucket privado `evidencias` isolado por tenant, compressão no navegador (1600px / qualidade 80%), limite de 5MB e URL assinada. O carimbo é aplicado no mesmo canvas da compressão, antes do envio
 
 **Envio da OS**

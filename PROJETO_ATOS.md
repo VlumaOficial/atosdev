@@ -382,6 +382,25 @@ Engenheiro/PO/UX entende que é a melhor solução, vamos seguir"):
 - **Próximo passo**: usuário vai enviar um modelo de como espera o
   carimbo; redesenhar carimbo proporcional (retrato e paisagem) +
   miniatura que mostre o carimbo, juntos
+
+### Carimbo v2 + ver/baixar evidência — Incremento 1 (2026-09-23)
+**Atualização do achado acima: usuário enviou modelo (estilo app
+Timemark) e aprovou o plano em 3 incrementos — ver VISAO_ATOS.md, F6.**
+- `desenharCarimbo()` em `src/lib/uploadEvidencia.ts` substitui a faixa
+  escura: texto branco com sombra + degradê leve na base; canto inferior
+  esquerdo com logo em cartão branco (proporção preservada — antes era
+  esticada num quadrado), hora em destaque, divisor amarelo, data + dia
+  da semana, endereço (slot pronto, preenchido no Incremento 2) e
+  coordenadas em linha pequena; canto superior direito com a marca
+  "ATOS · Gestão de Campo". Tudo proporcional ao MENOR lado da foto
+  (igual em retrato e paisagem). Sem logo, cai para o nome da empresa
+- Miniatura em `OrderEvidences` passa de `object-cover` para
+  `object-contain` (foto inteira, carimbo visível)
+- Novo `EvidenceViewer.tsx`: tocar na foto abre em tela cheia sem
+  recorte + botão **Baixar** (URL assinada com `download`, arquivo
+  carimbado). Vale para técnico e admin, evidência da OS e foto de
+  checklist. Dialog do Radix (abre de dentro do modal do checklist)
+- Sem migration
 - Sem migration
 
 ### Próximos blocos
@@ -497,3 +516,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-23: bug de "falta de memória" — câmera embutida (`getUserMedia`) implementada nos dois pontos de captura de foto, substituindo o app de Câmera nativo; testada ponta a ponta na URL pública (4 cenários, incluindo um bug de modal achado e corrigido no próprio teste). Ver seção 4.3. Falta validação final no celular real do usuário — se confirmar, o bug fecha e o próximo passo é o Bloco C (PDF).*
 
 *2026-09-23: validado no celular real — bug de memória FECHADO. Novo achado: carimbo escondido pela miniatura e desproporcional em foto retrato (seção 4.3); aguardando modelo do usuário antes do Bloco C.*
+
+*2026-09-23: carimbo v2 no padrão do modelo do usuário + visualização em tela cheia e download de evidências (Incremento 1 de 3). Próximos: endereço via Edge Function/Nominatim (Inc. 2), configuração de campos do carimbo por tenant (Inc. 3). Em discussão com o usuário: marca ATOS removível ou não, e código de verificação de autenticidade.*
