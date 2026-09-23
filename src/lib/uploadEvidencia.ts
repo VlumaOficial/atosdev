@@ -28,6 +28,34 @@ export interface DadosCarimbo {
   endereco?: string | null
   config: ConfigCarimbo
   contexto?: ContextoCarimbo
+  codigo?: string | null        // código de verificação (selo "ATOS Verificado")
+  siteVerificacao?: string      // ex.: atosdev.vercel.app/verificar
+}
+
+// Código de verificação: 12 caracteres sem os ambíguos (I, L, O, 0, 1) —
+// 31^12 ≈ 7,9×10^17 combinações, impossível de adivinhar/enumerar.
+// Exibido em grupos de 4 (K7P2-9XQ4-M3TD). Validado também no banco.
+const ALFABETO_CODIGO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+
+export function gerarCodigoVerificacao(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(12))
+  // rejeição simples do viés de módulo: 248 = 31 × 8
+  let codigo = ''
+  let i = 0
+  while (codigo.length < 12) {
+    if (i >= bytes.length) { crypto.getRandomValues(bytes); i = 0 }
+    const b = bytes[i++]
+    if (b < 248) codigo += ALFABETO_CODIGO[b % 31]
+  }
+  return codigo
+}
+
+export function formatarCodigo(codigo: string): string {
+  return codigo.replace(/(.{4})(?=.)/g, '$1-')
+}
+
+export function siteVerificacaoAtual(): string {
+  return `${window.location.host}/verificar`
 }
 
 function carregarImagem(url: string): Promise<HTMLImageElement> {
@@ -117,7 +145,18 @@ export function desenharCarimbo(
   ctx.fillText('ATOS', largura - margem, margem)
   ctx.fillStyle = COR_ATOS_SUB
   ctx.font = `${2.6 * u}px ${fonte}`
-  ctx.fillText('Gestão de Campo', largura - margem, margem + 5.2 * u)
+  if (dados.codigo) {
+    // selo de autenticidade (decisão de produto 2026-09-23): a marca ATOS
+    // vale como prova — o código confere a foto em /verificar/CÓDIGO
+    ctx.font = `bold ${2.8 * u}px ${fonte}`
+    ctx.fillText(`Verificado · ${formatarCodigo(dados.codigo)}`, largura - margem, margem + 5.4 * u)
+    if (dados.siteVerificacao) {
+      ctx.font = `${2.2 * u}px ${fonte}`
+      ctx.fillText(dados.siteVerificacao, largura - margem, margem + 8.8 * u)
+    }
+  } else {
+    ctx.fillText('Gestão de Campo', largura - margem, margem + 5.2 * u)
+  }
 
   // --- bloco inferior esquerdo, desenhado de baixo pra cima
   // (ordem visual, de cima pra baixo: logo, nome da empresa, OS/unidade/
@@ -236,13 +275,15 @@ export function desenharCarimbo(
 interface FotoProcessada {
   principal: Blob
   miniatura: Blob | null
+  codigo?: string
+  carimbadoEm?: Date
 }
 
 function paraBlob(canvas: HTMLCanvasElement, qualidade: number): Promise<Blob | null> {
   return new Promise((resolve) => canvas.toBlob(b => resolve(b), 'image/jpeg', qualidade))
 }
 
-async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<FotoProcessada> {
+async function comprimirECarimbar(file: File, dados: DadosCarimbo, quando: Date): Promise<FotoProcessada> {
   if (!file.type.startsWith('image/')) return { principal: file, miniatura: null }
 
   // Fotos de câmera de celular podem vir em resolução muito alta
@@ -288,7 +329,7 @@ async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<Foto
       // segue sem logo se a imagem falhar ao carregar (ex: CORS, arquivo corrompido)
     }
   }
-  desenharCarimbo(ctx, largura, altura, dados, logo, new Date())
+  desenharCarimbo(ctx, largura, altura, dados, logo, quando)
 
   const principal = (await paraBlob(canvas, QUALIDADE)) ?? file
 
@@ -390,14 +431,19 @@ async function carimbar(
     cfg.endereco ? obterEndereco(coords) : Promise.resolve(null),
     cfg.numero_os || cfg.unidade ? buscarContexto().catch(() => ({})) : Promise.resolve({} as ContextoCarimbo),
   ])
-  return comprimirECarimbar(file, {
+  const codigo = gerarCodigoVerificacao()
+  const quando = new Date()
+  const foto = await comprimirECarimbar(file, {
     tenantName: dados.tenantName,
     logoUrl: dados.logoUrl,
     coords,
     endereco,
     config: cfg,
     contexto: { ...contexto, tecnico: cfg.tecnico ? dados.nomeUsuario : null },
-  })
+    codigo,
+    siteVerificacao: siteVerificacaoAtual(),
+  }, quando)
+  return { ...foto, codigo, carimbadoEm: quando }
 }
 
 async function contextoDaOS(orderId: string): Promise<ContextoCarimbo> {
@@ -429,14 +475,40 @@ export function caminhoMiniatura(path: string): string {
   return path.replace(/\.jpg$/i, '') + '_mini.jpg'
 }
 
-async function enviarFoto(foto: FotoProcessada, caminho: string): Promise<UploadResult> {
+async function sha256Hex(blob: Blob): Promise<string> {
+  const h = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer())
+  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+interface VinculoFoto { orderId?: string | null; checklistInstanceId?: string | null }
+
+async function enviarFoto(foto: FotoProcessada, caminho: string, vinculo: VinculoFoto): Promise<UploadResult> {
   if (foto.principal.size > TAMANHO_MAX) {
     return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
   }
+  const hash = foto.codigo ? await sha256Hex(foto.principal) : null
   const { error } = await supabase.storage
     .from('evidencias')
     .upload(caminho, foto.principal, { contentType: 'image/jpeg', upsert: false })
   if (error) return { path: '', erro: error.message }
+
+  // registro de verificação (hash + hora do servidor). É parte da prova:
+  // se não gravar, a foto não fica — apaga e pede pra tentar de novo
+  if (foto.codigo && hash) {
+    const { error: erroVer } = await supabase.from('fotos_verificacao').insert({
+      codigo: foto.codigo,
+      file_path: caminho,
+      sha256: hash,
+      bytes: foto.principal.size,
+      carimbado_em: foto.carimbadoEm?.toISOString() ?? null,
+      order_id: vinculo.orderId ?? null,
+      checklist_instance_id: vinculo.checklistInstanceId ?? null,
+    })
+    if (erroVer) {
+      await supabase.storage.from('evidencias').remove([caminho]).catch(() => {})
+      return { path: '', erro: 'Não foi possível registrar a verificação da foto. Tente de novo.' }
+    }
+  }
 
   // miniatura é otimização: se falhar, a evidência continua valendo
   if (foto.miniatura) {
@@ -457,9 +529,13 @@ export async function uploadEvidenciaChecklist(
 ): Promise<UploadResult> {
   const dados = await buscarDadosTenant()
   if ('erro' in dados) return { path: '', erro: dados.erro }
-  const foto = await carimbar(file, dados, coords, () => contextoDoChecklist(instanceId))
+  const [foto, { data: inst }] = await Promise.all([
+    carimbar(file, dados, coords, () => contextoDoChecklist(instanceId)),
+    supabase.from('checklist_instances').select('order_id').eq('id', instanceId).maybeSingle(),
+  ])
   const nome = `${fieldId}-${Date.now()}.jpg`
-  return enviarFoto(foto, `${dados.tenantId}/checklist/${instanceId}/${nome}`)
+  return enviarFoto(foto, `${dados.tenantId}/checklist/${instanceId}/${nome}`,
+    { checklistInstanceId: instanceId, orderId: (inst as any)?.order_id ?? null })
 }
 
 // Envia uma evidencia carimbada vinculada direto a uma OS (sem checklist),
@@ -473,7 +549,7 @@ export async function uploadEvidenciaOS(
   if ('erro' in dados) return { path: '', erro: dados.erro }
   const foto = await carimbar(file, dados, coords, () => contextoDaOS(orderId))
   const nome = `${Date.now()}.jpg`
-  return enviarFoto(foto, `${dados.tenantId}/os/${orderId}/${nome}`)
+  return enviarFoto(foto, `${dados.tenantId}/os/${orderId}/${nome}`, { orderId })
 }
 
 // Gera URL assinada temporaria para exibir a evidencia (bucket privado)
@@ -506,6 +582,12 @@ export async function urlMiniaturaEvidencia(path: string, segundos = 3600): Prom
   const mini = data?.[0]
   if (mini && !mini.error && mini.signedUrl) return mini.signedUrl
   return urlEvidencia(path, segundos)
+}
+
+// Código de verificação de uma foto (null em fotos anteriores ao recurso)
+export async function codigoDaFoto(path: string): Promise<string | null> {
+  const { data } = await supabase.from('fotos_verificacao').select('codigo').eq('file_path', path).maybeSingle()
+  return (data as any)?.codigo ?? null
 }
 
 // Remove uma evidencia (e a miniatura, se houver)

@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 import { Stamp, RotateCcw } from 'lucide-react'
-import { desenharCarimbo } from '@/lib/uploadEvidencia'
+import { desenharCarimbo, siteVerificacaoAtual } from '@/lib/uploadEvidencia'
 import {
   CAMPOS_CARIMBO, resolverConfigCarimbo, diferencasDoPadrao,
   type CampoCarimbo, type ConfigCarimbo,
@@ -76,6 +76,8 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
       endereco: EXEMPLO.endereco,
       config,
       contexto: { numeroOs: EXEMPLO.numeroOs, unidade: EXEMPLO.unidade, tecnico: user?.name ?? 'Nome do Técnico' },
+      codigo: 'K7P29XQ4M3TD',
+      siteVerificacao: siteVerificacaoAtual(),
     }, logo, new Date())
   }, [canvas, config, orientacao, logo, logoUrl, tenant?.name, user])
 
@@ -130,8 +132,8 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
           ))}
           <div className="flex items-center justify-between gap-3 py-1.5 opacity-70">
             <div>
-              <p className="text-sm text-foreground">Selo ATOS</p>
-              <p className="text-[11px] text-muted-foreground">Sempre presente no canto superior</p>
+              <p className="text-sm text-foreground">Selo ATOS Verificado</p>
+              <p className="text-[11px] text-muted-foreground">Código de autenticidade de cada foto — sempre presente no canto superior</p>
             </div>
             <span className="text-[11px] text-muted-foreground">fixo</span>
           </div>

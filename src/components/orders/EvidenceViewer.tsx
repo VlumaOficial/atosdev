@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { X, Download, Loader2 } from 'lucide-react'
-import { urlDownloadEvidencia, urlEvidencia } from '@/lib/uploadEvidencia'
+import { X, Download, Loader2, ShieldCheck } from 'lucide-react'
+import { urlDownloadEvidencia, urlEvidencia, codigoDaFoto, formatarCodigo } from '@/lib/uploadEvidencia'
 
 // Foto de evidência em tela cheia (sem recorte — o carimbo fica sempre
 // visível) + download do arquivo carimbado. Dialog do Radix pelo mesmo
@@ -15,12 +15,15 @@ interface Props {
 export default function EvidenceViewer({ path, onFechar }: Props) {
   const [url, setUrl] = useState<string | null>(null)
   const [urlDownload, setUrlDownload] = useState<string | null>(null)
+  const [codigo, setCodigo] = useState<string | null>(null)
 
   useEffect(() => {
     let ativo = true
     setUrl(null)
     setUrlDownload(null)
+    setCodigo(null)
     if (path) {
+      codigoDaFoto(path).then(c => { if (ativo) setCodigo(c) })
       urlEvidencia(path).then(u => { if (ativo) setUrl(u) })
       urlDownloadEvidencia(path).then(u => { if (ativo) setUrlDownload(u) })
     }
@@ -34,7 +37,15 @@ export default function EvidenceViewer({ path, onFechar }: Props) {
         <Dialog.Content aria-describedby={undefined}
           className="fixed inset-0 z-[60] flex flex-col focus:outline-none">
           <div className="flex items-center justify-between gap-2 px-4 py-3 text-white">
-            <Dialog.Title className="text-sm font-medium">Evidência</Dialog.Title>
+            <div className="min-w-0">
+              <Dialog.Title className="text-sm font-medium">Evidência</Dialog.Title>
+              {codigo && (
+                <a href={`/verificar/${codigo}`} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-green-300 hover:underline" data-testid="codigo-verificacao">
+                  <ShieldCheck size={12} /> Verificado · {formatarCodigo(codigo)}
+                </a>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               {urlDownload ? (
                 <a href={urlDownload} download

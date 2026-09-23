@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import AtosLogo from '@/components/brand/AtosLogo'
-import { MapPin, Camera, Lock, Building2, Map as MapIcon } from 'lucide-react'
+import { MapPin, Camera, Lock, Building2, Map as MapIcon, ShieldCheck } from 'lucide-react'
 
 export default function AvisoPrivacidadePage() {
   return (
@@ -41,6 +41,16 @@ export default function AvisoPrivacidadePage() {
             <div>
               <p className="text-sm font-medium text-foreground">Conversão da coordenada em endereço</p>
               <p className="text-sm text-muted-foreground mt-0.5">Para escrever o endereço no carimbo da foto, a coordenada daquele momento é enviada ao serviço de mapas OpenStreetMap (Nominatim), que devolve rua, bairro, cidade e CEP. Só a coordenada é enviada — nenhum nome, e-mail ou dado da ordem de serviço. Se o serviço não responder, a foto sai apenas com as coordenadas.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="w-9 h-9 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+              <ShieldCheck size={16} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Código de verificação da foto</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Cada foto de evidência recebe um código único impresso no selo ATOS. Quem tiver o código pode conferir, em /verificar, se a foto é autêntica — vendo a própria foto, a empresa, o número da OS e os horários. Nome, e-mail ou outros dados do técnico não são exibidos.</p>
             </div>
           </div>
 

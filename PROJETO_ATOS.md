@@ -649,6 +649,42 @@ exportação ZIP → código de verificação → "liberar espaço"
   e fechou sem "Salvar" → resposta gravada com autor "Infoxtec Teste" e
   hora atual; no bucket ficaram só a foto nova + miniatura (a anterior
   foi apagada, sem órfão)
+
+### Código de verificação de autenticidade (2026-09-23)
+- Decisão de produto (VISAO_ATOS.md F6): marca ATOS = selo "ATOS
+  Verificado · CÓDIGO", entra no MVP antes do PDF
+- **Código**: 12 caracteres sem ambíguos (sem I, L, O, 0, 1), 31^12 ≈
+  7,9×10^17, gerado com `crypto.getRandomValues` (sem viés de módulo),
+  exibido K7P2-9XQ4-M3TD. Impresso no selo do canto superior direito +
+  endereço do site de verificação (host atual, então vale em DEV e PRD)
+- **Na foto**: código → carimbo → SHA-256 do JPEG final → upload →
+  registro em `fotos_verificacao` (migration 026). Se o registro falhar,
+  a foto é apagada e o técnico tenta de novo (o código é parte da prova)
+- **Banco à prova de forja**: gatilho define tenant, autor (auth.uid())
+  e `enviado_em = now()` do servidor — cliente não escolhe; arquivo fora
+  da pasta da empresa é recusado; sem UPDATE/DELETE (imutável). Testado
+  por impersonação: hora "2020-01-01" enviada → gravada a do servidor;
+  pasta de outro tenant → erro; tentativa de trocar hash → inalterado
+- **Edge Function `verificar-foto`** (pública, verify_jwt=false,
+  publicada via Management API, versionada em supabase/functions/):
+  recalcula o SHA-256 do arquivo GUARDADO e compara com o registrado
+  (detecta troca do arquivo depois do envio); devolve só empresa, nº da
+  OS, hora da foto (aparelho), hora do servidor, divergência de relógio,
+  resultado e URL temporária (5 min) da foto — nenhum id, e-mail ou nome
+  de técnico (LGPD)
+- **Página pública `/verificar` e `/verificar/:codigo`**: resultado
+  (autêntica / alterada / não encontrada / arquivo removido), dados,
+  alerta se o relógio do aparelho diverge +10 min do servidor, a foto, e
+  "Conferir arquivo" (hash calculado no navegador de quem verifica —
+  avisa que apps de mensagem recomprimem imagens). Limite honesto
+  escrito na página: garante inalteração + hora do servidor; GPS vem do
+  aparelho
+- Visualizador de evidência mostra "Verificado · CÓDIGO" com link;
+  planilha do ZIP ganhou "Código de verificação" e "Verificar em";
+  prévia do carimbo mostra código de exemplo; aviso de privacidade
+  explica o código (sem novo aceite: não muda o tratamento de
+  localização)
+- Fotos anteriores ao recurso não têm código (continuam válidas)
 - Sem migration
 
 ### Próximos blocos
@@ -724,6 +760,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 023_f6_carimbo_config | tenants.stamp_config (jsonb, só diferenças do padrão) + função atualizar_carimbo_tenant() (SECURITY DEFINER, admin, só chaves conhecidas booleanas) | OK | Pendente | Sim |
 | 024_f6_armazenamento | funções arquivos_orfaos() e uso_armazenamento() (SECURITY DEFINER, admin/super_admin, só consulta — remoção via Storage API) | OK | Pendente | Sim |
 | 025_f5_checklist_answer_autor | gatilho fn_checklist_answer_autor(): grava answered_by (auth.uid()) e answered_at em todo INSERT e em UPDATE que muda o valor — corrige autoria nunca registrada | OK | Pendente | Sim |
+| 026_f6_verificacao_fotos | tabela fotos_verificacao (código, sha256, hora do servidor, autor; imutável, sem UPDATE/DELETE) + gatilho que força tenant/autor/hora e bloqueia arquivo de outra empresa | OK | Pendente | Sim |
 
 ---
 

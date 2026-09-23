@@ -33,6 +33,7 @@ export interface ItemExportacao {
   autor: string
   dataHora: string     // ISO
   observacao: string
+  codigo?: string
 }
 
 function limpar(nome: string): string {
@@ -148,6 +149,15 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
     })
   }
 
+  // códigos de verificação (fotos anteriores ao recurso não têm)
+  const caminhosFotos = itens.filter(i => i.tipo !== 'Assinatura do cliente').map(i => i.caminho)
+  const codigos = new Map<string, string>()
+  for (let i = 0; i < caminhosFotos.length; i += 200) {
+    const { data } = await supabase.from('fotos_verificacao').select('codigo, file_path').in('file_path', caminhosFotos.slice(i, i + 200))
+    for (const d of (data ?? []) as any[]) codigos.set(d.file_path, d.codigo)
+  }
+  for (const it of itens) it.codigo = codigos.get(it.caminho)
+
   // nomes únicos dentro de cada pasta (duas fotos no mesmo minuto)
   const usados = new Set<string>()
   for (const it of itens) {
@@ -161,11 +171,13 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
 }
 
 function planilha(itens: ItemExportacao[], faltando: Set<string>): string {
-  const cab = ['Pasta', 'Arquivo', 'Tipo', 'OS', 'Cliente', 'Unidade', 'Checklist / item', 'Autor', 'Data e hora', 'Observação', 'Situação']
+  const cab = ['Pasta', 'Arquivo', 'Tipo', 'OS', 'Cliente', 'Unidade', 'Checklist / item', 'Autor', 'Data e hora', 'Observação', 'Código de verificação', 'Verificar em', 'Situação']
+  const site = `${window.location.origin}/verificar/`
   const esc = (v: string) => /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
   const linhas = itens.map(it => [
     it.pasta, it.arquivo, it.tipo, it.os, it.cliente, it.unidade, it.checklistItem, it.autor,
     it.dataHora ? new Date(it.dataHora).toLocaleString('pt-BR') : '', it.observacao,
+    it.codigo ? it.codigo.replace(/(.{4})(?=.)/g, '$1-') : '', it.codigo ? site + it.codigo : '',
     faltando.has(it.caminho) ? 'Arquivo não encontrado' : 'OK',
   ].map(v => esc(String(v ?? ''))).join(';'))
   return '﻿' + [cab.join(';'), ...linhas].join('\r\n')
