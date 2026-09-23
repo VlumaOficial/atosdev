@@ -1,24 +1,29 @@
 import { useState, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X, Download, Loader2 } from 'lucide-react'
-import { urlDownloadEvidencia } from '@/lib/uploadEvidencia'
+import { urlDownloadEvidencia, urlEvidencia } from '@/lib/uploadEvidencia'
 
 // Foto de evidência em tela cheia (sem recorte — o carimbo fica sempre
 // visível) + download do arquivo carimbado. Dialog do Radix pelo mesmo
 // motivo do CameraCaptura: também é aberto de dentro do modal do checklist.
 interface Props {
   path: string | null
-  url: string | null        // URL assinada já carregada pela miniatura
   onFechar: () => void
 }
 
-export default function EvidenceViewer({ path, url, onFechar }: Props) {
+// A foto CHEIA só é baixada aqui (ao abrir) — listas usam a miniatura
+export default function EvidenceViewer({ path, onFechar }: Props) {
+  const [url, setUrl] = useState<string | null>(null)
   const [urlDownload, setUrlDownload] = useState<string | null>(null)
 
   useEffect(() => {
     let ativo = true
+    setUrl(null)
     setUrlDownload(null)
-    if (path) urlDownloadEvidencia(path).then(u => { if (ativo) setUrlDownload(u) })
+    if (path) {
+      urlEvidencia(path).then(u => { if (ativo) setUrl(u) })
+      urlDownloadEvidencia(path).then(u => { if (ativo) setUrlDownload(u) })
+    }
     return () => { ativo = false }
   }, [path])
 
@@ -48,6 +53,7 @@ export default function EvidenceViewer({ path, url, onFechar }: Props) {
             </div>
           </div>
           <div className="flex-1 min-h-0 flex items-center justify-center p-2" onClick={onFechar}>
+            {!url && <Loader2 size={24} className="animate-spin text-white/60" />}
             {url && (
               <img src={url} alt="Evidência em tela cheia" onClick={e => e.stopPropagation()}
                 className="max-w-full max-h-full object-contain" />

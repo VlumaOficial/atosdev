@@ -111,6 +111,7 @@ export default function FieldChecklistPage() {
           itensAbertos={itensAbertos}
           onToggleItem={(itemId) => setItensAbertos(prev => ({ ...prev, [itemId]: !prev[itemId] }))}
           onCampo={setCampo}
+          onFotoAlterada={(item, val) => { salvarResposta(item.id, item, val).catch(() => {}) }}
           instanceId={checklist.instanceId}
           readOnly={concluido}
         />

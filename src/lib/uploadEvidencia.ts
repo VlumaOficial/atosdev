@@ -4,8 +4,15 @@ import type { Coordenadas } from '@/lib/geolocation'
 import { obterEndereco } from '@/lib/geocodificacao'
 import { resolverConfigCarimbo, type ConfigCarimbo } from '@/lib/carimboConfig'
 
-const LARGURA_MAX = 1600
+// Limite no MAIOR lado (retrato ou paisagem). Antes era só na largura:
+// retrato saía 1600×2845 — ~3× o espaço da paisagem, e ainda AMPLIADO
+// (o quadro da câmera é 1080×1920). Auditoria de armazenamento 2026-09-23.
+const LADO_MAX = 1600
 const QUALIDADE = 0.8
+// Miniatura só para listas/cards — a foto cheia só é baixada ao abrir em
+// tela cheia, baixar ou gerar PDF (economia de tráfego/egress)
+const LADO_MINIATURA = 400
+const QUALIDADE_MINIATURA = 0.7
 const TAMANHO_MAX = 5 * 1024 * 1024 // 5MB
 
 export interface ContextoCarimbo {
@@ -226,24 +233,42 @@ export function desenharCarimbo(
 // Comprime a imagem e desenha o carimbo (logo + nome da empresa +
 // data/hora + GPS) no mesmo canvas, antes de exportar — só a versão
 // carimbada é guardada, o original nunca sai do navegador.
-async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<Blob> {
-  if (!file.type.startsWith('image/')) return file
+interface FotoProcessada {
+  principal: Blob
+  miniatura: Blob | null
+}
+
+function paraBlob(canvas: HTMLCanvasElement, qualidade: number): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(b => resolve(b), 'image/jpeg', qualidade))
+}
+
+async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<FotoProcessada> {
+  if (!file.type.startsWith('image/')) return { principal: file, miniatura: null }
 
   // Fotos de câmera de celular podem vir em resolução muito alta
-  // (12MP+) mesmo quando o arquivo em si não é grande em bytes (câmeras
-  // modernas comprimem bem) — então NÃO dá pra decidir pelo tamanho do
-  // arquivo se é seguro decodificar inteiro. Sempre pede pro navegador
-  // já decodificar redimensionado (um passo só, nunca materializa a
-  // imagem em resolução total em memória). Se o navegador não suportar
-  // esses parâmetros, cai pro modo normal (mais lento, mas funcional).
+  // (12MP+) mesmo quando o arquivo em si não é grande em bytes — o
+  // tamanho do arquivo não indica resolução. As dimensões são lidas do
+  // cabeçalho do JPEG (sem decodificar a imagem) e o navegador já
+  // decodifica no tamanho final, num passo só: nunca materializa a foto
+  // em resolução total em memória e nunca AMPLIA uma foto pequena.
+  // Formato desconhecido (sem cabeçalho legível): decodifica pela largura
+  // e o canvas ajusta pelo maior lado.
+  const dim = await dimensoesJpeg(file).catch(() => null)
   let bitmap: ImageBitmap
   try {
-    bitmap = await createImageBitmap(file, { resizeWidth: LARGURA_MAX, resizeQuality: 'medium' })
+    if (dim) {
+      const escalaAlvo = Math.min(1, LADO_MAX / Math.max(dim.w, dim.h))
+      bitmap = escalaAlvo < 1
+        ? await createImageBitmap(file, { resizeWidth: Math.round(dim.w * escalaAlvo), resizeQuality: 'medium' })
+        : await createImageBitmap(file)
+    } else {
+      bitmap = await createImageBitmap(file, { resizeWidth: LADO_MAX, resizeQuality: 'medium' })
+    }
   } catch {
     bitmap = await createImageBitmap(file)
   }
 
-  const escala = Math.min(1, LARGURA_MAX / bitmap.width)
+  const escala = Math.min(1, LADO_MAX / Math.max(bitmap.width, bitmap.height))
   const largura = Math.round(bitmap.width * escala)
   const altura = Math.round(bitmap.height * escala)
 
@@ -251,7 +276,7 @@ async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<Blob
   canvas.width = largura
   canvas.height = altura
   const ctx = canvas.getContext('2d')
-  if (!ctx) return file
+  if (!ctx) return { principal: file, miniatura: null }
   ctx.drawImage(bitmap, 0, 0, largura, altura)
   bitmap.close()
 
@@ -265,9 +290,58 @@ async function comprimirECarimbar(file: File, dados: DadosCarimbo): Promise<Blob
   }
   desenharCarimbo(ctx, largura, altura, dados, logo, new Date())
 
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob ?? file), 'image/jpeg', QUALIDADE)
-  })
+  const principal = (await paraBlob(canvas, QUALIDADE)) ?? file
+
+  // miniatura a partir do canvas JÁ carimbado (mesma imagem, só menor)
+  let miniatura: Blob | null = null
+  const escalaMini = Math.min(1, LADO_MINIATURA / Math.max(largura, altura))
+  const mini = document.createElement('canvas')
+  mini.width = Math.round(largura * escalaMini)
+  mini.height = Math.round(altura * escalaMini)
+  const ctxMini = mini.getContext('2d')
+  if (ctxMini) {
+    ctxMini.drawImage(canvas, 0, 0, mini.width, mini.height)
+    miniatura = await paraBlob(mini, QUALIDADE_MINIATURA)
+  }
+  return { principal, miniatura }
+}
+
+// Lê largura/altura do cabeçalho JPEG (marcador SOF) já considerando a
+// orientação EXIF, sem decodificar a imagem. null se não for JPEG legível.
+async function dimensoesJpeg(file: File): Promise<{ w: number; h: number } | null> {
+  const v = new DataView(await file.slice(0, 256 * 1024).arrayBuffer())
+  if (v.byteLength < 4 || v.getUint16(0) !== 0xFFD8) return null
+  let off = 2
+  let orientacao = 1
+  while (off + 9 < v.byteLength) {
+    if (v.getUint8(off) !== 0xFF) return null
+    const marcador = v.getUint8(off + 1)
+    const tamanho = v.getUint16(off + 2)
+    if (marcador === 0xE1) orientacao = orientacaoExif(v, off + 4, tamanho - 2) ?? orientacao
+    if (marcador >= 0xC0 && marcador <= 0xCF && marcador !== 0xC4 && marcador !== 0xC8 && marcador !== 0xCC) {
+      const h = v.getUint16(off + 5)
+      const w = v.getUint16(off + 7)
+      return orientacao >= 5 && orientacao <= 8 ? { w: h, h: w } : { w, h }
+    }
+    off += 2 + tamanho
+  }
+  return null
+}
+
+function orientacaoExif(v: DataView, inicio: number, tamanho: number): number | null {
+  // "Exif\0\0" + cabeçalho TIFF
+  if (tamanho < 14 || v.getUint32(inicio) !== 0x45786966) return null
+  const tiff = inicio + 6
+  const le = v.getUint16(tiff) === 0x4949
+  const ifd0 = tiff + v.getUint32(tiff + 4, le)
+  if (ifd0 + 2 > v.byteLength) return null
+  const entradas = v.getUint16(ifd0, le)
+  for (let i = 0; i < entradas; i++) {
+    const e = ifd0 + 2 + i * 12
+    if (e + 12 > v.byteLength) return null
+    if (v.getUint16(e, le) === 0x0112) return v.getUint16(e + 8, le)
+  }
+  return null
 }
 
 export interface UploadResult {
@@ -310,7 +384,7 @@ async function carimbar(
   dados: DadosTenant,
   coords: Coordenadas,
   buscarContexto: () => Promise<ContextoCarimbo>
-): Promise<Blob> {
+): Promise<FotoProcessada> {
   const cfg = dados.config
   const [endereco, contexto] = await Promise.all([
     cfg.endereco ? obterEndereco(coords) : Promise.resolve(null),
@@ -348,6 +422,32 @@ async function contextoDoChecklist(instanceId: string): Promise<ContextoCarimbo>
   }
 }
 
+// Miniatura fica ao lado da foto, com nome derivado — sem coluna no
+// banco. Fotos antigas (antes de 2026-09-23) não têm miniatura: quem
+// exibe cai para a foto cheia.
+export function caminhoMiniatura(path: string): string {
+  return path.replace(/\.jpg$/i, '') + '_mini.jpg'
+}
+
+async function enviarFoto(foto: FotoProcessada, caminho: string): Promise<UploadResult> {
+  if (foto.principal.size > TAMANHO_MAX) {
+    return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
+  }
+  const { error } = await supabase.storage
+    .from('evidencias')
+    .upload(caminho, foto.principal, { contentType: 'image/jpeg', upsert: false })
+  if (error) return { path: '', erro: error.message }
+
+  // miniatura é otimização: se falhar, a evidência continua valendo
+  if (foto.miniatura) {
+    await supabase.storage
+      .from('evidencias')
+      .upload(caminhoMiniatura(caminho), foto.miniatura, { contentType: 'image/jpeg', upsert: false })
+      .catch(() => {})
+  }
+  return { path: caminho }
+}
+
 // Envia a evidencia carimbada para o bucket, no caminho {tenant}/checklist/{instanceId}/{arquivo}
 export async function uploadEvidenciaChecklist(
   file: File,
@@ -357,21 +457,9 @@ export async function uploadEvidenciaChecklist(
 ): Promise<UploadResult> {
   const dados = await buscarDadosTenant()
   if ('erro' in dados) return { path: '', erro: dados.erro }
-  const carimbada = await carimbar(file, dados, coords, () => contextoDoChecklist(instanceId))
-
-  if (carimbada.size > TAMANHO_MAX) {
-    return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
-  }
-
+  const foto = await carimbar(file, dados, coords, () => contextoDoChecklist(instanceId))
   const nome = `${fieldId}-${Date.now()}.jpg`
-  const caminho = `${dados.tenantId}/checklist/${instanceId}/${nome}`
-
-  const { error } = await supabase.storage
-    .from('evidencias')
-    .upload(caminho, carimbada, { contentType: 'image/jpeg', upsert: false })
-
-  if (error) return { path: '', erro: error.message }
-  return { path: caminho }
+  return enviarFoto(foto, `${dados.tenantId}/checklist/${instanceId}/${nome}`)
 }
 
 // Envia uma evidencia carimbada vinculada direto a uma OS (sem checklist),
@@ -383,21 +471,9 @@ export async function uploadEvidenciaOS(
 ): Promise<UploadResult> {
   const dados = await buscarDadosTenant()
   if ('erro' in dados) return { path: '', erro: dados.erro }
-  const carimbada = await carimbar(file, dados, coords, () => contextoDaOS(orderId))
-
-  if (carimbada.size > TAMANHO_MAX) {
-    return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
-  }
-
+  const foto = await carimbar(file, dados, coords, () => contextoDaOS(orderId))
   const nome = `${Date.now()}.jpg`
-  const caminho = `${dados.tenantId}/os/${orderId}/${nome}`
-
-  const { error } = await supabase.storage
-    .from('evidencias')
-    .upload(caminho, carimbada, { contentType: 'image/jpeg', upsert: false })
-
-  if (error) return { path: '', erro: error.message }
-  return { path: caminho }
+  return enviarFoto(foto, `${dados.tenantId}/os/${orderId}/${nome}`)
 }
 
 // Gera URL assinada temporaria para exibir a evidencia (bucket privado)
@@ -420,8 +496,17 @@ export async function urlDownloadEvidencia(path: string, nomeArquivo?: string): 
   return data.signedUrl
 }
 
-// Remove uma evidencia
+// URL da miniatura (listas/cards); cai para a foto cheia se não houver
+export async function urlMiniaturaEvidencia(path: string, segundos = 3600): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from('evidencias')
+    .createSignedUrl(caminhoMiniatura(path), segundos)
+  if (!error && data?.signedUrl) return data.signedUrl
+  return urlEvidencia(path, segundos)
+}
+
+// Remove uma evidencia (e a miniatura, se houver)
 export async function removerEvidencia(path: string): Promise<boolean> {
-  const { error } = await supabase.storage.from('evidencias').remove([path])
+  const { error } = await supabase.storage.from('evidencias').remove([path, caminhoMiniatura(path)])
   return !error
 }

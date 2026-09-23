@@ -521,6 +521,32 @@ ser limpas por esse motivo).
   lado, miniatura separada para listas, auto-salvar a foto do
   checklist, rotina de limpeza de órfãos; WebP e política de retenção
   por plano como opções
+
+### Otimização de armazenamento — A, B, C (2026-09-23, aprovados pelo usuário)
+- **A — limite no maior lado**: `LADO_MAX = 1600` vale para o maior
+  lado. As dimensões são lidas do cabeçalho JPEG (marcador SOF +
+  orientação EXIF, `dimensoesJpeg()`), sem decodificar, e o navegador
+  decodifica direto no tamanho final. **Achado junto**: a foto retrato
+  real do usuário (1600×2845) tinha sido AMPLIADA — o quadro da câmera
+  embutida é 1080×1920 e o código antigo forçava largura 1600. Agora
+  nunca amplia (retrato de câmera 1080×1920 → 900×1600)
+- **B — miniatura**: cada foto gera também `<nome>_mini.jpg` (maior lado
+  400 px, qualidade 0.7), feita do canvas já carimbado, sem coluna nova
+  no banco (nome derivado). Listas/cards usam a miniatura
+  (`urlMiniaturaEvidencia`, cai para a foto cheia em fotos antigas sem
+  miniatura); a foto cheia só é baixada no visualizador/download.
+  Remoção apaga as duas. Falha ao subir a miniatura não invalida a
+  evidência
+- **C — foto do checklist salva na hora**: `ChecklistFillList` ganhou
+  `onFotoAlterada`; campo do tipo foto grava o item assim que a foto
+  sobe ou é removida (OS e checklist avulso). Fim da foto perdida/órfã
+  por sair sem "Salvar"
+- **D (limpeza de órfãos)**: em vez de rotina escondida, usuário pediu
+  opção em Configurações (limpeza + exportação ZIP) — em discussão
+- **Decisão de plano Supabase adiada (pedido do usuário)**: estimativa
+  ~300 KB/foto → 1 GB ≈ 3.300 fotos; Infoxtec com ~300 OS/mês × 10 fotos
+  enche o free em ~1 mês mesmo otimizado. No pago, espaço é barato;
+  cuidado maior é egress. **Reavaliar antes da promoção para PRD**
 - Sem migration
 
 ### Próximos blocos

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { uploadEvidenciaChecklist, urlEvidencia, removerEvidencia } from '@/lib/uploadEvidencia'
+import { uploadEvidenciaChecklist, urlMiniaturaEvidencia, removerEvidencia } from '@/lib/uploadEvidencia'
 import { obterLocalizacao, type ErroLocalizacao } from '@/lib/geolocation'
 import { useLocationConsent } from '@/hooks/useLocationConsent'
 import LocationConsentModal from '@/components/LocationConsentModal'
@@ -35,7 +35,7 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
   useEffect(() => {
     let ativo = true
     if (value) {
-      urlEvidencia(value).then(url => { if (ativo) setPreview(url) })
+      urlMiniaturaEvidencia(value).then(url => { if (ativo) setPreview(url) })
     } else {
       setPreview(null)
     }
@@ -110,7 +110,7 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
         <button type="button" onClick={() => setAmpliada(true)} className="block" aria-label="Ver evidência em tela cheia">
           <img src={preview} alt="Evidência" className="max-h-48 rounded-md border border-border" />
         </button>
-        <EvidenceViewer path={ampliada ? value : null} url={preview} onFechar={() => setAmpliada(false)} />
+        <EvidenceViewer path={ampliada ? value : null} onFechar={() => setAmpliada(false)} />
         {!readOnly && (
           <button type="button" onClick={handleRemover}
             className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-red-500/80 transition">

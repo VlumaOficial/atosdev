@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOrderEvidences, type OrderEvidence } from '@/hooks/useOrderEvidences'
-import { urlEvidencia } from '@/lib/uploadEvidencia'
+import { urlMiniaturaEvidencia } from '@/lib/uploadEvidencia'
 import { obterLocalizacao, type ErroLocalizacao } from '@/lib/geolocation'
 import { useLocationConsent } from '@/hooks/useLocationConsent'
 import LocationConsentModal from '@/components/LocationConsentModal'
@@ -27,7 +27,7 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
 
   useEffect(() => {
     let ativo = true
-    urlEvidencia(evidencia.file_path).then(url => { if (ativo) setPreview(url) })
+    urlMiniaturaEvidencia(evidencia.file_path).then(url => { if (ativo) setPreview(url) })
     return () => { ativo = false }
   }, [evidencia.file_path])
 
@@ -49,7 +49,7 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
           </button>
         )}
       </div>
-      <EvidenceViewer path={ampliada ? evidencia.file_path : null} url={preview} onFechar={() => setAmpliada(false)} />
+      <EvidenceViewer path={ampliada ? evidencia.file_path : null} onFechar={() => setAmpliada(false)} />
       <div className="p-2">
         {readOnly ? (
           texto && <p className="text-xs text-muted-foreground whitespace-pre-wrap">{texto}</p>

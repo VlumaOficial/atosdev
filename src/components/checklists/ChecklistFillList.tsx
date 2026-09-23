@@ -8,11 +8,15 @@ interface ChecklistFillListProps {
   itensAbertos: Record<string, boolean>
   onToggleItem: (itemId: string) => void
   onCampo: (itemId: string, fieldId: string, value: any) => void
+  // chamado quando um campo de FOTO muda — o arquivo já subiu (ou foi
+  // apagado) no bucket, então o item precisa ser gravado na hora; senão
+  // sair sem "Salvar" deixava a foto órfã no bucket e perdida pro técnico
+  onFotoAlterada?: (item: ChecklistItemSnapshot, valorDoItem: any) => void
   instanceId: string
   readOnly?: boolean
 }
 
-export default function ChecklistFillList({ items, respostas, itensAbertos, onToggleItem, onCampo, instanceId, readOnly }: ChecklistFillListProps) {
+export default function ChecklistFillList({ items, respostas, itensAbertos, onToggleItem, onCampo, onFotoAlterada, instanceId, readOnly }: ChecklistFillListProps) {
   return (
     <div className="space-y-4">
       {items.map(it => (
@@ -29,7 +33,10 @@ export default function ChecklistFillList({ items, respostas, itensAbertos, onTo
             {it.fields.map(f => (
               <div key={f.id}>
                 <p className="text-xs text-muted-foreground mb-1">{FIELD_LABELS[f.type] ?? f.type}</p>
-                <FieldInput field={f} value={respostas[it.id]?.[f.id]} onChange={(v) => onCampo(it.id, f.id, v)} instanceId={instanceId} readOnly={readOnly} />
+                <FieldInput field={f} value={respostas[it.id]?.[f.id]} onChange={(v) => {
+                  onCampo(it.id, f.id, v)
+                  if (f.type === 'foto') onFotoAlterada?.(it, { ...(respostas[it.id] ?? {}), [f.id]: v })
+                }} instanceId={instanceId} readOnly={readOnly} />
               </div>
             ))}
           </div>
