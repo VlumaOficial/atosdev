@@ -600,6 +600,10 @@ exportação ZIP → código de verificação → "liberar espaço"
 - Card Armazenamento ganhou o aviso "Limpeza automática de arquivos sem
   uso: ativa" + última verificação e resultado; abrir a tela também
   verifica/remove órfãos (+1h) antes de medir
+- Testado (URL pública, admin real): as 3 seções abrem fechadas com
+  resumo no cabeçalho (4,9 MB · 22 fotos / logo / Padrão); abrir mostra
+  o conteúdo; estado lembrado após recarregar; aviso de limpeza com
+  "Última verificação: 23/09, 18:49 — nada a remover"; zero erros
 - Sem migration
 
 ### Próximos blocos
