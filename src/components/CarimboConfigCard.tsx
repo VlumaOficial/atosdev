@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import { Card } from '@/components/ui/card'
+import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 import { Stamp, RotateCcw } from 'lucide-react'
 import { desenharCarimbo } from '@/lib/uploadEvidencia'
 import {
@@ -102,20 +102,11 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
   const personalizado = Object.keys(diferencasDoPadrao(config)).length > 0
 
   return (
-    <Card className="p-5">
-      <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-          <Stamp size={16} className="text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground">Carimbo das fotos de evidência</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Escolha o que aparece em cada foto tirada em campo. Vale para as próximas fotos — as já enviadas não mudam.
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_auto]">
+    <SecaoRecolhivel id="carimbo" icone={<Stamp size={16} className="text-primary" />}
+      titulo="Carimbo das fotos de evidência"
+      descricao="Escolha o que aparece em cada foto tirada em campo. Vale para as próximas fotos — as já enviadas não mudam."
+      resumo={personalizado ? 'Personalizado' : 'Padrão'}>
+      <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
         <div className="space-y-1">
           {CAMPOS_CARIMBO.map(c => (
             <div key={c.campo} className="flex items-center justify-between gap-3 py-1.5">
@@ -166,6 +157,6 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
       </div>
 
       {erro && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2 mt-3">{erro}</div>}
-    </Card>
+    </SecaoRecolhivel>
   )
 }

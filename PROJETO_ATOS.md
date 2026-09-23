@@ -585,6 +585,21 @@ exportação ZIP → código de verificação → "liberar espaço"
   lista todos os tenants e usuários; como técnico → "Sem permissão";
   (4) admin removeu o checklist da OS-0018 de teste → foto e miniatura
   da pasta dele apagadas do bucket na hora
+
+### Configurações com seções recolhíveis + limpeza visível (2026-09-23)
+- **Feedback do usuário**: (1) "não tenho a opção de limpeza" — a
+  limpeza de órfãos existe mas é automática e ficou invisível; o
+  "liberar espaço" (período escolhido pelo cliente) ainda não foi
+  construído — explicação anterior misturou os dois; (2) seções como o
+  Carimbo deveriam ficar recolhidas
+- `SecaoRecolhivel` (src/components/ui/secao-recolhivel.tsx): seção abre
+  FECHADA, cabeçalho com resumo (Armazenamento: total + fotos; Carimbo:
+  Padrão/Personalizado; Marca: miniatura da logo), estado lembrado por
+  navegador. Aplicada em Armazenamento, Marca da empresa e Carimbo;
+  exportação e liberar espaço vão usar o mesmo padrão
+- Card Armazenamento ganhou o aviso "Limpeza automática de arquivos sem
+  uso: ativa" + última verificação e resultado; abrir a tela também
+  verifica/remove órfãos (+1h) antes de medir
 - Sem migration
 
 ### Próximos blocos

@@ -15,6 +15,20 @@ const BUCKET = 'evidencias'
 const LOTE = 100
 const INTERVALO_VARREDURA_MS = 12 * 60 * 60 * 1000
 const CHAVE_ULTIMA_VARREDURA = 'atos_ultima_varredura_orfaos'
+const CHAVE_RESULTADO_VARREDURA = 'atos_resultado_varredura_orfaos'
+
+export interface ResultadoVarredura { quando: number; removidos: number }
+
+function gravarResultado(removidos: number) {
+  try { localStorage.setItem(CHAVE_RESULTADO_VARREDURA, JSON.stringify({ quando: Date.now(), removidos })) } catch { /* ok */ }
+}
+
+export function ultimaVarredura(): ResultadoVarredura | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(CHAVE_RESULTADO_VARREDURA) ?? 'null')
+    return v && typeof v.quando === 'number' ? v : null
+  } catch { return null }
+}
 
 async function removerEmLotes(nomes: string[]): Promise<number> {
   let removidos = 0
@@ -59,8 +73,16 @@ export async function removerArquivosDaOS(orderId: string, checklistIds: string[
 
 export async function limparOrfaos(minIdadeMinutos = 60): Promise<number> {
   const { data, error } = await supabase.rpc('arquivos_orfaos', { p_min_idade_minutos: minIdadeMinutos })
-  if (error || !data?.length) return 0
-  return removerEmLotes((data as { nome: string }[]).map(r => r.nome))
+  if (error) return 0
+  const removidos = data?.length ? await removerEmLotes((data as { nome: string }[]).map(r => r.nome)) : 0
+  gravarResultado(removidos)
+  return removidos
+}
+
+export async function contarOrfaos(minIdadeMinutos = 60): Promise<number> {
+  const { data, error } = await supabase.rpc('arquivos_orfaos', { p_min_idade_minutos: minIdadeMinutos })
+  if (error) return 0
+  return data?.length ?? 0
 }
 
 export async function varrerOrfaosSeDevido(): Promise<void> {

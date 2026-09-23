@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { Card } from '@/components/ui/card'
-import { HardDrive, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
-import { usoArmazenamento, formatarBytes, type UsoArmazenamento } from '@/lib/armazenamento'
+import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
+import { HardDrive, ChevronDown, ChevronRight, Loader2, ShieldCheck } from 'lucide-react'
+import {
+  usoArmazenamento, formatarBytes, limparOrfaos, ultimaVarredura,
+  type UsoArmazenamento, type ResultadoVarredura,
+} from '@/lib/armazenamento'
 
 // Espaço ocupado pelas fotos/assinaturas/logo no bucket, por tenant e por
 // usuário que enviou (autor do upload). Admin vê só a própria empresa;
@@ -31,8 +34,20 @@ export default function ArmazenamentoCard() {
   const [erro, setErro] = useState('')
   const [abertos, setAbertos] = useState<Record<string, boolean>>({})
 
+  const [varredura, setVarredura] = useState<ResultadoVarredura | null>(() => ultimaVarredura())
+
   useEffect(() => {
-    usoArmazenamento().then(setLinhas).catch(e => setErro(e?.message ?? 'Não foi possível calcular o espaço usado.'))
+    let ativo = true
+    async function carregar() {
+      // a limpeza de órfãos é automática; ao abrir a tela, verifica (e
+      // remove o que estiver sem referência há +1h) antes de medir
+      await limparOrfaos(60)
+      if (ativo) setVarredura(ultimaVarredura())
+      const dados = await usoArmazenamento()
+      if (ativo) setLinhas(dados)
+    }
+    carregar().catch(e => { if (ativo) setErro(e?.message ?? 'Não foi possível calcular o espaço usado.') })
+    return () => { ativo = false }
   }, [])
 
   const grupos = useMemo<GrupoTenant[]>(() => {
@@ -71,30 +86,24 @@ export default function ArmazenamentoCard() {
     )
   }
 
-  return (
-    <Card className="p-5">
-      <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-          <HardDrive size={16} className="text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground">Armazenamento</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Espaço ocupado pelas fotos de evidência, assinaturas e logo{superAdmin ? ', por empresa e por usuário' : ', por usuário que enviou'}.
-          </p>
-        </div>
-      </div>
+  const resumo = linhas
+    ? <><span className="text-foreground font-medium">{formatarBytes(totalBytes)}</span><br />{totalFotos} {totalFotos === 1 ? 'foto' : 'fotos'}</>
+    : <Loader2 size={14} className="animate-spin" />
 
-      {erro && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2 mt-3">{erro}</div>}
-      {!linhas && !erro && <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground"><Loader2 size={14} className="animate-spin" /> Calculando...</div>}
+  return (
+    <SecaoRecolhivel id="armazenamento" icone={<HardDrive size={16} className="text-primary" />}
+      titulo="Armazenamento"
+      descricao={`Espaço ocupado pelas fotos de evidência, assinaturas e logo${superAdmin ? ', por empresa e por usuário' : ', por usuário que enviou'}.`}
+      resumo={resumo}>
+      {erro && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{erro}</div>}
+      {!linhas && !erro && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 size={14} className="animate-spin" /> Calculando...</div>}
 
       {linhas && (
-        <div className="mt-4">
+        <div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-semibold text-foreground" data-testid="armazenamento-total">{formatarBytes(totalBytes)}</span>
             <span className="text-xs text-muted-foreground">{totalFotos} {totalFotos === 1 ? 'foto' : 'fotos'}{superAdmin ? ` · ${grupos.length} empresas` : ''}</span>
           </div>
-
           {superAdmin && (
             <div className="mt-2">
               <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
@@ -129,8 +138,17 @@ export default function ArmazenamentoCard() {
               grupos[0] && <div className="border-t border-border pt-1">{tabelaUsuarios(grupos[0])}</div>
             )}
           </div>
+
+          <div className="mt-4 flex items-start gap-2 text-[11px] text-muted-foreground bg-secondary/40 rounded-md px-3 py-2" data-testid="limpeza-automatica">
+            <ShieldCheck size={14} className="text-green-400 flex-shrink-0 mt-px" />
+            <span>
+              <span className="text-foreground">Limpeza automática de arquivos sem uso: ativa.</span>{' '}
+              Arquivos que perderam o vínculo (ex.: OS ou checklist excluído) são apagados sozinhos.
+              {varredura && <> Última verificação: {new Date(varredura.quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} — {varredura.removidos === 0 ? 'nada a remover' : `${varredura.removidos} ${varredura.removidos === 1 ? 'arquivo removido' : 'arquivos removidos'}`}.</>}
+            </span>
+          </div>
         </div>
       )}
-    </Card>
+    </SecaoRecolhivel>
   )
 }

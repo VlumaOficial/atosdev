@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card'
 import { PenTool, Image as ImageIcon, Loader2 } from 'lucide-react'
 import CarimboConfigCard from '@/components/CarimboConfigCard'
 import ArmazenamentoCard from '@/components/ArmazenamentoCard'
+import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
 export default function ConfiguracoesPage() {
   const { tenant, refreshTenant } = useAuth()
@@ -66,35 +67,29 @@ export default function ConfiguracoesPage() {
       <div className="space-y-4 max-w-2xl">
         <ArmazenamentoCard />
 
-        <Card className="p-5">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-              <ImageIcon size={16} className="text-primary" />
+        <SecaoRecolhivel id="marca" icone={<ImageIcon size={16} className="text-primary" />}
+          titulo="Marca da empresa"
+          descricao="Aparece no carimbo das fotos de evidência coletadas em campo."
+          resumo={logoUrl
+            ? <img src={logoUrl} alt="" className="h-6 max-w-[72px] object-contain rounded-sm" />
+            : (logoLoading ? null : 'Sem logo')}>
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-md border border-border bg-secondary/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+              {logoLoading ? <Loader2 size={16} className="animate-spin text-muted-foreground" /> :
+                logoUrl ? <img src={logoUrl} alt="Logo da empresa" className="w-full h-full object-contain" /> :
+                <ImageIcon size={18} className="text-muted-foreground" />}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Marca da empresa</p>
-              <p className="text-xs text-muted-foreground mt-0.5 mb-3">
-                Aparece no carimbo das fotos de evidência coletadas em campo.
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-md border border-border bg-secondary/40 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {logoLoading ? <Loader2 size={16} className="animate-spin text-muted-foreground" /> :
-                    logoUrl ? <img src={logoUrl} alt="Logo da empresa" className="w-full h-full object-contain" /> :
-                    <ImageIcon size={18} className="text-muted-foreground" />}
-                </div>
-                <div>
-                  <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoArquivo} className="hidden" id="logo-upload" />
-                  <label htmlFor="logo-upload"
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-transparent text-sm text-foreground hover:bg-secondary transition cursor-pointer">
-                    {logoEnviando && <Loader2 size={14} className="animate-spin" />}
-                    {logoUrl ? 'Trocar logo' : 'Enviar logo'}
-                  </label>
-                </div>
-              </div>
-              {logoErro && <p className="text-xs text-red-400 mt-2">{logoErro}</p>}
+            <div>
+              <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoArquivo} className="hidden" id="logo-upload" />
+              <label htmlFor="logo-upload"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-transparent text-sm text-foreground hover:bg-secondary transition cursor-pointer">
+                {logoEnviando && <Loader2 size={14} className="animate-spin" />}
+                {logoUrl ? 'Trocar logo' : 'Enviar logo'}
+              </label>
             </div>
           </div>
-        </Card>
+          {logoErro && <p className="text-xs text-red-400 mt-2">{logoErro}</p>}
+        </SecaoRecolhivel>
 
         {!logoLoading && <CarimboConfigCard logoUrl={logoUrl} />}
 
