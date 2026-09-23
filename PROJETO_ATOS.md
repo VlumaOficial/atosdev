@@ -426,6 +426,11 @@ Timemark) e aprovou o plano em 3 incrementos — ver VISAO_ATOS.md, F6.**
 - Aviso `/privacidade` atualizado: coordenada enviada ao OpenStreetMap
   só para converter em endereço, sem nome/e-mail/dados da OS
 - Sem migration
+- Testado ponta a ponta (URL pública, técnico real, coordenadas reais da
+  foto do usuário): carimbo sai com "Rua Silveira Martins - Cabula,
+  Salvador - BA, 41150-000" + coordenadas; com o Nominatim bloqueado
+  (simulando sem internet) a foto é anexada normalmente, só com
+  coordenadas, sem mensagem de erro
 - Sem migration
 
 ### Próximos blocos
@@ -543,3 +548,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-23: validado no celular real — bug de memória FECHADO. Novo achado: carimbo escondido pela miniatura e desproporcional em foto retrato (seção 4.3); aguardando modelo do usuário antes do Bloco C.*
 
 *2026-09-23: carimbo v2 no padrão do modelo do usuário + visualização em tela cheia e download de evidências (Incremento 1 de 3). Próximos: endereço via Edge Function/Nominatim (Inc. 2), configuração de campos do carimbo por tenant (Inc. 3). Em discussão com o usuário: marca ATOS removível ou não, e código de verificação de autenticidade.*
+
+*2026-09-23: Incremento 2 (endereço no carimbo) concluído e testado. Decisões de produto (marca ATOS como selo, código de verificação no MVP antes do PDF, ordem dos próximos passos) registradas em VISAO_ATOS.md, F6. Próximo: Incremento 3 (configuração dos campos do carimbo por tenant — tem migration).*
