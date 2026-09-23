@@ -41,7 +41,7 @@
 | F3 | Ordens de Serviço (gestor) | MVP | Feito |
 | F4 | App de campo (técnico, mobile) | MVP | Feito |
 | F5 | Checklists dinâmicos | MVP | Feito |
-| F6 | Assinatura digital + PDF + WhatsApp | MVP | Em andamento (Bloco A feito) |
+| F6 | Assinatura digital + PDF + WhatsApp | MVP | Em andamento (Blocos A e B feitos; bug de memória aberto — ver seção 4.3) |
 | F7 | Painel gerencial | MVP | Pendente |
 | — | Tenant Infoxtec criado manualmente | MVP | Feito |
 | F8 | Planos, Asaas, cobrança, trial | Backlog | — |
@@ -278,6 +278,43 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
   memória de um aparelho físico específico — validação final depende
   de teste no celular real do usuário.
 
+### 🔴 BUG ABERTO — "falta de memória" ao anexar evidência (não resolvido)
+**Status em 2026-09-23: diagnosticado, correção NÃO implementada ainda.**
+
+- Usuário reportou que o erro **persistiu** mesmo após as duas correções
+  acima (que otimizam o processamento da imagem já dentro do
+  JavaScript do app)
+- **Print do erro real (celular do usuário) mudou o diagnóstico**: a
+  seção "Evidências fotográficas" aparece **vazia** (nenhuma foto
+  anexada, nem a mensagem de erro que o próprio app mostra) — em vez
+  disso, um **toast do sistema Android/navegador** flutua sobre a
+  página: *"Devido à insuficiência de memória, não foi possível
+  concluir a operação anterior"*. Esse texto não existe em nenhum
+  lugar do código do ATOS
+- **Conclusão**: a falha não acontece mais dentro do código que já foi
+  otimizado (`comprimirECarimbar`) — acontece **antes**, na troca
+  (handoff) entre o app de Câmera nativo do Android e o navegador.
+  Em aparelhos com pouca RAM livre, o Android mata/recarrega a aba do
+  navegador para liberar memória pro app de Câmera, e isso é a nível
+  de sistema operacional — **nenhuma otimização de JavaScript no app
+  consegue interceptar ou evitar isso**, porque o crash acontece fora
+  do processo da página
+- **Correção proposta (ainda não implementada, aguardando decisão do
+  usuário)**: trocar `<input type="file" capture="environment">`
+  (que invoca o app de Câmera nativo pesado) por uma câmera **embutida
+  na própria página** via `getUserMedia()` — captura o frame
+  diretamente num `<video>`/`<canvas>` da página, com resolução
+  controlada pelo próprio app, nunca abrindo um processo externo nem
+  fazendo esse handoff pesado. É uma mudança de UX real (visor de
+  câmera na tela em vez do botão simples atual), não um ajuste pontual
+  — por isso não foi implementada sem confirmação
+- Afeta tanto `FotoEvidencia.tsx` (foto do checklist) quanto
+  `OrderEvidences.tsx` (evidência da OS) — os dois usam o mesmo padrão
+  de `<input capture="environment">`
+- **Próximo passo**: perguntar ao usuário se quer seguir com essa
+  reformulação (câmera embutida) — é o item nº1 de pendência pra
+  próxima sessão
+
 ### Próximos blocos
 - **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura)
 - **D** — Envio (WhatsApp/e-mail) — **pendente de detalhamento técnico**:
@@ -385,3 +422,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-22: evidências fotográficas passam a existir direto na OS, independentes de checklist (achado reportado pelo usuário na OS-0010 real) — ver seção 4.3. Também corrigida policy de UPDATE faltante no bucket `evidencias` (afetava "Trocar logo"). Próximo: Bloco C (PDF).*
 
 *2026-09-22: migrations 004–016 reconstruídas/adicionadas e versionadas em `supabase/migrations/` (ver seção 6). Achados de segurança pendentes (token de acesso do Supabase usado nessas migrations, e Personal Access Token do GitHub embutido no remote git da pasta `C:\vluma\atosdev`) — revogar/trocar ambos **ao final de todo o desenvolvimento do MVP**, não antes (decisão do time, para não gerar atrito de credencial a cada sessão de trabalho).*
+
+*2026-09-23: sessão encerrada com um bug aberto — ver "🔴 BUG ABERTO" na seção 4.3. Diagnosticado (falha no handoff câmera nativa→navegador em aparelhos com pouca RAM, não é algo que otimização de JS no app resolve), correção proposta (câmera embutida via getUserMedia) ainda NÃO implementada — depende de confirmação do usuário por ser mudança de UX, não ajuste pontual. **Esse é o item nº1 pra próxima sessão.***
