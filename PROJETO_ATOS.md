@@ -577,6 +577,14 @@ exportação ZIP → código de verificação → "liberar espaço"
 - `ArmazenamentoCard` no topo de Configurações: total + fotos; admin vê
   por usuário que enviou; super admin vê todas as empresas (expansíveis
   até os técnicos) + barra do limite de 1 GB do projeto
+- Testado ponta a ponta (URL pública + banco): (1) login do admin
+  disparou a varredura → **9 órfãos removidos (745 KB)**, bucket 37 → 28
+  arquivos, `arquivos_orfaos()` passa a retornar 0; segunda navegação
+  não varre de novo (intervalo 12h); (2) card mostra 5,0 MB / 23 fotos
+  com divisão por usuário; (3) `uso_armazenamento()` como super admin
+  lista todos os tenants e usuários; como técnico → "Sem permissão";
+  (4) admin removeu o checklist da OS-0018 de teste → foto e miniatura
+  da pasta dele apagadas do bucket na hora
 - Sem migration
 
 ### Próximos blocos
@@ -700,3 +708,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-23: Incremento 3 (configuração dos campos do carimbo, migration 023) concluído e testado — ver seção 4.3. Próximo: Incremento 4 (código de verificação de autenticidade).*
 
 *2026-09-23: Incremento 2 (endereço no carimbo) concluído e testado. Decisões de produto (marca ATOS como selo, código de verificação no MVP antes do PDF, ordem dos próximos passos) registradas em VISAO_ATOS.md, F6. Próximo: Incremento 3 (configuração dos campos do carimbo por tenant — tem migration).*
+
+*2026-09-23: auditoria de armazenamento concluída — fotos ~80% menores (limite no maior lado, sem ampliar), miniatura para listas, foto do checklist salva na hora, espaço usado por tenant/técnico (migration 024) e zero órfãos (prevenção nas 4 exclusões + varredura automática). Próximo, ordem técnica definida: exportação ZIP em Configurações → código de verificação → "liberar espaço" (período escolhido pelo cliente).*
