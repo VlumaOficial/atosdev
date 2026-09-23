@@ -498,10 +498,13 @@ export async function urlDownloadEvidencia(path: string, nomeArquivo?: string): 
 
 // URL da miniatura (listas/cards); cai para a foto cheia se não houver
 export async function urlMiniaturaEvidencia(path: string, segundos = 3600): Promise<string | null> {
-  const { data, error } = await supabase.storage
+  // createSignedUrls (lote) devolve "não existe" por item, sem erro HTTP —
+  // createSignedUrl simples respondia 400 no console para cada foto antiga
+  const { data } = await supabase.storage
     .from('evidencias')
-    .createSignedUrl(caminhoMiniatura(path), segundos)
-  if (!error && data?.signedUrl) return data.signedUrl
+    .createSignedUrls([caminhoMiniatura(path)], segundos)
+  const mini = data?.[0]
+  if (mini && !mini.error && mini.signedUrl) return mini.signedUrl
   return urlEvidencia(path, segundos)
 }
 
