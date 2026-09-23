@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card'
 import { PenTool, Image as ImageIcon, Loader2 } from 'lucide-react'
 import CarimboConfigCard from '@/components/CarimboConfigCard'
 import ArmazenamentoCard from '@/components/ArmazenamentoCard'
+import ExportacaoFotosCard from '@/components/ExportacaoFotosCard'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
 export default function ConfiguracoesPage() {
@@ -66,6 +67,7 @@ export default function ConfiguracoesPage() {
 
       <div className="space-y-4 max-w-2xl">
         <ArmazenamentoCard />
+        {tenant && <ExportacaoFotosCard />}
 
         <SecaoRecolhivel id="marca" icone={<ImageIcon size={16} className="text-primary" />}
           titulo="Marca da empresa"

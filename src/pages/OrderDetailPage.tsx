@@ -7,6 +7,7 @@ import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
 import OrderSignature from '@/components/orders/OrderSignature'
 import OrderEvidences from '@/components/orders/OrderEvidences'
+import BaixarFotosOSButton from '@/components/orders/BaixarFotosOSButton'
 import { checklistObrigatoriosPendentes } from '@/lib/checklistGuard'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
@@ -198,7 +199,10 @@ export default function OrderDetailPage() {
           </Card>
 
           <Card className="p-5">
-            <p className="text-sm font-medium text-foreground mb-3">Evidências fotográficas</p>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <p className="text-sm font-medium text-foreground">Evidências fotográficas</p>
+              <BaixarFotosOSButton orderId={order.id} numero={order.number} />
+            </div>
             <OrderEvidences orderId={order.id} readOnly />
           </Card>
 

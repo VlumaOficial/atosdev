@@ -610,6 +610,28 @@ exportação ZIP → código de verificação → "liberar espaço"
   Corrigido com ref por estado (callback ref) nas dependências do desenho
   — testado na URL pública: seção fechada → expandir → prévia já
   desenhada, sem tocar em campo
+
+### Exportação de fotos em ZIP (2026-09-23)
+- Seção recolhível "Exportar fotos" em Configurações (admin): período
+  (De/Até, padrão últimos 30 dias, pela data da foto) + cliente opcional
+  (Combobox). Duas etapas: "Verificar fotos do período" (só lista e
+  conta, sem baixar) → "Baixar ZIP (N arquivos)" com progresso
+- Botão "Baixar fotos (ZIP)" no card de evidências do detalhe da OS
+  (admin) — mesma lib, filtrado pela OS
+- `src/lib/exportacaoFotos.ts` + lib `client-zip` (MIT, ~40 KB, sem
+  dependências): ZIP montado NO NAVEGADOR — **nenhum arquivo temporário
+  no servidor**, por isso a regra "apagar após download ou em 10 min"
+  proposta pelo usuário não é necessária (não há o que apagar); também
+  evita limite de memória/tempo de Edge Function
+- Conteúdo: evidências da OS, fotos de checklist (OS e avulsos, pasta
+  "Checklists avulsos/"), assinaturas. Pastas `OS-0012 - Cliente -
+  Unidade/`, arquivos `AAAA-MM-DD_HHMM_evidencia.jpg`,
+  `..._checklist_<item>.jpg`, `assinatura_<nome>.png`; planilha
+  `fotos.csv` (";" + BOM, abre no Excel pt-BR) com OS, cliente, unidade,
+  item do checklist, autor, data/hora, observação e situação (arquivo
+  não encontrado fica marcado, o ZIP não falha)
+- Egress: a exportação baixa as fotos cheias (é o objetivo); URLs
+  assinadas de 10 min, 4 downloads em paralelo
 - Sem migration
 
 ### Próximos blocos
