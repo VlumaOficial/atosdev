@@ -685,6 +685,20 @@ exportação ZIP → código de verificação → "liberar espaço"
   explica o código (sem novo aceite: não muda o tratamento de
   localização)
 - Fotos anteriores ao recurso não têm código (continuam válidas)
+- Testado ponta a ponta (URL pública): técnico real enviou foto na
+  OS-0018 → código Z44G-3JH3-K7S6 impresso no selo, registro com autor
+  "Infoxtec Teste", 1 s entre hora da foto e do servidor; página pública
+  sem login (código digitado com hífens/minúsculas) → "Foto autêntica"
+  com empresa, OS, horários e a foto; cópia idêntica → "Idêntica";
+  outro arquivo → "Diferente"; código inexistente → "não encontrado";
+  0 erros de console; visualizador mostra "Verificado · código" com
+  link; planilha do ZIP traz código e link de verificação
+- **Achado testando — brecha fechada (migration 027)**: o admin
+  conseguia sobrescrever uma foto de evidência já enviada (policy de
+  UPDATE do storage valia para tudo). A verificação detectou ("Foto
+  alterada" → restaurado → "autêntica"), mas agora a sobrescrita é
+  bloqueada (403) para fotos; logo e assinatura continuam regraváveis
+  (regressão da migration 021 testada)
 - Sem migration
 
 ### Próximos blocos
@@ -761,6 +775,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 024_f6_armazenamento | funções arquivos_orfaos() e uso_armazenamento() (SECURITY DEFINER, admin/super_admin, só consulta — remoção via Storage API) | OK | Pendente | Sim |
 | 025_f5_checklist_answer_autor | gatilho fn_checklist_answer_autor(): grava answered_by (auth.uid()) e answered_at em todo INSERT e em UPDATE que muda o valor — corrige autoria nunca registrada | OK | Pendente | Sim |
 | 026_f6_verificacao_fotos | tabela fotos_verificacao (código, sha256, hora do servidor, autor; imutável, sem UPDATE/DELETE) + gatilho que força tenant/autor/hora e bloqueia arquivo de outra empresa | OK | Pendente | Sim |
+| 027_f6_evidencias_imutaveis | policy evidencias_update restrita a logo.png e assinaturas/ — fotos de evidência não podem mais ser sobrescritas | OK | Pendente | Sim |
 
 ---
 
@@ -814,3 +829,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-23: auditoria de armazenamento concluída — fotos ~80% menores (limite no maior lado, sem ampliar), miniatura para listas, foto do checklist salva na hora, espaço usado por tenant/técnico (migration 024) e zero órfãos (prevenção nas 4 exclusões + varredura automática). Próximo, ordem técnica definida: exportação ZIP em Configurações → código de verificação → "liberar espaço" (período escolhido pelo cliente).*
 
 *2026-09-23: exportação de fotos em ZIP concluída e testada (Configurações + botão por OS, montado no navegador, sem arquivo temporário no servidor). Achados corrigidos no caminho: erros 400 de miniatura em fotos antigas e autoria de resposta de checklist nunca gravada (migration 025). Próximo: código de verificação de autenticidade.*
+
+*2026-09-23: código de verificação de autenticidade concluído e testado (migrations 026–027, Edge Function verificar-foto, página pública /verificar). Fotos de evidência passam a ser imutáveis também no storage. Próximo: "liberar espaço" (período escolhido pelo cliente) e depois a discussão do provedor de geocodificação para SaaS, antes do Bloco C (PDF).*
