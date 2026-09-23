@@ -5,9 +5,20 @@ import { useAuth } from '@/hooks/useAuth'
 // Consentimento LGPD de uso de localização, guardado em users.preferences
 // (mesmo padrão de useViewPreference.ts). GPS só é lido sob demanda, no
 // momento da foto — este hook só controla se o aviso já foi aceito.
+//
+// O aceite é VERSIONADO: quando o texto do termo muda de forma relevante,
+// sobe VERSAO_TERMO_LOCALIZACAO e quem aceitou uma versão anterior vê o
+// termo de novo (com aviso de atualização). Aceites antigos, sem versão
+// gravada, contam como versão 1.
+//   v1 — GPS sob demanda, carimbado só na foto (F6 Bloco B)
+//   v2 (2026-09-23) — coordenada também enviada ao OpenStreetMap para
+//        virar endereço no carimbo
+export const VERSAO_TERMO_LOCALIZACAO = 2
+
 export function useLocationConsent() {
   const { user } = useAuth()
   const [aceito, setAceito] = useState(false)
+  const [termoAtualizado, setTermoAtualizado] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -19,8 +30,11 @@ export function useLocationConsent() {
         .select('preferences')
         .eq('id', user.id)
         .single()
-      if (active && data?.preferences?.location_consent_at) {
-        setAceito(true)
+      const prefs = data?.preferences
+      if (active && prefs?.location_consent_at) {
+        const versao = Number(prefs.location_consent_version ?? 1)
+        if (versao >= VERSAO_TERMO_LOCALIZACAO) setAceito(true)
+        else setTermoAtualizado(true)
       }
       if (active) setLoaded(true)
     }
@@ -38,9 +52,9 @@ export function useLocationConsent() {
       .single()
     const prefs = data?.preferences ?? {}
     await supabase.rpc('atualizar_minhas_preferencias', {
-      p_preferences: { ...prefs, location_consent_at: new Date().toISOString() },
+      p_preferences: { ...prefs, location_consent_at: new Date().toISOString(), location_consent_version: VERSAO_TERMO_LOCALIZACAO },
     })
   }, [user])
 
-  return { aceito, loaded, aceitar }
+  return { aceito, termoAtualizado, loaded, aceitar }
 }

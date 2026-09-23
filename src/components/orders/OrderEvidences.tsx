@@ -70,7 +70,7 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
 
 export default function OrderEvidences({ orderId, readOnly }: { orderId: string; readOnly?: boolean }) {
   const { evidencias, loading, adicionar, atualizarObservacao, remover } = useOrderEvidences(orderId)
-  const { aceito, loaded, aceitar } = useLocationConsent()
+  const { aceito, termoAtualizado, loaded, aceitar } = useLocationConsent()
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
   const [arquivoPendente, setArquivoPendente] = useState<File | null>(null)
@@ -179,7 +179,7 @@ export default function OrderEvidences({ orderId, readOnly }: { orderId: string;
         </div>
       )}
 
-      <LocationConsentModal open={consentModalAberto} onAceitar={handleAceitarConsentimento} onCancelar={handleCancelarConsentimento} />
+      <LocationConsentModal open={consentModalAberto} termoAtualizado={termoAtualizado} onAceitar={handleAceitarConsentimento} onCancelar={handleCancelarConsentimento} />
       <CameraCaptura open={cameraAberta} onCapturar={handleFotoCapturada} onFechar={() => setCameraAberta(false)} />
     </div>
   )

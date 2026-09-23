@@ -30,7 +30,7 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
   const [consentModalAberto, setConsentModalAberto] = useState(false)
   const [cameraAberta, setCameraAberta] = useState(false)
   const [ampliada, setAmpliada] = useState(false)
-  const { aceito, loaded, aceitar } = useLocationConsent()
+  const { aceito, termoAtualizado, loaded, aceitar } = useLocationConsent()
 
   useEffect(() => {
     let ativo = true
@@ -143,7 +143,7 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
           )}
         </div>
       )}
-      <LocationConsentModal open={consentModalAberto} onAceitar={handleAceitarConsentimento} onCancelar={handleCancelarConsentimento} />
+      <LocationConsentModal open={consentModalAberto} termoAtualizado={termoAtualizado} onAceitar={handleAceitarConsentimento} onCancelar={handleCancelarConsentimento} />
       <CameraCaptura open={cameraAberta} onCapturar={handleFotoCapturada} onFechar={() => setCameraAberta(false)} />
     </div>
   )

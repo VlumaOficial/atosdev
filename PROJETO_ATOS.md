@@ -431,6 +431,21 @@ Timemark) e aprovou o plano em 3 incrementos — ver VISAO_ATOS.md, F6.**
   Salvador - BA, 41150-000" + coordenadas; com o Nominatim bloqueado
   (simulando sem internet) a foto é anexada normalmente, só com
   coordenadas, sem mensagem de erro
+
+### Consentimento de localização versionado (2026-09-23)
+- **Achado pelo usuário no celular real**: depois do Incremento 2 a foto
+  não pediu novo aceite — o app só checava se EXISTIA um aceite
+  (`location_consent_at`), sem saber de qual texto
+- `useLocationConsent` passa a gravar `users.preferences.
+  location_consent_version` e compara com `VERSAO_TERMO_LOCALIZACAO`
+  (hoje = 2). Aceite antigo sem versão conta como v1 → modal reaparece
+  com o título "Aviso de localização atualizado" e uma faixa explicando
+  o que mudou (endereço via OpenStreetMap). Texto do modal ganhou o
+  parágrafo do endereço
+- Regra daqui em diante: mudança relevante no tratamento de localização
+  = subir a versão (histórico das versões comentado no hook)
+- Sem migration (preferences já é jsonb gravado via
+  `atualizar_minhas_preferencias()`, migration 020)
 - Sem migration
 
 ### Próximos blocos
