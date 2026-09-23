@@ -278,7 +278,8 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
   memória de um aparelho físico específico — validação final depende
   de teste no celular real do usuário.
 
-### 🟡 BUG — "falta de memória" ao anexar evidência — CORREÇÃO IMPLEMENTADA, aguardando validação no celular real
+### ✅ BUG — "falta de memória" ao anexar evidência — RESOLVIDO (validado no celular real do usuário em 2026-09-23)
+**Atualização 2026-09-23 (validação): usuário anexou foto pelo celular real com a câmera embutida, sem o erro. Título anterior: "CORREÇÃO IMPLEMENTADA, aguardando validação no celular real".**
 **Status em 2026-09-23 (início da sessão): diagnosticado, correção NÃO implementada ainda.**
 **Atualização 2026-09-23 (mesma data, sessão seguinte): câmera embutida implementada — ver "Correção implementada" ao fim desta seção. Histórico do diagnóstico mantido abaixo.**
 
@@ -367,6 +368,20 @@ Engenheiro/PO/UX entende que é a melhor solução, vamos seguir"):
   de console. **Limitação**: câmera simulada não reproduz a pressão de
   memória nem a orientação retrato de um celular físico — validação
   final no aparelho real do usuário
+
+### 🔴 ACHADO — carimbo "invisível"/ilegível em foto retrato (2026-09-23, validação no celular real)
+- A primeira foto real em **retrato** (1600×2845) saiu **com** carimbo
+  (logo+nome+data+GPS real conferidos baixando o arquivo do storage),
+  mas o usuário não o viu. Duas causas:
+  1. Miniatura em `OrderEvidences.tsx` usa `h-40 object-cover` —
+     recorta o centro e esconde a faixa inferior em fotos retrato (as
+     fotos de teste eram paisagem, por isso passou despercebido)
+  2. Layout do carimbo em `comprimirECarimbar` não é proporcional: faixa
+     e logo escalam pela ALTURA (14%), texto é fixo em 13px — em retrato
+     a logo fica gigante e o texto minúsculo
+- **Próximo passo**: usuário vai enviar um modelo de como espera o
+  carimbo; redesenhar carimbo proporcional (retrato e paisagem) +
+  miniatura que mostre o carimbo, juntos
 - Sem migration
 
 ### Próximos blocos
@@ -480,3 +495,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-23: sessão encerrada com um bug aberto — ver "🔴 BUG ABERTO" na seção 4.3. Diagnosticado (falha no handoff câmera nativa→navegador em aparelhos com pouca RAM, não é algo que otimização de JS no app resolve), correção proposta (câmera embutida via getUserMedia) ainda NÃO implementada — depende de confirmação do usuário por ser mudança de UX, não ajuste pontual. **Esse é o item nº1 pra próxima sessão.***
 
 *2026-09-23: bug de "falta de memória" — câmera embutida (`getUserMedia`) implementada nos dois pontos de captura de foto, substituindo o app de Câmera nativo; testada ponta a ponta na URL pública (4 cenários, incluindo um bug de modal achado e corrigido no próprio teste). Ver seção 4.3. Falta validação final no celular real do usuário — se confirmar, o bug fecha e o próximo passo é o Bloco C (PDF).*
+
+*2026-09-23: validado no celular real — bug de memória FECHADO. Novo achado: carimbo escondido pela miniatura e desproporcional em foto retrato (seção 4.3); aguardando modelo do usuário antes do Bloco C.*
