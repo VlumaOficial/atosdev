@@ -401,6 +401,11 @@ Timemark) e aprovou o plano em 3 incrementos — ver VISAO_ATOS.md, F6.**
   carimbado). Vale para técnico e admin, evidência da OS e foto de
   checklist. Dialog do Radix (abre de dentro do modal do checklist)
 - Sem migration
+- Testado ponta a ponta (Playwright, URL pública, técnico real): foto
+  retrato real 1600×2400 (recorte da foto do usuário) e paisagem
+  1920×1080 (câmera simulada) — carimbo proporcional e legível nas duas,
+  miniatura mostra a foto inteira, visualizador abre/fecha, download com
+  `Content-Disposition: attachment` e evento de download do navegador ok
 - Sem migration
 
 ### Próximos blocos
