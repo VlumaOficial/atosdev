@@ -135,7 +135,11 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
   - Endereço por geocodificação reversa via Edge Function (provedor trocável). **Começa com Nominatim/OpenStreetMap**; avaliar Google antes do PRD. Usuário quer discutir o tema mais a fundo pensando em SaaS (custo por tenant, cota, cache)
   - **Configuração de campos do carimbo por tenant** (liga/desliga, posições fixas, prévia ao vivo) — Incremento 3
   - Evidência pode ser vista em tela cheia e **baixada** (técnico e admin)
-  - **Em discussão:** marca ATOS removível (white-label) ou fixa; código de verificação de autenticidade da foto (padrão Timemark)
+  - ~~Em discussão: marca ATOS removível (white-label) ou fixa; código de verificação de autenticidade~~ **Decidido em 2026-09-23:**
+    - **Marca ATOS = selo de autenticidade**, não propaganda ("ATOS Verificado · código"). Fixa e discreta no MVP; **white-label pago na F8** (selo sem o nome ATOS, código continua). Racional: concorrentes de field service (Auvo, Produttivo) põem a marca do CLIENTE no entregável; marca do fornecedor em destaque só funciona como selo com propósito (caso Timemark)
+    - **Código de verificação de autenticidade ENTRA no MVP, antes do Bloco C (PDF)** — código aleatório + hash SHA-256 + hora do servidor por foto, página pública `/verificar/CÓDIGO`. Limite honesto: app web não detecta GPS falsificado; garante "não foi alterada depois do envio" + "quem e quando (relógio do servidor)"
+    - Endereço no carimbo: só rua/bairro/cidade/UF/CEP (Nominatim erra nome do local e número)
+  - **Ordem acordada antes do Bloco C:** (1) carimbo v2 + ver/baixar ✅ → (2) endereço ✅ → (3) configuração de campos do carimbo por tenant → (4) código de verificação → (5) **discussão do provedor de geocodificação para SaaS** (custo por tenant, cota por plano, cache, LGPD/suboperador) → Bloco C (PDF)
 - Base construída na F5 (Bloco D): bucket privado `evidencias` isolado por tenant, compressão no navegador (1600px / qualidade 80%), limite de 5MB e URL assinada. O carimbo é aplicado no mesmo canvas da compressão, antes do envio
 
 **Envio da OS**

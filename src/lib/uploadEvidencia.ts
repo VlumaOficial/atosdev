@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { urlLogoEmpresa } from '@/lib/uploadLogo'
 import type { Coordenadas } from '@/lib/geolocation'
+import { obterEndereco } from '@/lib/geocodificacao'
 
 const LARGURA_MAX = 1600
 const QUALIDADE = 0.8
@@ -252,10 +253,11 @@ export async function uploadEvidenciaChecklist(
   fieldId: string,
   coords: Coordenadas
 ): Promise<UploadResult> {
-  const dados = await buscarDadosTenant()
+  // endereço em paralelo com os dados do tenant — nunca bloqueia (null = só coordenadas)
+  const [dados, endereco] = await Promise.all([buscarDadosTenant(), obterEndereco(coords)])
   if ('erro' in dados) return { path: '', erro: dados.erro }
 
-  const carimbada = await comprimirECarimbar(file, { tenantName: dados.tenantName, logoUrl: dados.logoUrl, coords })
+  const carimbada = await comprimirECarimbar(file, { tenantName: dados.tenantName, logoUrl: dados.logoUrl, coords, endereco })
 
   if (carimbada.size > TAMANHO_MAX) {
     return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
@@ -279,10 +281,11 @@ export async function uploadEvidenciaOS(
   orderId: string,
   coords: Coordenadas
 ): Promise<UploadResult> {
-  const dados = await buscarDadosTenant()
+  // endereço em paralelo com os dados do tenant — nunca bloqueia (null = só coordenadas)
+  const [dados, endereco] = await Promise.all([buscarDadosTenant(), obterEndereco(coords)])
   if ('erro' in dados) return { path: '', erro: dados.erro }
 
-  const carimbada = await comprimirECarimbar(file, { tenantName: dados.tenantName, logoUrl: dados.logoUrl, coords })
+  const carimbada = await comprimirECarimbar(file, { tenantName: dados.tenantName, logoUrl: dados.logoUrl, coords, endereco })
 
   if (carimbada.size > TAMANHO_MAX) {
     return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }

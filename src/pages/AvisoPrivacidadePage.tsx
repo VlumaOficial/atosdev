@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import AtosLogo from '@/components/brand/AtosLogo'
-import { MapPin, Camera, Lock, Building2 } from 'lucide-react'
+import { MapPin, Camera, Lock, Building2, Map as MapIcon } from 'lucide-react'
 
 export default function AvisoPrivacidadePage() {
   return (
@@ -31,6 +31,16 @@ export default function AvisoPrivacidadePage() {
             <div>
               <p className="text-sm font-medium text-foreground">A coordenada pertence à foto, não a você</p>
               <p className="text-sm text-muted-foreground mt-0.5">As coordenadas ficam carimbadas apenas na imagem da evidência — nunca são guardadas separadamente como "posição do técnico".</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="w-9 h-9 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+              <MapIcon size={16} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Conversão da coordenada em endereço</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Para escrever o endereço no carimbo da foto, a coordenada daquele momento é enviada ao serviço de mapas OpenStreetMap (Nominatim), que devolve rua, bairro, cidade e CEP. Só a coordenada é enviada — nenhum nome, e-mail ou dado da ordem de serviço. Se o serviço não responder, a foto sai apenas com as coordenadas.</p>
             </div>
           </div>
 

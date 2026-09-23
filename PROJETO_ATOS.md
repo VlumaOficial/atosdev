@@ -406,6 +406,26 @@ Timemark) e aprovou o plano em 3 incrementos — ver VISAO_ATOS.md, F6.**
   1920×1080 (câmera simulada) — carimbo proporcional e legível nas duas,
   miniatura mostra a foto inteira, visualizador abre/fecha, download com
   `Content-Disposition: attachment` e evento de download do navegador ok
+
+### Endereço no carimbo — Incremento 2 (2026-09-23)
+- `src/lib/geocodificacao.ts` → `obterEndereco(coords)`: Nominatim
+  público (OpenStreetMap), timeout 5s, máx. 1 req/s (política do
+  Nominatim), cache em memória por ~11 m. Chamado em paralelo com os
+  dados do tenant no upload; **nunca bloqueia** (falhou → só coordenadas)
+- **Desvio do plano, registrado**: o combinado era Edge Function, mas o
+  único token Supabase disponível na máquina pertence a outra conta (não
+  enxerga o projeto ATOS) — sem como publicar function. A chamada sai do
+  navegador, isolada nesse único arquivo; vira Edge Function junto com a
+  decisão do provedor SaaS (provedor pago exige esconder a chave de
+  qualquer forma)
+- **Decisão de produto (achado testando)**: carimbo mostra só rua,
+  bairro, cidade, UF e CEP. Nome do local e número ficam de fora — com as
+  coordenadas da foto real do usuário o Nominatim devolveu o colégio
+  vizinho e número 1 (o real era Condomínio Shopping Conexão, nº 27).
+  Endereço errado numa prova é pior que incompleto
+- Aviso `/privacidade` atualizado: coordenada enviada ao OpenStreetMap
+  só para converter em endereço, sem nome/e-mail/dados da OS
+- Sem migration
 - Sem migration
 
 ### Próximos blocos
