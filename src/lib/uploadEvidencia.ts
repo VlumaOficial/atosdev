@@ -40,7 +40,7 @@ function carregarImagem(url: string): Promise<HTMLImageElement> {
 // ATOS no canto superior direito. Todas as medidas são proporcionais ao
 // MENOR lado da foto, pra ficar igual em retrato e paisagem.
 const COR_ATOS = '#8b5cf6'
-const COR_ATOS_SUB = '#cbd5e1'
+const COR_ATOS_SUB = '#ffffff' // branco + sombra: legível também sobre fundo claro (antes cinza, sumia)
 const COR_DIVISOR = '#facc15'
 
 function comSombra(ctx: CanvasRenderingContext2D, u: number) {
@@ -58,7 +58,7 @@ function semSombra(ctx: CanvasRenderingContext2D) {
 }
 
 function quebrarLinhas(ctx: CanvasRenderingContext2D, texto: string, larguraMax: number): string[] {
-  const palavras = texto.split(/\s+/)
+  const palavras = texto.split(/ +/) // só espaço comum — o não-separável (\u00A0) mantém "Téc. Nome" junto
   const linhas: string[] = []
   let atual = ''
   for (const p of palavras) {
@@ -183,7 +183,7 @@ export function desenharCarimbo(
   const partes = [
     cfg.numero_os && ctxAtend?.numeroOs,
     cfg.unidade && ctxAtend?.unidade,
-    cfg.tecnico && ctxAtend?.tecnico && `Téc. ${ctxAtend.tecnico}`,
+    cfg.tecnico && ctxAtend?.tecnico && `Téc.\u00A0${ctxAtend.tecnico}`,
   ].filter(Boolean) as string[]
   if (partes.length) {
     const tamCtx = 3.4 * u
