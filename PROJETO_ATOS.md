@@ -353,6 +353,20 @@ Engenheiro/PO/UX entende que é a melhor solução, vamos seguir"):
   `body`. Corrigido tornando o visor um Dialog do Radix também (Dialogs
   aninhados empilham certo). A evidência direto na OS não era afetada
   (não fica dentro de modal)
+- **Testado ponta a ponta (Playwright, URL pública, técnico real,
+  perfil Pixel 5, câmera simulada do Chromium)**: (1) evidência da OS —
+  visor abre a 1920×1080, prévia, "Tirar outra" volta ao vivo, "Usar
+  foto" envia com carimbo (logo+nome+data+GPS conferidos na imagem
+  salva), câmera desligada (`track.readyState = ended`) ao usar e ao
+  fechar no X, nenhum `input[capture]` na página; (2) foto de item de
+  checklist dentro do modal (OS de teste "Teste camera embutida
+  (checklist)", criada pelo admin) — ok após o fix do Dialog; (3)
+  permissão negada (`NotAllowedError` real via CDP) — mensagem +
+  "Tentar novamente" + link secundário, upload pelo link ok; (4)
+  navegador sem `getUserMedia` — fallback aparece e envia. Zero erros
+  de console. **Limitação**: câmera simulada não reproduz a pressão de
+  memória nem a orientação retrato de um celular físico — validação
+  final no aparelho real do usuário
 - Sem migration
 
 ### Próximos blocos
@@ -465,4 +479,4 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 
 *2026-09-23: sessão encerrada com um bug aberto — ver "🔴 BUG ABERTO" na seção 4.3. Diagnosticado (falha no handoff câmera nativa→navegador em aparelhos com pouca RAM, não é algo que otimização de JS no app resolve), correção proposta (câmera embutida via getUserMedia) ainda NÃO implementada — depende de confirmação do usuário por ser mudança de UX, não ajuste pontual. **Esse é o item nº1 pra próxima sessão.***
 
-*2026-09-23: bug de "falta de memória" — câmera embutida (`getUserMedia`) implementada nos dois pontos de captura de foto, substituindo o app de Câmera nativo. Ver seção 4.3. Falta validação final no celular real do usuário.*
+*2026-09-23: bug de "falta de memória" — câmera embutida (`getUserMedia`) implementada nos dois pontos de captura de foto, substituindo o app de Câmera nativo; testada ponta a ponta na URL pública (4 cenários, incluindo um bug de modal achado e corrigido no próprio teste). Ver seção 4.3. Falta validação final no celular real do usuário — se confirmar, o bug fecha e o próximo passo é o Bloco C (PDF).*
