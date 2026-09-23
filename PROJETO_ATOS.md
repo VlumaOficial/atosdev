@@ -547,6 +547,13 @@ ser limpas por esse motivo).
   ~300 KB/foto → 1 GB ≈ 3.300 fotos; Infoxtec com ~300 OS/mês × 10 fotos
   enche o free em ~1 mês mesmo otimizado. No pago, espaço é barato;
   cuidado maior é egress. **Reavaliar antes da promoção para PRD**
+- Testado ponta a ponta (URL pública, técnico real, OS-0018 de teste):
+  foto 4032×3024 com EXIF orientação 6 → salva em retrato **1200×1600,
+  168 KB** (+ miniatura 16 KB); quadro 1080×1920 → **129 KB** (+ 13 KB);
+  foto do checklist pela câmera embutida → 56 KB (+ 7 KB). Referência
+  antes da mudança: foto retrato real de 875 KB (≈ **80% menor** agora).
+  Cards usam `_mini.jpg`, visualizador usa a foto cheia. Checklist:
+  foto anexada e modal fechado SEM "Salvar" → resposta gravada no banco
 - Sem migration
 
 ### Próximos blocos
