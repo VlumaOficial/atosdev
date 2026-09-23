@@ -604,6 +604,10 @@ exportação ZIP → código de verificação → "liberar espaço"
   resumo no cabeçalho (4,9 MB · 22 fotos / logo / Padrão); abrir mostra
   o conteúdo; estado lembrado após recarregar; aviso de limpeza com
   "Última verificação: 23/09, 18:49 — nada a remover"; zero erros
+- **Bug achado pelo usuário**: ao expandir o Carimbo a prévia vinha
+  vazia até mexer num campo — o canvas só monta com a seção aberta e o
+  desenho (useEffect com useRef) já tinha rodado antes, sem canvas.
+  Corrigido com ref por estado (callback ref) nas dependências do desenho
 - Sem migration
 
 ### Próximos blocos

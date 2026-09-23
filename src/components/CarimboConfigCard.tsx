@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
@@ -48,7 +48,9 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const [logo, setLogo] = useState<HTMLImageElement | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  // ref por estado (e não useRef): a seção abre fechada e o canvas só
+  // existe depois de expandir — o desenho precisa rodar quando ele monta
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null)
 
   useEffect(() => { setConfig(resolverConfigCarimbo(tenant?.stamp_config)) }, [tenant?.stamp_config])
 
@@ -60,7 +62,6 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
   }, [logoUrl])
 
   useEffect(() => {
-    const canvas = canvasRef.current
     if (!canvas) return
     const [w, h] = orientacao === 'retrato' ? [900, 1600] : [1600, 900]
     canvas.width = w
@@ -76,7 +77,7 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
       config,
       contexto: { numeroOs: EXEMPLO.numeroOs, unidade: EXEMPLO.unidade, tecnico: user?.name ?? 'Nome do Técnico' },
     }, logo, new Date())
-  }, [config, orientacao, logo, logoUrl, tenant?.name, user])
+  }, [canvas, config, orientacao, logo, logoUrl, tenant?.name, user])
 
   async function salvar(novo: ConfigCarimbo) {
     const anterior = config
@@ -151,7 +152,7 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
               </button>
             ))}
           </div>
-          <canvas ref={canvasRef} aria-label="Prévia do carimbo" className="w-full rounded-md border border-border" />
+          <canvas ref={setCanvas} aria-label="Prévia do carimbo" className="w-full rounded-md border border-border" />
           <p className="text-[11px] text-muted-foreground mt-1">Prévia com dados de exemplo</p>
         </div>
       </div>
