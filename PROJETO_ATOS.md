@@ -446,6 +446,16 @@ Timemark) e aprovou o plano em 3 incrementos — ver VISAO_ATOS.md, F6.**
   = subir a versão (histórico das versões comentado no hook)
 - Sem migration (preferences já é jsonb gravado via
   `atualizar_minhas_preferencias()`, migration 020)
+- Testado (URL pública, técnico real com aceite v1): ao tocar em
+  "Adicionar evidência" o modal "Aviso de localização atualizado"
+  aparece com a faixa e o parágrafo do OpenStreetMap, câmera NÃO abre
+  antes do aceite, "Agora não" fecha sem abrir câmera. **O aceite em si
+  NÃO foi feito no teste de propósito** — sem token do Supabase não dava
+  pra desfazer, e o usuário precisa ver o termo novo no celular real.
+  Persistência do aceite v2 fica para o teste do usuário
+- **Token do Supabase enviado pelo usuário em 2026-09-23 voltou 401
+  (Unauthorized) em todos os endpoints** — aguardando token válido para
+  as migrations dos Incrementos 3 e 4
 - Sem migration
 
 ### Próximos blocos
