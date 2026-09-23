@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import * as Dialog from '@radix-ui/react-dialog'
 import { X, Loader2, RotateCcw, Check, Camera } from 'lucide-react'
 
 // Câmera embutida na própria página (getUserMedia), em vez de
@@ -15,6 +15,11 @@ import { X, Loader2, RotateCcw, Check, Camera } from 'lucide-react'
 // para o <input capture> antigo — melhor ter o risco de memória do que
 // não conseguir anexar nada. Com a permissão de câmera negada, o mesmo
 // recurso aparece como opção secundária ao "Tentar novamente".
+//
+// É um Dialog do Radix (e não um createPortal simples) porque o
+// preenchimento do checklist já roda dentro de um Dialog modal, que
+// bloqueia clique em tudo fora dele — Dialogs aninhados do Radix
+// empilham certo e o mais de cima recebe os eventos.
 
 const RESOLUCAO_IDEAL = { width: { ideal: 1920 }, height: { ideal: 1080 } }
 const QUALIDADE_CAPTURA = 0.92
@@ -117,10 +122,13 @@ export default function CameraCaptura({ open, onCapturar, onFechar }: Props) {
 
   if (!open) return null
 
-  return createPortal(
-    <div className="fixed inset-0 z-[60] bg-black flex flex-col" role="dialog" aria-label="Câmera">
+  return (
+    <Dialog.Root open onOpenChange={(o) => { if (!o) fechar() }}>
+    <Dialog.Portal>
+    <Dialog.Content aria-label="Câmera" aria-describedby={undefined}
+      className="fixed inset-0 z-[60] bg-black flex flex-col focus:outline-none">
       <div className="flex items-center justify-between px-4 py-3 text-white">
-        <span className="text-sm font-medium">Foto de evidência</span>
+        <Dialog.Title className="text-sm font-medium">Foto de evidência</Dialog.Title>
         <button type="button" onClick={fechar} aria-label="Fechar câmera"
           className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
           <X size={18} />
@@ -185,7 +193,8 @@ export default function CameraCaptura({ open, onCapturar, onFechar }: Props) {
           </>
         )}
       </div>
-    </div>,
-    document.body
+    </Dialog.Content>
+    </Dialog.Portal>
+    </Dialog.Root>
   )
 }

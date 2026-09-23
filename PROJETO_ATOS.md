@@ -346,6 +346,13 @@ Engenheiro/PO/UX entende que é a melhor solução, vamos seguir"):
   deixar o técnico travado se negou a câmera por engano)
 - Mensagem de erro de upload deixou de sugerir "use foto da galeria"
   (opção que não existe mais)
+- **Achado testando (Playwright, mesmo dia)**: no checklist a câmera
+  abria mas o botão de disparo não respondia — o preenchimento do
+  checklist roda dentro de um Dialog modal do Radix, que bloqueia
+  clique em tudo fora dele, e o visor era um `createPortal` comum no
+  `body`. Corrigido tornando o visor um Dialog do Radix também (Dialogs
+  aninhados empilham certo). A evidência direto na OS não era afetada
+  (não fica dentro de modal)
 - Sem migration
 
 ### Próximos blocos
