@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { removerArquivosDaOS } from '@/lib/armazenamento'
 import { registrarEvento } from '@/lib/orderEvents'
 
 export type OrderStatus = 'aberta' | 'agendada' | 'em_andamento' | 'pausada' | 'concluida' | 'cancelada'
@@ -145,8 +146,12 @@ export function useOrders() {
   }
 
   async function deleteOrder(id: string) {
+    // ids dos checklists ANTES da exclusão (a cascata apaga os registros,
+    // e depois não dá mais pra saber quais pastas de foto eram dela)
+    const { data: checklists } = await supabase.from('checklist_instances').select('id').eq('order_id', id)
     const { error } = await supabase.from('orders').delete().eq('id', id)
     if (error) throw error
+    await removerArquivosDaOS(id, (checklists ?? []).map(c => c.id)).catch(() => {})
     await fetchOrders()
   }
 

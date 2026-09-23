@@ -5,6 +5,7 @@ import { useClients } from '@/hooks/useClients'
 import { useTechnicians } from '@/hooks/useTechnicians'
 import { useChecklistTemplates } from '@/hooks/useChecklistTemplates'
 import { supabase } from '@/lib/supabase'
+import { removerArquivosDoChecklist } from '@/lib/armazenamento'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
@@ -173,7 +174,8 @@ export default function OrdersPage() {
         if (checklistTemplateId !== templateAtual) {
           // removeu ou trocou: apaga a instancia anterior
           if (checklistInstancia) {
-            await supabase.from('checklist_instances').delete().eq('id', checklistInstancia.id)
+            const { error: erroDel } = await supabase.from('checklist_instances').delete().eq('id', checklistInstancia.id)
+            if (!erroDel) await removerArquivosDoChecklist(checklistInstancia.id).catch(() => {})
           }
           // escolheu um novo modelo: cria a instancia
           if (checklistTemplateId) {

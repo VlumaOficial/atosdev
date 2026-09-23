@@ -554,6 +554,29 @@ ser limpas por esse motivo).
   antes da mudança: foto retrato real de 875 KB (≈ **80% menor** agora).
   Cards usam `_mini.jpg`, visualizador usa a foto cheia. Checklist:
   foto anexada e modal fechado SEM "Salvar" → resposta gravada no banco
+
+### Espaço usado + fim dos órfãos (2026-09-23)
+**Decisões do usuário**: exportação ZIP como módulo em Configurações;
+período de limpeza escolhido pelo cliente; "não deveríamos ter fotos
+órfãs"; admin vê total + por técnico, super admin vê por tenant e os
+técnicos de cada tenant; ordem técnica delegada → espaço+órfãos →
+exportação ZIP → código de verificação → "liberar espaço"
+- Migration 024 (ver seção 6): detecção de órfãos e uso por
+  tenant/usuário (autor = `storage.objects.owner`)
+- **Achado na auditoria**: 4 pontos excluíam registro sem apagar
+  arquivo — excluir OS (fotos, assinatura e fotos dos checklists da OS),
+  excluir checklist avulso, desassociar checklist da OS e trocar o
+  checklist ao editar a OS. Confirmado no banco: assinatura órfã de uma
+  OS já excluída. Todos passam a apagar a pasta correspondente
+  (`src/lib/armazenamento.ts`). Também: se o registro da evidência
+  falhar depois do upload, o arquivo é apagado na hora
+- **Rede de segurança automática**, sem botão (órfão é falha do sistema,
+  não decisão do admin): ao usar o painel, admin/super admin disparam
+  uma varredura no máx. a cada 12h que remove arquivos sem referência há
+  mais de 1h (margem protege upload em andamento)
+- `ArmazenamentoCard` no topo de Configurações: total + fotos; admin vê
+  por usuário que enviou; super admin vê todas as empresas (expansíveis
+  até os técnicos) + barra do limite de 1 GB do projeto
 - Sem migration
 
 ### Próximos blocos
@@ -627,6 +650,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 021_f6_storage_update_policy | policy evidencias_update em storage.objects — corrige "Trocar logo"/re-upload no mesmo path | OK | Pendente | Sim |
 | 022_f6_order_evidences | tabela order_evidences (foto+observação direto na OS, sem depender de checklist) + RLS | OK | Pendente | Sim |
 | 023_f6_carimbo_config | tenants.stamp_config (jsonb, só diferenças do padrão) + função atualizar_carimbo_tenant() (SECURITY DEFINER, admin, só chaves conhecidas booleanas) | OK | Pendente | Sim |
+| 024_f6_armazenamento | funções arquivos_orfaos() e uso_armazenamento() (SECURITY DEFINER, admin/super_admin, só consulta — remoção via Storage API) | OK | Pendente | Sim |
 
 ---
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { removerArquivosDoChecklist } from '@/lib/armazenamento'
 import { useChecklistInstance, type ChecklistItemSnapshot, type ChecklistInstance as OrderChecklist } from '@/hooks/useChecklistInstance'
 
 export type { ChecklistItemSnapshot, OrderChecklist }
@@ -22,8 +23,10 @@ export function useOrderChecklist(orderId: string | undefined) {
 
   async function desassociar() {
     if (!base.checklist) return
-    const { error } = await supabase.from('checklist_instances').delete().eq('id', base.checklist.instanceId)
+    const instanceId = base.checklist.instanceId
+    const { error } = await supabase.from('checklist_instances').delete().eq('id', instanceId)
     if (error) throw error
+    await removerArquivosDoChecklist(instanceId).catch(() => {})
     await base.fetchChecklist()
   }
 

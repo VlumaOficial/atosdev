@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { removerArquivosDoChecklist } from '@/lib/armazenamento'
 
 export interface ChecklistAvulso {
   id: string
@@ -89,6 +90,7 @@ export function useChecklistAvulsos() {
   async function deleteChecklistAvulso(id: string) {
     const { error } = await supabase.from('checklist_instances').delete().eq('id', id)
     if (error) throw error
+    await removerArquivosDoChecklist(id).catch(() => {})
     await fetchChecklists()
   }
 

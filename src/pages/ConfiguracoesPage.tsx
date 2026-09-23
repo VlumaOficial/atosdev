@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { Card } from '@/components/ui/card'
 import { PenTool, Image as ImageIcon, Loader2 } from 'lucide-react'
 import CarimboConfigCard from '@/components/CarimboConfigCard'
+import ArmazenamentoCard from '@/components/ArmazenamentoCard'
 
 export default function ConfiguracoesPage() {
   const { tenant, refreshTenant } = useAuth()
@@ -63,6 +64,8 @@ export default function ConfiguracoesPage() {
       <PageHeader title="Configurações" description="Preferências da sua empresa no ATOS" />
 
       <div className="space-y-4 max-w-2xl">
+        <ArmazenamentoCard />
+
         <Card className="p-5">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">

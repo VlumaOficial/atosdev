@@ -49,7 +49,11 @@ export function useOrderEvidences(orderId: string | undefined) {
       file_path: res.path,
       created_by: user?.id ?? null,
     })
-    if (error) throw error
+    if (error) {
+      // arquivo subiu mas o registro não — apaga na hora pra não virar órfão
+      await removerEvidencia(res.path).catch(() => false)
+      throw error
+    }
     await fetchEvidencias()
   }
 

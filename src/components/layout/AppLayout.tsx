@@ -1,9 +1,18 @@
+import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import { useIdleTimeout } from '@/hooks/useIdleTimeout'
+import { useAuth } from '@/hooks/useAuth'
+import { varrerOrfaosSeDevido } from '@/lib/armazenamento'
 
 export default function AppLayout() {
   useIdleTimeout(30)
+  const { user } = useAuth()
+
+  // rede de segurança contra fotos órfãs no bucket (no máx. 1x a cada 12h)
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'super_admin') varrerOrfaosSeDevido()
+  }, [user?.role])
   return (
     <div className="flex min-h-screen">
       <Sidebar />
