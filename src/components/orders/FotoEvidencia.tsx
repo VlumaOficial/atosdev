@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { uploadEvidenciaChecklist, urlEvidencia, removerEvidencia } from '@/lib/uploadEvidencia'
 import { obterLocalizacao, type ErroLocalizacao } from '@/lib/geolocation'
 import { useLocationConsent } from '@/hooks/useLocationConsent'
 import LocationConsentModal from '@/components/LocationConsentModal'
+import CameraCaptura from '@/components/orders/CameraCaptura'
 import { Camera, X, Loader2, MapPin, RotateCcw } from 'lucide-react'
 
 interface Props {
@@ -26,7 +27,7 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
   const [erro, setErro] = useState('')
   const [arquivoPendente, setArquivoPendente] = useState<File | null>(null)
   const [consentModalAberto, setConsentModalAberto] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [cameraAberta, setCameraAberta] = useState(false)
   const { aceito, loaded, aceitar } = useLocationConsent()
 
   useEffect(() => {
@@ -57,36 +58,37 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
         setArquivoPendente(null)
       }
     } catch {
-      setErro('Falha ao enviar a foto. Se persistir, tente uma foto já salva na galeria em vez da câmera, ou reduza a qualidade da câmera nas configurações do aparelho.')
+      setErro('Falha ao enviar a foto. Verifique a conexão e tente de novo.')
       setArquivoPendente(file)
     } finally {
       setEnviando(false)
-      if (inputRef.current) inputRef.current.value = ''
     }
   }
 
-  async function handleArquivo(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!loaded) return
+  // Consentimento de localização vem ANTES de abrir a câmera, pra não
+  // tirar a foto e só depois descobrir que não pode carimbar
+  function handleAbrirCamera() {
+    if (!loaded || enviando) return
     if (!aceito) {
-      setArquivoPendente(file)
       setConsentModalAberto(true)
       return
     }
+    setCameraAberta(true)
+  }
+
+  async function handleFotoCapturada(file: File) {
+    setCameraAberta(false)
     await processarArquivo(file)
   }
 
   async function handleAceitarConsentimento() {
     setConsentModalAberto(false)
     await aceitar()
-    if (arquivoPendente) await processarArquivo(arquivoPendente)
+    setCameraAberta(true)
   }
 
   function handleCancelarConsentimento() {
     setConsentModalAberto(false)
-    setArquivoPendente(null)
-    if (inputRef.current) inputRef.current.value = ''
   }
 
   async function handleTentarNovamente() {
@@ -120,12 +122,11 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
 
   return (
     <div>
-      <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleArquivo} className="hidden" id={'foto-' + fieldId} />
-      <label htmlFor={'foto-' + fieldId}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition cursor-pointer">
+      <button type="button" onClick={handleAbrirCamera} disabled={enviando}
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition disabled:opacity-60">
         {enviando ? <Loader2 size={15} className="animate-spin" /> : <Camera size={15} />}
         {enviando ? 'Enviando...' : 'Anexar foto'}
-      </label>
+      </button>
       {erro && (
         <div className="mt-1.5">
           <p className="text-xs text-red-400 flex items-start gap-1"><MapPin size={12} className="flex-shrink-0 mt-0.5" /> {erro}</p>
@@ -138,6 +139,7 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
         </div>
       )}
       <LocationConsentModal open={consentModalAberto} onAceitar={handleAceitarConsentimento} onCancelar={handleCancelarConsentimento} />
+      <CameraCaptura open={cameraAberta} onCapturar={handleFotoCapturada} onFechar={() => setCameraAberta(false)} />
     </div>
   )
 }

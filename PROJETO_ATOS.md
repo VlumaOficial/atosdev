@@ -15,7 +15,7 @@
 | Supabase DEV | vgkiddqahubznlzkxfgb |
 | Supabase PRD | zeejmwdyqrbjnkhwtdsu |
 | Deploy | atosdev.vercel.app (auto-deploy no push da main) |
-| Pasta projeto (WSL) | /mnt/c/Users/sdore/dyad-apps/atosdev |
+| Pastas locais | /home/sdorea/vluma/atosdev (WSL) e /mnt/c/vluma/atosdev (Windows) — manter as duas sincronizadas (corrigido em 2026-09-23; antes apontava para /mnt/c/Users/sdore/dyad-apps/atosdev, pasta antiga) |
 | E-mail transacional | atos@vluma.com.br (Zoho, SMTP 587) |
 
 **Stack:** React + Vite + TypeScript + Tailwind v3 + Shadcn-style + Supabase + Vercel
@@ -41,7 +41,7 @@
 | F3 | Ordens de Serviço (gestor) | MVP | Feito |
 | F4 | App de campo (técnico, mobile) | MVP | Feito |
 | F5 | Checklists dinâmicos | MVP | Feito |
-| F6 | Assinatura digital + PDF + WhatsApp | MVP | Em andamento (Blocos A e B feitos; bug de memória aberto — ver seção 4.3) |
+| F6 | Assinatura digital + PDF + WhatsApp | MVP | Em andamento (Blocos A e B feitos; bug de memória com correção implementada em 2026-09-23, aguardando validação no celular real — ver seção 4.3) |
 | F7 | Painel gerencial | MVP | Pendente |
 | — | Tenant Infoxtec criado manualmente | MVP | Feito |
 | F8 | Planos, Asaas, cobrança, trial | Backlog | — |
@@ -176,7 +176,7 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
   **achado testando**: policy de RLS de `tenants` só libera UPDATE pra
   `super_admin`; um `admin` normal não conseguia salvar Configurações
   (silenciosamente, sem erro — RLS filtra a linha, não retorna 403).
-  Corrigido com função seção de UPDATE controlado, sem abrir policy geral
+  Corrigido com função SECURITY DEFINER de UPDATE controlado, sem abrir policy geral
   (evita admin poder editar `plan`/`status`, campos comerciais)
 - Componente `OrderSignature` (src/components/orders/) — captura por
   toque/mouse com `signature_pad`, aparece em `OrderDetailPage` (admin,
@@ -278,8 +278,9 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
   memória de um aparelho físico específico — validação final depende
   de teste no celular real do usuário.
 
-### 🔴 BUG ABERTO — "falta de memória" ao anexar evidência (não resolvido)
-**Status em 2026-09-23: diagnosticado, correção NÃO implementada ainda.**
+### 🟡 BUG — "falta de memória" ao anexar evidência — CORREÇÃO IMPLEMENTADA, aguardando validação no celular real
+**Status em 2026-09-23 (início da sessão): diagnosticado, correção NÃO implementada ainda.**
+**Atualização 2026-09-23 (mesma data, sessão seguinte): câmera embutida implementada — ver "Correção implementada" ao fim desta seção. Histórico do diagnóstico mantido abaixo.**
 
 - Usuário reportou que o erro **persistiu** mesmo após as duas correções
   acima (que otimizam o processamento da imagem já dentro do
@@ -314,6 +315,35 @@ ver `VISAO_ATOS.md` seção "F6" para o escopo completo de cada bloco.
 - **Próximo passo**: perguntar ao usuário se quer seguir com essa
   reformulação (câmera embutida) — é o item nº1 de pendência pra
   próxima sessão
+
+**Correção implementada (2026-09-23)** — aprovada pelo usuário ("se como
+Engenheiro/PO/UX entende que é a melhor solução, vamos seguir"):
+- Componente novo `src/components/orders/CameraCaptura.tsx`: visor em
+  tela cheia (`getUserMedia`, câmera traseira, resolução ideal
+  1920×1080), botão de disparo, prévia com "Tirar outra" / "Usar foto".
+  A foto é um frame do `<video>` copiado pra canvas — nenhum app externo
+  é aberto, não há o handoff que fazia o Android matar a aba
+- O stream é encerrado (`track.stop()`) ao usar a foto, fechar ou
+  desmontar — câmera não fica ligada em segundo plano
+- `FotoEvidencia.tsx` e `OrderEvidences.tsx` trocam o
+  `<input capture>` por um botão que abre o `CameraCaptura`. Resto do
+  fluxo inalterado: mesma `comprimirECarimbar`, mesmo GPS pontual, mesmo
+  upload
+- **Decisão de UX**: o consentimento de localização (LGPD) passou a ser
+  pedido ANTES de abrir a câmera (antes era depois de escolher o
+  arquivo) — evita o técnico tirar a foto e só então descobrir que
+  precisa aceitar
+- **Decisão de produto**: sem opção "escolher da galeria". O carimbo
+  grava data/GPS do momento do envio; foto antiga da galeria sairia
+  carimbada como se fosse atual — comprometeria o valor de prova da
+  evidência
+- **Fallback**: se o navegador não suportar `getUserMedia` ou não
+  achar câmera, o próprio visor oferece "Abrir câmera do aparelho"
+  (o `<input capture>` antigo) — nunca deixa o técnico sem conseguir
+  anexar. Permissão de câmera negada mostra mensagem + "Tentar novamente"
+- Mensagem de erro de upload deixou de sugerir "use foto da galeria"
+  (opção que não existe mais)
+- Sem migration
 
 ### Próximos blocos
 - **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura)
@@ -424,3 +454,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-22: migrations 004–016 reconstruídas/adicionadas e versionadas em `supabase/migrations/` (ver seção 6). Achados de segurança pendentes (token de acesso do Supabase usado nessas migrations, e Personal Access Token do GitHub embutido no remote git da pasta `C:\vluma\atosdev`) — revogar/trocar ambos **ao final de todo o desenvolvimento do MVP**, não antes (decisão do time, para não gerar atrito de credencial a cada sessão de trabalho).*
 
 *2026-09-23: sessão encerrada com um bug aberto — ver "🔴 BUG ABERTO" na seção 4.3. Diagnosticado (falha no handoff câmera nativa→navegador em aparelhos com pouca RAM, não é algo que otimização de JS no app resolve), correção proposta (câmera embutida via getUserMedia) ainda NÃO implementada — depende de confirmação do usuário por ser mudança de UX, não ajuste pontual. **Esse é o item nº1 pra próxima sessão.***
+
+*2026-09-23: bug de "falta de memória" — câmera embutida (`getUserMedia`) implementada nos dois pontos de captura de foto, substituindo o app de Câmera nativo. Ver seção 4.3. Falta validação final no celular real do usuário.*

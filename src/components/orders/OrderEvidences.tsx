@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useOrderEvidences, type OrderEvidence } from '@/hooks/useOrderEvidences'
 import { urlEvidencia } from '@/lib/uploadEvidencia'
 import { obterLocalizacao, type ErroLocalizacao } from '@/lib/geolocation'
 import { useLocationConsent } from '@/hooks/useLocationConsent'
 import LocationConsentModal from '@/components/LocationConsentModal'
+import CameraCaptura from '@/components/orders/CameraCaptura'
 import { X, Loader2, MapPin, RotateCcw, Image as ImageIcon } from 'lucide-react'
 
 const ERRO_LOCALIZACAO_MSG: Record<ErroLocalizacao, string> = {
@@ -66,7 +67,7 @@ export default function OrderEvidences({ orderId, readOnly }: { orderId: string;
   const [erro, setErro] = useState('')
   const [arquivoPendente, setArquivoPendente] = useState<File | null>(null)
   const [consentModalAberto, setConsentModalAberto] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [cameraAberta, setCameraAberta] = useState(false)
 
   async function processarArquivo(file: File) {
     setErro('')
@@ -81,35 +82,37 @@ export default function OrderEvidences({ orderId, readOnly }: { orderId: string;
       await adicionar(file, resultado.coords!)
       setArquivoPendente(null)
     } catch (e: any) {
-      setErro((e?.message ?? 'Falha ao enviar a foto.') + ' Se persistir, tente uma foto já salva na galeria em vez da câmera, ou reduza a qualidade da câmera nas configurações do aparelho.')
+      setErro((e?.message ?? 'Falha ao enviar a foto.') + ' Verifique a conexão e tente de novo.')
       setArquivoPendente(file)
     } finally {
       setEnviando(false)
-      if (inputRef.current) inputRef.current.value = ''
     }
   }
 
-  async function handleArquivo(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !loaded) return
+  // Consentimento de localização vem ANTES de abrir a câmera, pra não
+  // tirar a foto e só depois descobrir que não pode carimbar
+  function handleAbrirCamera() {
+    if (!loaded || enviando) return
     if (!aceito) {
-      setArquivoPendente(file)
       setConsentModalAberto(true)
       return
     }
+    setCameraAberta(true)
+  }
+
+  async function handleFotoCapturada(file: File) {
+    setCameraAberta(false)
     await processarArquivo(file)
   }
 
   async function handleAceitarConsentimento() {
     setConsentModalAberto(false)
     await aceitar()
-    if (arquivoPendente) await processarArquivo(arquivoPendente)
+    setCameraAberta(true)
   }
 
   function handleCancelarConsentimento() {
     setConsentModalAberto(false)
-    setArquivoPendente(null)
-    if (inputRef.current) inputRef.current.value = ''
   }
 
   async function handleTentarNovamente() {
@@ -149,12 +152,11 @@ export default function OrderEvidences({ orderId, readOnly }: { orderId: string;
 
       {!readOnly && (
         <div>
-          <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleArquivo} className="hidden" id={'os-evidencia-' + orderId} />
-          <label htmlFor={'os-evidencia-' + orderId}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition cursor-pointer">
+          <button type="button" onClick={handleAbrirCamera} disabled={enviando}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition disabled:opacity-60">
             {enviando ? <Loader2 size={15} className="animate-spin" /> : <ImageIcon size={15} />}
             {enviando ? 'Enviando...' : 'Adicionar evidência'}
-          </label>
+          </button>
           {erro && (
             <div className="mt-1.5">
               <p className="text-xs text-red-400 flex items-start gap-1"><MapPin size={12} className="flex-shrink-0 mt-0.5" /> {erro}</p>
@@ -170,6 +172,7 @@ export default function OrderEvidences({ orderId, readOnly }: { orderId: string;
       )}
 
       <LocationConsentModal open={consentModalAberto} onAceitar={handleAceitarConsentimento} onCancelar={handleCancelarConsentimento} />
+      <CameraCaptura open={cameraAberta} onCapturar={handleFotoCapturada} onFechar={() => setCameraAberta(false)} />
     </div>
   )
 }

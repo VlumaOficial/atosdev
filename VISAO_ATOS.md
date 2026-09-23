@@ -82,7 +82,7 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 | **F3** | Ordens de Serviço (visão do Gestor) | Sim | ✅ Concluída |
 | **F4** | App de Campo (visão do Técnico, mobile) | Sim | ✅ Concluída |
 | **F5** | Checklists dinâmicos de verificação | Sim | ✅ Concluída |
-| **F6** | Assinatura digital, evidências, PDF e envio | Sim | 🔄 Em andamento (Bloco A feito) |
+| **F6** | Assinatura digital, evidências, PDF e envio | Sim | 🔄 Em andamento (Blocos A e B feitos — atualizado em 2026-09-23; antes dizia só "Bloco A feito") |
 | **F7** | Painel gerencial e indicadores | Sim | ⏳ Pendente |
 | **F8** | Planos, Asaas, cobrança, trial | Não | 📋 Backlog |
 | **F9** | Integração GLPI | Não | 📋 Backlog |
@@ -126,6 +126,7 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - Campo de observação aberto, preenchido pelo técnico
 - **GPS capturado automaticamente** do dispositivo, nunca digitado — leitura pontual (`getCurrentPosition`, sem `watchPosition`), nunca em segundo plano
 - Se o GPS estiver negado/desligado: sistema **avisa e exige ativação** para continuar (bloqueia o anexo)
+- **Captura só pela câmera embutida no app (2026-09-23)** — sem escolher foto da galeria, para que o carimbo de data/GPS corresponda de fato ao momento da foto. Motivo técnico adicional: abrir o app de Câmera nativo fazia o Android fechar o navegador em aparelhos com pouca memória
 - **Decisão (jul/2026), implementada:** guarda-se **apenas a imagem carimbada** — o original sem carimbo não é armazenado. A coordenada só existe dentro do pixel da foto, nunca gravada separada no banco (reforço de privacidade além do inicialmente decidido)
 - Logo da empresa configurável em Configurações (branding por tenant)
 - Base construída na F5 (Bloco D): bucket privado `evidencias` isolado por tenant, compressão no navegador (1600px / qualidade 80%), limite de 5MB e URL assinada. O carimbo é aplicado no mesmo canvas da compressão, antes do envio
