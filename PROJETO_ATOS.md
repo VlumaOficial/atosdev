@@ -480,6 +480,20 @@ Timemark) e aprovou o plano em 3 incrementos — ver VISAO_ATOS.md, F6.**
   como foi dito ao usuário — fotos de teste foram parar nela. Testes
   seguintes passam a usar a OS "Teste camera embutida (checklist)"
   (`7bec79dd…`)
+- Ajustes achados na prévia: subtítulo "Gestão de Campo" passou de
+  cinza para branco+sombra (sumia em fundo claro); "Téc." e o nome
+  unidos por espaço não-separável (quebra de linha os separava)
+- Testado ponta a ponta: (1) admin liga/desliga campos, prévia muda ao
+  vivo (retrato/paisagem), persiste após reload e no banco
+  (`stamp_config` só com as diferenças); (2) segurança da função via
+  impersonação SQL: técnico → "Sem permissão"; admin com chaves
+  inválidas (`plan`, `status`, `numero_os:"sim"`) → só a válida
+  gravaria (teste em transação com rollback); (3) foto real do técnico
+  na OS-0018 de teste: sai com nº da OS, unidade, técnico, sem dia da
+  semana, conforme a config; OS sem unidade omite o campo sem erro.
+  Para validar a unidade, a OS-0018 (de teste) recebeu a unidade
+  principal do "Cliente Trigger Teste"
+- Config do tenant Infoxtec devolvida ao padrão (`{}`) ao fim dos testes
 - Sem migration
 
 ### Próximos blocos
@@ -598,5 +612,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-23: validado no celular real — bug de memória FECHADO. Novo achado: carimbo escondido pela miniatura e desproporcional em foto retrato (seção 4.3); aguardando modelo do usuário antes do Bloco C.*
 
 *2026-09-23: carimbo v2 no padrão do modelo do usuário + visualização em tela cheia e download de evidências (Incremento 1 de 3). Próximos: endereço via Edge Function/Nominatim (Inc. 2), configuração de campos do carimbo por tenant (Inc. 3). Em discussão com o usuário: marca ATOS removível ou não, e código de verificação de autenticidade.*
+
+*2026-09-23: Incremento 3 (configuração dos campos do carimbo, migration 023) concluído e testado — ver seção 4.3. Próximo: Incremento 4 (código de verificação de autenticidade).*
 
 *2026-09-23: Incremento 2 (endereço no carimbo) concluído e testado. Decisões de produto (marca ATOS como selo, código de verificação no MVP antes do PDF, ordem dos próximos passos) registradas em VISAO_ATOS.md, F6. Próximo: Incremento 3 (configuração dos campos do carimbo por tenant — tem migration).*
