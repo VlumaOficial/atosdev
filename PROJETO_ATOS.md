@@ -341,6 +341,9 @@ Engenheiro/PO/UX entende que é a melhor solução, vamos seguir"):
   achar câmera, o próprio visor oferece "Abrir câmera do aparelho"
   (o `<input capture>` antigo) — nunca deixa o técnico sem conseguir
   anexar. Permissão de câmera negada mostra mensagem + "Tentar novamente"
+  + link secundário "Usar a câmera do aparelho" (o app nativo não depende
+  da permissão do site — acrescentado no mesmo dia após o teste, pra não
+  deixar o técnico travado se negou a câmera por engano)
 - Mensagem de erro de upload deixou de sugerir "use foto da galeria"
   (opção que não existe mais)
 - Sem migration

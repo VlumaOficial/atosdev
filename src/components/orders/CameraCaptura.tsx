@@ -13,7 +13,8 @@ import { X, Loader2, RotateCcw, Check, Camera } from 'lucide-react'
 // momento do envio, então uma foto antiga passaria como atual.
 // Se o navegador não suportar getUserMedia (ou não houver câmera), cai
 // para o <input capture> antigo — melhor ter o risco de memória do que
-// não conseguir anexar nada.
+// não conseguir anexar nada. Com a permissão de câmera negada, o mesmo
+// recurso aparece como opção secundária ao "Tentar novamente".
 
 const RESOLUCAO_IDEAL = { width: { ideal: 1920 }, height: { ideal: 1080 } }
 const QUALIDADE_CAPTURA = 0.92
@@ -31,7 +32,6 @@ export default function CameraCaptura({ open, onCapturar, onFechar }: Props) {
   const [previa, setPrevia] = useState<{ url: string; blob: Blob } | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
 
   function pararCamera() {
     streamRef.current?.getTracks().forEach(t => t.stop())
@@ -136,6 +136,10 @@ export default function CameraCaptura({ open, onCapturar, onFechar }: Props) {
           <img src={previa.url} alt="Prévia da foto" className="max-w-full max-h-full object-contain" />
         )}
 
+        {(estado === 'negado' || estado === 'fallback') && (
+          <input type="file" accept="image/*" capture="environment" onChange={handleArquivoFallback} className="hidden" id="camera-fallback" />
+        )}
+
         {estado === 'iniciando' && <Loader2 size={28} className="animate-spin text-white/70" />}
 
         {estado === 'negado' && (
@@ -145,13 +149,16 @@ export default function CameraCaptura({ open, onCapturar, onFechar }: Props) {
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-white/10 text-sm hover:bg-white/20 transition">
               <RotateCcw size={14} /> Tentar novamente
             </button>
+            {/* app de Câmera nativo não depende da permissão do site — nunca deixa o técnico travado */}
+            <label htmlFor="camera-fallback" className="block text-xs text-white/60 underline cursor-pointer">
+              Usar a câmera do aparelho
+            </label>
           </div>
         )}
 
         {estado === 'fallback' && (
           <div className="px-6 text-center text-white space-y-3">
             <p className="text-sm">Não foi possível abrir a câmera nesta tela. Use a câmera do aparelho.</p>
-            <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleArquivoFallback} className="hidden" id="camera-fallback" />
             <label htmlFor="camera-fallback"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-white/10 text-sm hover:bg-white/20 transition cursor-pointer">
               <Camera size={14} /> Abrir câmera do aparelho
