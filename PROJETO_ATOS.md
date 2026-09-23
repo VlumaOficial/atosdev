@@ -456,6 +456,30 @@ Timemark) e aprovou o plano em 3 incrementos — ver VISAO_ATOS.md, F6.**
 - **Token do Supabase enviado pelo usuário em 2026-09-23 voltou 401
   (Unauthorized) em todos os endpoints** — aguardando token válido para
   as migrations dos Incrementos 3 e 4
+  → **Atualização 2026-09-23: usuário enviou token novo, válido.**
+  Conferido no banco que o aceite v2 do termo foi gravado pelo usuário
+  no celular (`location_consent_version = 2`) — persistência ok. O que o
+  usuário viu depois do bloqueio de tela foi a permissão de GPS do
+  próprio Android/Chrome (camada técnica, separada do termo LGPD do ATOS)
+
+### Configuração dos campos do carimbo — Incremento 3 (2026-09-23)
+- Migration 023 (ver seção 6). Padrões e rótulos em
+  `src/lib/carimboConfig.ts`; banco guarda só as diferenças
+- Campos: logo, nome da empresa, hora, data, dia da semana, endereço,
+  coordenadas (padrão ligados, exceto nome da empresa) + número da OS,
+  unidade, técnico que tirou a foto (padrão desligados). Selo ATOS fixo,
+  não configurável (decisão de produto)
+- `desenharCarimbo()` respeita a config; contexto (OS/unidade) só é
+  buscado no banco se ligado; **endereço desligado = coordenada nem é
+  enviada ao OpenStreetMap** (ganho de privacidade)
+- `CarimboConfigCard` em Configurações: switches + prévia ao vivo
+  (retrato/paisagem) desenhada pela MESMA função do upload real +
+  "Restaurar padrão"
+- **Correção de registro**: a OS usada nos testes de evidência
+  (`596ae00c…`) é a **OS-0010 real do usuário**, não uma OS de teste
+  como foi dito ao usuário — fotos de teste foram parar nela. Testes
+  seguintes passam a usar a OS "Teste camera embutida (checklist)"
+  (`7bec79dd…`)
 - Sem migration
 
 ### Próximos blocos
@@ -528,6 +552,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 020_f6_preferencias_rpc | função atualizar_minhas_preferencias() (SECURITY DEFINER) — corrige usuário sem permissão de UPDATE na própria linha em users | OK | Pendente | Sim |
 | 021_f6_storage_update_policy | policy evidencias_update em storage.objects — corrige "Trocar logo"/re-upload no mesmo path | OK | Pendente | Sim |
 | 022_f6_order_evidences | tabela order_evidences (foto+observação direto na OS, sem depender de checklist) + RLS | OK | Pendente | Sim |
+| 023_f6_carimbo_config | tenants.stamp_config (jsonb, só diferenças do padrão) + função atualizar_carimbo_tenant() (SECURITY DEFINER, admin, só chaves conhecidas booleanas) | OK | Pendente | Sim |
 
 ---
 

@@ -5,6 +5,7 @@ import { uploadLogoEmpresa, urlLogoEmpresa } from '@/lib/uploadLogo'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card } from '@/components/ui/card'
 import { PenTool, Image as ImageIcon, Loader2 } from 'lucide-react'
+import CarimboConfigCard from '@/components/CarimboConfigCard'
 
 export default function ConfiguracoesPage() {
   const { tenant, refreshTenant } = useAuth()
@@ -61,7 +62,7 @@ export default function ConfiguracoesPage() {
     <div>
       <PageHeader title="Configurações" description="Preferências da sua empresa no ATOS" />
 
-      <div className="space-y-4 max-w-xl">
+      <div className="space-y-4 max-w-2xl">
         <Card className="p-5">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
@@ -91,6 +92,8 @@ export default function ConfiguracoesPage() {
             </div>
           </div>
         </Card>
+
+        {!logoLoading && <CarimboConfigCard logoUrl={logoUrl} />}
 
         <Card className="p-5">
           <div className="flex items-start gap-3">

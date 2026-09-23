@@ -28,6 +28,7 @@ export interface Tenant {
   status: TenantStatus
   plan: 'starter' | 'professional' | 'enterprise'
   require_signature_to_complete: boolean
+  stamp_config?: Record<string, boolean>
   created_at: string
   updated_at: string
 }

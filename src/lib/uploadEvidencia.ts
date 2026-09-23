@@ -2,16 +2,25 @@ import { supabase } from '@/lib/supabase'
 import { urlLogoEmpresa } from '@/lib/uploadLogo'
 import type { Coordenadas } from '@/lib/geolocation'
 import { obterEndereco } from '@/lib/geocodificacao'
+import { resolverConfigCarimbo, type ConfigCarimbo } from '@/lib/carimboConfig'
 
 const LARGURA_MAX = 1600
 const QUALIDADE = 0.8
 const TAMANHO_MAX = 5 * 1024 * 1024 // 5MB
 
-interface DadosCarimbo {
+export interface ContextoCarimbo {
+  numeroOs?: string | null
+  unidade?: string | null
+  tecnico?: string | null
+}
+
+export interface DadosCarimbo {
   tenantName: string
   logoUrl: string | null
   coords: Coordenadas
   endereco?: string | null
+  config: ConfigCarimbo
+  contexto?: ContextoCarimbo
 }
 
 function carregarImagem(url: string): Promise<HTMLImageElement> {
@@ -72,7 +81,7 @@ function retanguloArredondado(ctx: CanvasRenderingContext2D, x: number, y: numbe
   ctx.fill()
 }
 
-function desenharCarimbo(
+export function desenharCarimbo(
   ctx: CanvasRenderingContext2D,
   largura: number,
   altura: number,
@@ -104,19 +113,24 @@ function desenharCarimbo(
   ctx.fillText('Gestão de Campo', largura - margem, margem + 5.2 * u)
 
   // --- bloco inferior esquerdo, desenhado de baixo pra cima
+  // (ordem visual, de cima pra baixo: logo, nome da empresa, OS/unidade/
+  // técnico, hora|data/dia, endereço, coordenadas)
+  const cfg = dados.config
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
   const larguraTexto = largura - 2 * margem
   let y = altura - margem
 
   // coordenadas (linha pequena — é a prova "dura" da localização)
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
-  ctx.font = `${2.6 * u}px ${fonte}`
-  ctx.fillText(`${dados.coords.lat.toFixed(6)}, ${dados.coords.lng.toFixed(6)}`, margem, y)
-  y -= 2.6 * u + 1.8 * u
+  if (cfg.coordenadas) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+    ctx.font = `${2.6 * u}px ${fonte}`
+    ctx.fillText(`${dados.coords.lat.toFixed(6)}, ${dados.coords.lng.toFixed(6)}`, margem, y)
+    y -= 2.6 * u + 1.8 * u
+  }
 
-  // endereço (opcional — preenchido quando houver geocodificação)
-  if (dados.endereco) {
+  // endereço (quando houver geocodificação)
+  if (cfg.endereco && dados.endereco) {
     const tamEnd = 4 * u
     ctx.fillStyle = '#ffffff'
     ctx.font = `${tamEnd}px ${fonte}`
@@ -129,30 +143,73 @@ function desenharCarimbo(
   }
 
   // hora em destaque + divisor amarelo + data / dia da semana
-  const tamHora = 12 * u
-  const capHora = tamHora * 0.72
   const hora = quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   const data = quando.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
   const diaBruto = quando.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
   const dia = diaBruto.charAt(0).toUpperCase() + diaBruto.slice(1)
-
-  ctx.fillStyle = '#ffffff'
-  ctx.font = `bold ${tamHora}px ${fonte}`
-  ctx.fillText(hora, margem, y)
-  const xDivisor = margem + ctx.measureText(hora).width + 2.2 * u
-  semSombra(ctx)
-  ctx.fillStyle = COR_DIVISOR
-  ctx.fillRect(xDivisor, y - capHora, 0.55 * u, capHora)
-  comSombra(ctx, u)
   const tamData = 4.4 * u
   ctx.fillStyle = '#ffffff'
-  ctx.font = `${tamData}px ${fonte}`
-  ctx.fillText(data, xDivisor + 2.2 * u, y - capHora + tamData * 0.8)
-  ctx.fillText(dia, xDivisor + 2.2 * u, y)
-  y -= capHora + 3 * u
 
-  // logo da empresa num cartão branco (ou o nome, se não houver logo)
-  if (logo && logo.naturalWidth && logo.naturalHeight) {
+  if (cfg.hora) {
+    const tamHora = 12 * u
+    const capHora = tamHora * 0.72
+    ctx.font = `bold ${tamHora}px ${fonte}`
+    ctx.fillText(hora, margem, y)
+    if (cfg.data || cfg.dia_semana) {
+      const xDivisor = margem + ctx.measureText(hora).width + 2.2 * u
+      semSombra(ctx)
+      ctx.fillStyle = COR_DIVISOR
+      ctx.fillRect(xDivisor, y - capHora, 0.55 * u, capHora)
+      comSombra(ctx, u)
+      ctx.fillStyle = '#ffffff'
+      ctx.font = `${tamData}px ${fonte}`
+      const xData = xDivisor + 2.2 * u
+      if (cfg.data && cfg.dia_semana) {
+        ctx.fillText(data, xData, y - capHora + tamData * 0.8)
+        ctx.fillText(dia, xData, y)
+      } else {
+        ctx.fillText(cfg.data ? data : dia, xData, y - capHora / 2 + tamData * 0.35)
+      }
+    }
+    y -= capHora + 3 * u
+  } else if (cfg.data || cfg.dia_semana) {
+    ctx.font = `bold ${tamData * 1.3}px ${fonte}`
+    ctx.fillText([cfg.data && data, cfg.dia_semana && dia].filter(Boolean).join(' · '), margem, y)
+    y -= tamData * 1.3 + 2 * u
+  }
+
+  // contexto do atendimento: OS · unidade · técnico
+  const ctxAtend = dados.contexto
+  const partes = [
+    cfg.numero_os && ctxAtend?.numeroOs,
+    cfg.unidade && ctxAtend?.unidade,
+    cfg.tecnico && ctxAtend?.tecnico && `Téc. ${ctxAtend.tecnico}`,
+  ].filter(Boolean) as string[]
+  if (partes.length) {
+    const tamCtx = 3.4 * u
+    ctx.fillStyle = '#ffffff'
+    ctx.font = `bold ${tamCtx}px ${fonte}`
+    const linhas = quebrarLinhas(ctx, partes.join(' · '), Math.min(larguraTexto, 80 * u)).slice(0, 2)
+    for (let i = linhas.length - 1; i >= 0; i--) {
+      ctx.fillText(linhas[i], margem, y)
+      y -= tamCtx * 1.25
+    }
+    y -= 1.2 * u
+  }
+
+  // nome da empresa — ligado na config, ou como substituto da logo ausente
+  const temLogo = !!(logo && logo.naturalWidth && logo.naturalHeight)
+  const mostrarLogo = cfg.logo && temLogo
+  if (dados.tenantName && (cfg.nome_empresa || (cfg.logo && !temLogo))) {
+    const tamNome = 4.4 * u
+    ctx.fillStyle = '#ffffff'
+    ctx.font = `bold ${tamNome}px ${fonte}`
+    ctx.fillText(dados.tenantName, margem, y)
+    y -= tamNome + 1.5 * u
+  }
+
+  // logo da empresa num cartão branco
+  if (mostrarLogo && logo) {
     const alturaCartao = 8 * u
     const pad = 0.9 * u
     const alturaLogo = alturaCartao - 2 * pad
@@ -162,10 +219,6 @@ function desenharCarimbo(
     retanguloArredondado(ctx, margem, y - alturaCartao, larguraCartao, alturaCartao, 1 * u)
     semSombra(ctx)
     ctx.drawImage(logo, margem + pad, y - alturaCartao + pad, larguraLogo, alturaLogo)
-  } else if (dados.tenantName) {
-    ctx.fillStyle = '#ffffff'
-    ctx.font = `bold ${4.4 * u}px ${fonte}`
-    ctx.fillText(dados.tenantName, margem, y)
   }
   semSombra(ctx)
 }
@@ -226,6 +279,8 @@ interface DadosTenant {
   tenantId: string
   tenantName: string
   logoUrl: string | null
+  config: ConfigCarimbo
+  nomeUsuario: string | null
 }
 
 async function buscarDadosTenant(): Promise<DadosTenant | { erro: string }> {
@@ -234,16 +289,63 @@ async function buscarDadosTenant(): Promise<DadosTenant | { erro: string }> {
 
   const { data: perfil } = await supabase
     .from('users')
-    .select('tenant_id, tenants(name)')
+    .select('tenant_id, name, tenants(name, stamp_config)')
     .eq('id', user.id)
     .single()
 
   const tenantId = perfil?.tenant_id
   if (!tenantId) return { erro: 'Usuário sem empresa vinculada.' }
   const tenantName = (perfil as any)?.tenants?.name ?? ''
-  const logoUrl = await urlLogoEmpresa()
+  const config = resolverConfigCarimbo((perfil as any)?.tenants?.stamp_config)
+  const logoUrl = config.logo ? await urlLogoEmpresa() : null
 
-  return { tenantId, tenantName, logoUrl }
+  return { tenantId, tenantName, logoUrl, config, nomeUsuario: (perfil as any)?.name ?? null }
+}
+
+// Busca só o que a config do tenant pede — endereço (serviço externo) e
+// contexto da OS (consulta ao banco) ficam de fora quando desligados.
+// Endereço nunca bloqueia: null = carimbo só com coordenadas.
+async function carimbar(
+  file: File,
+  dados: DadosTenant,
+  coords: Coordenadas,
+  buscarContexto: () => Promise<ContextoCarimbo>
+): Promise<Blob> {
+  const cfg = dados.config
+  const [endereco, contexto] = await Promise.all([
+    cfg.endereco ? obterEndereco(coords) : Promise.resolve(null),
+    cfg.numero_os || cfg.unidade ? buscarContexto().catch(() => ({})) : Promise.resolve({} as ContextoCarimbo),
+  ])
+  return comprimirECarimbar(file, {
+    tenantName: dados.tenantName,
+    logoUrl: dados.logoUrl,
+    coords,
+    endereco,
+    config: cfg,
+    contexto: { ...contexto, tecnico: cfg.tecnico ? dados.nomeUsuario : null },
+  })
+}
+
+async function contextoDaOS(orderId: string): Promise<ContextoCarimbo> {
+  const { data } = await supabase
+    .from('orders')
+    .select('number, locations(name)')
+    .eq('id', orderId)
+    .single()
+  return { numeroOs: (data as any)?.number ?? null, unidade: (data as any)?.locations?.name ?? null }
+}
+
+async function contextoDoChecklist(instanceId: string): Promise<ContextoCarimbo> {
+  const { data } = await supabase
+    .from('checklist_instances')
+    .select('locations(name), orders(number, locations(name))')
+    .eq('id', instanceId)
+    .single()
+  const d = data as any
+  return {
+    numeroOs: d?.orders?.number ?? null,
+    unidade: d?.locations?.name ?? d?.orders?.locations?.name ?? null,
+  }
 }
 
 // Envia a evidencia carimbada para o bucket, no caminho {tenant}/checklist/{instanceId}/{arquivo}
@@ -253,11 +355,9 @@ export async function uploadEvidenciaChecklist(
   fieldId: string,
   coords: Coordenadas
 ): Promise<UploadResult> {
-  // endereço em paralelo com os dados do tenant — nunca bloqueia (null = só coordenadas)
-  const [dados, endereco] = await Promise.all([buscarDadosTenant(), obterEndereco(coords)])
+  const dados = await buscarDadosTenant()
   if ('erro' in dados) return { path: '', erro: dados.erro }
-
-  const carimbada = await comprimirECarimbar(file, { tenantName: dados.tenantName, logoUrl: dados.logoUrl, coords, endereco })
+  const carimbada = await carimbar(file, dados, coords, () => contextoDoChecklist(instanceId))
 
   if (carimbada.size > TAMANHO_MAX) {
     return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
@@ -281,11 +381,9 @@ export async function uploadEvidenciaOS(
   orderId: string,
   coords: Coordenadas
 ): Promise<UploadResult> {
-  // endereço em paralelo com os dados do tenant — nunca bloqueia (null = só coordenadas)
-  const [dados, endereco] = await Promise.all([buscarDadosTenant(), obterEndereco(coords)])
+  const dados = await buscarDadosTenant()
   if ('erro' in dados) return { path: '', erro: dados.erro }
-
-  const carimbada = await comprimirECarimbar(file, { tenantName: dados.tenantName, logoUrl: dados.logoUrl, coords, endereco })
+  const carimbada = await carimbar(file, dados, coords, () => contextoDaOS(orderId))
 
   if (carimbada.size > TAMANHO_MAX) {
     return { path: '', erro: 'Arquivo muito grande (máximo 5MB).' }
