@@ -632,6 +632,19 @@ exportação ZIP → código de verificação → "liberar espaço"
   não encontrado fica marcado, o ZIP não falha)
 - Egress: a exportação baixa as fotos cheias (é o objetivo); URLs
   assinadas de 10 min, 4 downloads em paralelo
+- Testado ponta a ponta (URL pública, admin real, ZIP aberto e
+  validado): período 30 dias → 23 arquivos em 3 pastas (22 evidências +
+  1 assinatura = exatamente o que há no banco), integridade do ZIP ok,
+  0 imagens inválidas, `fotos.csv` com 23 linhas; ZIP por OS (OS-0010: 12
+  arquivos; OS-0018: evidências + foto do checklist com o nome do item)
+- **Achado 1 (corrigido)**: 11 erros 400 no console ao abrir OS com
+  fotos antigas (sem miniatura) — `createSignedUrl` da miniatura
+  inexistente. Trocado por `createSignedUrls` (lote), que devolve "não
+  existe" por item sem erro HTTP → 0 erros, 11 imagens carregadas
+- **Achado 2 — bug antigo de rastreabilidade (F5), corrigido**: nenhuma
+  resposta de checklist gravava o autor (`answered_by` 0 de 3) e a hora
+  não era atualizada ao corrigir uma resposta. Migration 025 (gatilho no
+  banco, cobre qualquer origem). Respostas antigas seguem sem autor
 - Sem migration
 
 ### Próximos blocos
@@ -706,6 +719,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 022_f6_order_evidences | tabela order_evidences (foto+observação direto na OS, sem depender de checklist) + RLS | OK | Pendente | Sim |
 | 023_f6_carimbo_config | tenants.stamp_config (jsonb, só diferenças do padrão) + função atualizar_carimbo_tenant() (SECURITY DEFINER, admin, só chaves conhecidas booleanas) | OK | Pendente | Sim |
 | 024_f6_armazenamento | funções arquivos_orfaos() e uso_armazenamento() (SECURITY DEFINER, admin/super_admin, só consulta — remoção via Storage API) | OK | Pendente | Sim |
+| 025_f5_checklist_answer_autor | gatilho fn_checklist_answer_autor(): grava answered_by (auth.uid()) e answered_at em todo INSERT e em UPDATE que muda o valor — corrige autoria nunca registrada | OK | Pendente | Sim |
 
 ---
 
