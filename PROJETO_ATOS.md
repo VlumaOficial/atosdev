@@ -645,6 +645,10 @@ exportação ZIP → código de verificação → "liberar espaço"
   resposta de checklist gravava o autor (`answered_by` 0 de 3) e a hora
   não era atualizada ao corrigir uma resposta. Migration 025 (gatilho no
   banco, cobre qualquer origem). Respostas antigas seguem sem autor
+  — testado: técnico real trocou a foto de um item pela câmera embutida
+  e fechou sem "Salvar" → resposta gravada com autor "Infoxtec Teste" e
+  hora atual; no bucket ficaram só a foto nova + miniatura (a anterior
+  foi apagada, sem órfão)
 - Sem migration
 
 ### Próximos blocos
@@ -771,3 +775,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-23: Incremento 2 (endereço no carimbo) concluído e testado. Decisões de produto (marca ATOS como selo, código de verificação no MVP antes do PDF, ordem dos próximos passos) registradas em VISAO_ATOS.md, F6. Próximo: Incremento 3 (configuração dos campos do carimbo por tenant — tem migration).*
 
 *2026-09-23: auditoria de armazenamento concluída — fotos ~80% menores (limite no maior lado, sem ampliar), miniatura para listas, foto do checklist salva na hora, espaço usado por tenant/técnico (migration 024) e zero órfãos (prevenção nas 4 exclusões + varredura automática). Próximo, ordem técnica definida: exportação ZIP em Configurações → código de verificação → "liberar espaço" (período escolhido pelo cliente).*
+
+*2026-09-23: exportação de fotos em ZIP concluída e testada (Configurações + botão por OS, montado no navegador, sem arquivo temporário no servidor). Achados corrigidos no caminho: erros 400 de miniatura em fotos antigas e autoria de resposta de checklist nunca gravada (migration 025). Próximo: código de verificação de autenticidade.*
