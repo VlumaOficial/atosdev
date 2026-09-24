@@ -5,10 +5,10 @@ import { useAuth } from '@/hooks/useAuth'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
-import OrderSignature from '@/components/orders/OrderSignature'
+import ConcluirOSModal from '@/components/assinatura/ConcluirOSModal'
+import AssinaturasDaOS from '@/components/assinatura/AssinaturasDaOS'
 import OrderEvidences from '@/components/orders/OrderEvidences'
 import BaixarFotosOSButton from '@/components/orders/BaixarFotosOSButton'
-import { checklistObrigatoriosPendentes } from '@/lib/checklistGuard'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -62,7 +62,7 @@ const TRANSITIONS: Record<string, { target: string; label: string; reason?: bool
 export default function OrderDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { order, loading, error, changeStatus } = useOrder(id)
+  const { order, loading, error, changeStatus, fetchOrder } = useOrder(id)
   const { tenant } = useAuth()
 
   const [statusModal, setStatusModal] = useState<{ open: boolean; target: string; needsReason: boolean; needsDate: boolean; needsNotes: boolean; needsCompleteDate: boolean }>({ open: false, target: '', needsReason: false, needsDate: false, needsNotes: false, needsCompleteDate: false })
@@ -72,8 +72,10 @@ export default function OrderDetailPage() {
   const [dateInput, setDateInput] = useState('')
   const [statusError, setStatusError] = useState('')
   const [statusSaving, setStatusSaving] = useState(false)
+  const [concluirAberto, setConcluirAberto] = useState(false)
 
   function requestStatusChange(action: { target: string; reason?: boolean; date?: boolean; notes?: boolean; completeDate?: boolean }) {
+    if (action.target === 'concluida') { setConcluirAberto(true); return }
     if (action.reason || action.date || action.notes || action.completeDate) {
       setReasonInput('')
       setDateInput('')
@@ -119,19 +121,6 @@ export default function OrderDetailPage() {
     if (statusModal.target === 'agendada') { extra.scheduled_at = dateInput || null; extra.schedule_reason = reasonInput || null }
     if (statusModal.target === 'pausada') extra.pause_reason = reasonInput || null
     if (statusModal.target === 'cancelada') extra.cancel_reason = reasonInput || null
-    if (statusModal.target === 'concluida') {
-      const pendentes = await checklistObrigatoriosPendentes(order!.id)
-      if (pendentes > 0) {
-        setStatusError(`Conclua o checklist obrigatório antes de finalizar a OS (${pendentes} ${pendentes === 1 ? 'item pendente' : 'itens pendentes'}).`)
-        return
-      }
-      if ((order?.require_signature ?? tenant?.require_signature_to_complete) && !order?.signature_path) {
-        setStatusError('Colete a assinatura do cliente antes de finalizar a OS.')
-        return
-      }
-      extra.completion_notes = notesInput || null
-      if (completeDateInput) extra.completed_at = new Date(completeDateInput).toISOString()
-    }
     await applyStatusChange(statusModal.target, extra)
   }
 
@@ -207,11 +196,8 @@ export default function OrderDetailPage() {
           </Card>
 
           <Card className="p-5">
-            <p className="text-sm font-medium text-foreground mb-3">Assinatura</p>
-            {(order.require_signature ?? tenant?.require_signature_to_complete) && !order.signature_path && (
-              <p className="text-xs text-amber-400 mb-2">Obrigatória para concluir esta OS</p>
-            )}
-            <OrderSignature orderId={order.id} signaturePath={order.signature_path} signerName={order.signer_name} readOnly />
+            <p className="text-sm font-medium text-foreground mb-3">Assinaturas</p>
+            <AssinaturasDaOS order={order as any} exige={!!(order.require_signature ?? tenant?.require_signature_to_complete)} />
           </Card>
 
           <Card className="p-5">
@@ -240,6 +226,9 @@ export default function OrderDetailPage() {
           </Card>
         </div>
       </div>
+
+      <ConcluirOSModal open={concluirAberto} order={order as any} onClose={() => setConcluirAberto(false)}
+        onConcluir={async extra => { await changeStatus('concluida' as any, extra); await fetchOrder() }} />
 
       <Modal
         open={statusModal.open}

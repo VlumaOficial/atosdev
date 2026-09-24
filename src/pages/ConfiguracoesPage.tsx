@@ -15,12 +15,12 @@ export default function ConfiguracoesPage() {
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState('')
 
-  async function alternarAssinaturaObrigatoria(valor: boolean) {
+  async function salvarConfigAssinatura(params: { p_require_signature?: boolean; p_allow_signature_exception?: boolean }) {
     if (!tenant) return
     setSaving(true)
     setErro('')
     try {
-      const { error } = await supabase.rpc('atualizar_config_tenant', { p_require_signature: valor })
+      const { error } = await supabase.rpc('atualizar_config_tenant', params)
       if (error) throw error
       await refreshTenant()
     } catch (err: any) {
@@ -103,21 +103,42 @@ export default function ConfiguracoesPage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">Exigir assinatura do cliente para concluir OS</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Quando ligado, o técnico não consegue concluir uma ordem de serviço sem antes coletar a assinatura do cliente. Pode ser sobrescrito por OS individual.
+                Quando ligado, a OS só é concluída com a assinatura do cliente, coletada no próprio modal "Concluir atendimento". Pode ser sobrescrito por OS individual.
               </p>
             </div>
             <button
               type="button"
               role="switch"
+              aria-label="Exigir assinatura do cliente"
               aria-checked={!!tenant?.require_signature_to_complete}
               disabled={saving || !tenant}
-              onClick={() => alternarAssinaturaObrigatoria(!tenant?.require_signature_to_complete)}
+              onClick={() => salvarConfigAssinatura({ p_require_signature: !tenant?.require_signature_to_complete })}
               className={
                 'flex-shrink-0 w-11 h-6 rounded-full transition relative disabled:opacity-50 ' +
                 (tenant?.require_signature_to_complete ? 'bg-primary' : 'bg-secondary')
               }
             >
               <span className={'absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ' + (tenant?.require_signature_to_complete ? 'left-5' : 'left-0.5')} />
+            </button>
+          </div>
+          <div className="flex items-start gap-3 mt-4 pt-4 border-t border-border">
+            <div className="w-9 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Permitir concluir sem assinatura do cliente, com motivo</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Para quando o cliente não está no local ou se recusa a assinar. O técnico marca "Cliente não pôde assinar" e informa o motivo, que fica na linha do tempo e em destaque no relatório.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Permitir concluir sem assinatura do cliente"
+              aria-checked={!!tenant?.allow_signature_exception}
+              disabled={saving || !tenant}
+              onClick={() => salvarConfigAssinatura({ p_allow_signature_exception: !tenant?.allow_signature_exception })}
+              className={'flex-shrink-0 w-11 h-6 rounded-full transition relative disabled:opacity-50 ' + (tenant?.allow_signature_exception ? 'bg-primary' : 'bg-secondary')}
+            >
+              <span className={'absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ' + (tenant?.allow_signature_exception ? 'left-5' : 'left-0.5')} />
             </button>
           </div>
           {erro && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2 mt-3">{erro}</div>}

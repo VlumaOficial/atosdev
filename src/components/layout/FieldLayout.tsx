@@ -2,7 +2,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useIdleTimeout } from '@/hooks/useIdleTimeout'
 import { cn } from '@/lib/utils'
-import { LogOut, ClipboardList, ClipboardCheck } from 'lucide-react'
+import { LogOut, ClipboardList, ClipboardCheck, PenTool } from 'lucide-react'
 
 const TABS = [
   { to: '/campo', label: 'Atendimentos', icon: ClipboardList },
@@ -22,7 +22,10 @@ export default function FieldLayout() {
             <span className="text-xs text-muted-foreground">Campo</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground hidden sm:inline">{user?.name}</span>
+            <Link to="/campo/minha-assinatura" title="Minha assinatura"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+              <PenTool size={14} /> <span className="hidden sm:inline">{user?.name}</span>
+            </Link>
             <button onClick={signOut} title="Sair" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition">
               <LogOut size={16} />
             </button>

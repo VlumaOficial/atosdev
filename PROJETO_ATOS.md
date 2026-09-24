@@ -803,6 +803,35 @@ exportação ZIP → código de verificação → "liberar espaço"
 - **Validado pelo usuário no celular real em 2026-09-24** ("tudo
   funcionando"): QR do selo, foto preservada ao bloquear/voltar,
   "voltar" fechando a foto
+
+### Assinaturas no encerramento da OS (2026-09-24, 4 decisões do usuário)
+- **Pedido**: assinatura do cliente no modal de encerramento (não no
+  corpo da OS); OS só fecha com assinatura salva; botão Limpar; e
+  tratar assinatura do técnico. Aprovadas as 4 recomendações + Limpar
+- **Estado anterior levantado**: assinatura do cliente no corpo da OS
+  com "Salvar" separado; técnico sem assinatura; bloqueio existia mas a
+  Infoxtec estava com a opção DESLIGADA (por isso fechou sem); Limpar
+  existia como botão "fantasma" quase invisível
+- **Modal único `ConcluirOSModal`** (técnico e admin): relato, data/hora,
+  assinatura do cliente (nome + quadro) e do responsável; "Concluir"
+  grava assinatura + conclusão juntas — não existe mais assinatura
+  desenhada e não salva. Se a OS já tem assinatura (reaberta), mostra só
+  leitura
+- **Obrigatoriedade**: continua configurável, padrão agora "exigir" e
+  Infoxtec ligada. **Regra também no banco** (gatilho da migration 028):
+  vale para qualquer tela/origem
+- **"Cliente não pôde assinar"** com motivo obrigatório, só se a empresa
+  ligar "Permitir concluir sem assinatura do cliente, com motivo" em
+  Configurações (padrão desligado). Evento `signature_absent` na linha
+  do tempo; corpo da OS mostra o motivo em destaque
+- **Assinatura do responsável**: desenhada uma vez ("Minha assinatura" —
+  ícone de caneta no cabeçalho do app de campo e no menu lateral; ou no
+  próprio modal na primeira conclusão) e COPIADA para a OS
+  (`{os}_responsavel.png`) — trocar depois não altera OS concluídas
+- **`QuadroAssinatura`** reaproveitável: "Limpar" visível (contorno),
+  habilitado só com traço; dica "Assine aqui com o dedo"
+- Corpo da OS (técnico e admin) mostra as assinaturas só para leitura
+  (`AssinaturasDaOS`); componente antigo `OrderSignature` removido
 - Sem migration
 
 ### Próximos blocos
@@ -880,6 +909,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 025_f5_checklist_answer_autor | gatilho fn_checklist_answer_autor(): grava answered_by (auth.uid()) e answered_at em todo INSERT e em UPDATE que muda o valor — corrige autoria nunca registrada | OK | Pendente | Sim |
 | 026_f6_verificacao_fotos | tabela fotos_verificacao (código, sha256, hora do servidor, autor; imutável, sem UPDATE/DELETE) + gatilho que força tenant/autor/hora e bloqueia arquivo de outra empresa | OK | Pendente | Sim |
 | 027_f6_evidencias_imutaveis | policy evidencias_update restrita a logo.png e assinaturas/ — fotos de evidência não podem mais ser sobrescritas | OK | Pendente | Sim |
+| 028_f6_assinatura_no_encerramento | tenants.allow_signature_exception + padrão "exigir assinatura" (Infoxtec ligada); orders.signature_absent_reason e technician_signature_path/signer_name/signed_at; atualizar_config_tenant com parâmetros opcionais; gatilho que barra conclusão sem assinatura exigida; arquivos_orfaos reconhece as novas assinaturas | OK | Pendente | Sim |
 
 ---
 

@@ -7,7 +7,7 @@ import VlumaSignature from '@/components/brand/VlumaSignature'
 import type { UserRole } from '@/types'
 import {
   LayoutDashboard, ClipboardList, Users, Building2, MapPin,
-  Settings, LogOut, Menu, X, ShieldCheck, Wrench, CheckSquare, ClipboardCheck,
+  Settings, LogOut, Menu, X, PenTool, ShieldCheck, Wrench, CheckSquare, ClipboardCheck,
 } from 'lucide-react'
 
 interface NavItem {
@@ -89,6 +89,9 @@ export default function Sidebar() {
             <p className="text-xs font-medium text-foreground truncate">{user.name}</p>
             <p className="text-[10px] text-muted-foreground">{roleLabel(user.role)}</p>
           </div>
+          <NavLink to="/minha-assinatura" title="Minha assinatura" className="text-muted-foreground hover:text-foreground">
+            <PenTool size={14} />
+          </NavLink>
         </div>
         <button onClick={handleSignOut}
           className="vluma-sidebar-item w-full text-red-400 hover:text-red-300 hover:bg-red-500/10">

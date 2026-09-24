@@ -32,6 +32,10 @@ export interface Order {
   client?: { id: string; name: string } | null
   location?: { id: string; name: string; address?: string | null; city?: string | null; state?: string | null } | null
   technician?: { id: string; name: string } | null
+  signature_absent_reason?: string | null
+  technician_signature_path?: string | null
+  technician_signer_name?: string | null
+  technician_signed_at?: string | null
 }
 
 export interface OrderInput {

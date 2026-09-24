@@ -18,6 +18,7 @@ import ConfiguracoesPage from '@/pages/ConfiguracoesPage'
 import AvisoPrivacidadePage from '@/pages/AvisoPrivacidadePage'
 import VerificarFotoPage from '@/pages/VerificarFotoPage'
 import AtualizacaoApp from '@/components/AtualizacaoApp'
+import MinhaAssinaturaPage from '@/pages/MinhaAssinaturaPage'
 import FieldLayout from '@/components/layout/FieldLayout'
 import MyOrdersPage from '@/pages/field/MyOrdersPage'
 import FieldOrderPage from '@/pages/field/FieldOrderPage'
@@ -69,6 +70,7 @@ export default function App() {
             <Route path="os" element={<OrdersPage />} />
             <Route path="os/nova" element={<PlaceholderPage title="Nova OS" />} />
             <Route path="os/:id" element={<OrderDetailPage />} />
+            <Route path="minha-assinatura" element={<MinhaAssinaturaPage />} />
 
             {/* F5 — Checklists */}
             <Route path="checklists" element={<ChecklistsPage />} />
@@ -137,6 +139,7 @@ export default function App() {
             <Route path="campo/os/:id" element={<FieldOrderPage />} />
             <Route path="campo/checklists" element={<MyChecklistsPage />} />
             <Route path="campo/checklists/:id" element={<FieldChecklistPage />} />
+            <Route path="campo/minha-assinatura" element={<MinhaAssinaturaPage />} />
           </Route>
 
           {/* Fallback */}

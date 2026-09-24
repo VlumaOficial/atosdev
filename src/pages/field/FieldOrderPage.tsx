@@ -5,9 +5,9 @@ import { useAuth } from '@/hooks/useAuth'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
-import OrderSignature from '@/components/orders/OrderSignature'
+import ConcluirOSModal from '@/components/assinatura/ConcluirOSModal'
+import AssinaturasDaOS from '@/components/assinatura/AssinaturasDaOS'
 import OrderEvidences from '@/components/orders/OrderEvidences'
-import { checklistObrigatoriosPendentes } from '@/lib/checklistGuard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
@@ -70,8 +70,10 @@ export default function FieldOrderPage() {
   const [scheduleDateInput, setScheduleDateInput] = useState('')
   const [modalError, setModalError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [concluirAberto, setConcluirAberto] = useState(false)
 
   function requestAction(action: { target: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean }) {
+    if (action.target === 'concluida') { setConcluirAberto(true); return }
     if (action.reason || action.notes || action.completeDate || action.date) {
       setReasonInput(''); setNotesInput(''); setCompleteDateInput(''); setScheduleDateInput(''); setModalError('')
       setModal({ open: true, target: action.target, reason: !!action.reason, notes: !!action.notes, completeDate: !!action.completeDate, date: !!action.date })
@@ -108,19 +110,6 @@ export default function FieldOrderPage() {
     if (modal.target === 'agendada') { extra.scheduled_at = scheduleDateInput || null; extra.schedule_reason = reasonInput || null }
     if (modal.target === 'pausada') extra.pause_reason = reasonInput || null
     if (modal.target === 'cancelada') extra.cancel_reason = reasonInput || null
-    if (modal.target === 'concluida') {
-      const pendentes = await checklistObrigatoriosPendentes(order!.id)
-      if (pendentes > 0) {
-        setModalError(`Conclua o checklist obrigatório antes de finalizar (${pendentes} ${pendentes === 1 ? 'item pendente' : 'itens pendentes'}).`)
-        return
-      }
-      if ((order?.require_signature ?? tenant?.require_signature_to_complete) && !order?.signature_path) {
-        setModalError('Colete a assinatura do cliente antes de finalizar o atendimento.')
-        return
-      }
-      extra.completion_notes = notesInput || null
-      if (completeDateInput) extra.completed_at = new Date(completeDateInput).toISOString()
-    }
     await apply(modal.target, extra)
   }
 
@@ -191,17 +180,8 @@ export default function FieldOrderPage() {
       </Card>
 
       <Card className="p-4 mb-4">
-        <p className="text-sm font-medium text-foreground mb-3">Assinatura do cliente</p>
-        {(order.require_signature ?? tenant?.require_signature_to_complete) && !order.signature_path && (
-          <p className="text-xs text-amber-400 mb-2">Obrigatória para concluir este atendimento</p>
-        )}
-        <OrderSignature
-          orderId={order.id}
-          signaturePath={order.signature_path}
-          signerName={order.signer_name}
-          readOnly={order.status === 'concluida' || order.status === 'cancelada'}
-          onSigned={fetchOrder}
-        />
+        <p className="text-sm font-medium text-foreground mb-3">Assinaturas</p>
+        <AssinaturasDaOS order={order as any} exige={!!(order.require_signature ?? tenant?.require_signature_to_complete)} />
       </Card>
 
       {actions.length > 0 && (
@@ -221,6 +201,9 @@ export default function FieldOrderPage() {
       <Card className="p-4">
         <OrderComments orderId={order.id} />
       </Card>
+
+      <ConcluirOSModal open={concluirAberto} order={order as any} onClose={() => setConcluirAberto(false)}
+        onConcluir={async extra => { await changeStatus('concluida' as any, extra); await fetchOrder() }} />
 
       <Modal
         open={modal.open}
