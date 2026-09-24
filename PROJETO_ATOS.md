@@ -1181,4 +1181,9 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   aparecia nos itens e o PDF dela não entrava. Agora as OS pedidas
   entram sempre no ZIP com o PDF, mesmo sem nenhuma foto. (Na OS-0023 de
   teste o PDF foi apagado sem ir no ZIP — só dado de teste.)
+- Reteste do cenário que falhou (OS-0024 isolada em 16/01/2026, nível 1
+  → nível 2): ZIP obrigatório agora contém `Relatorio_OS-0024.pdf`; o
+  SHA-256 do PDF dentro do ZIP é idêntico ao registrado na verificação —
+  a cópia guardada pelo cliente continua conferível em /verificar mesmo
+  depois de o arquivo ser apagado do sistema. OS de teste: OS-0023/0024
 
