@@ -1095,4 +1095,19 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   cópia em PDF). ZIP inclui o PDF de cada OS. Excluir OS apaga os PDFs
 - Segredo `SITE_URL` = https://atosdev.vluma.com.br (link de verificação
   no PDF)
+- Testado ponta a ponta (URL pública + banco): PDFs gerados para
+  OS-0018 (checklist + 14 fotos, 5 págs), OS-0020 (cliente não assinou,
+  caixa em destaque) e OS-0021 (2 assinaturas) — renderizados e
+  conferidos visualmente (acentos ok). **Disparo automático**: técnico
+  concluiu a OS-0022 pela tela → banco criou o registro e chamou a
+  função via pg_net (HTTP 200) → PDF gerado em 3,5 s → botão passou de
+  "Gerando relatório…" para "Relatório (PDF)" em ~6 s → download
+  `Relatorio_OS-0022.pdf`; admin vê o mesmo botão; ZIP da OS contém
+  `Relatorio_OS-0022.pdf` + assinatura + fotos.csv; /verificar com o
+  código do PDF → "Relatório autêntico", botão "Abrir o relatório
+  (PDF)" e "Conferir arquivo" com o PDF baixado → "Idêntica à
+  original". 0 erros de console. OS de teste criada: OS-0022
+- Observação: o PDF v1 da OS-0018 (teste) foi gerado antes do ajuste
+  do título de seção sozinho no pé da página; relatórios novos já saem
+  corrigidos
 
