@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import AtosLogo from '@/components/brand/AtosLogo'
+import AtribuicaoMapas from '@/components/AtribuicaoMapas'
 import { MapPin, Camera, Lock, Building2, Map as MapIcon, ShieldCheck } from 'lucide-react'
 
 export default function AvisoPrivacidadePage() {
@@ -40,7 +41,7 @@ export default function AvisoPrivacidadePage() {
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Conversão da coordenada em endereço</p>
-              <p className="text-sm text-muted-foreground mt-0.5">Para escrever o endereço no carimbo da foto, a coordenada daquele momento é enviada ao serviço de mapas OpenStreetMap (Nominatim), que devolve rua, bairro, cidade e CEP. Só a coordenada é enviada — nenhum nome, e-mail ou dado da ordem de serviço. Se o serviço não responder, a foto sai apenas com as coordenadas.</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Para escrever o endereço no carimbo da foto, a coordenada daquele momento passa pelo servidor do ATOS e é consultada num provedor de mapas contratado pela plataforma (dados do OpenStreetMap; provedores possíveis: Nominatim/OpenStreetMap Foundation, LocationIQ ou OpenCage — o atual aparece no rodapé do app). Só a coordenada é enviada — nenhum nome, e-mail ou dado da ordem de serviço. O resultado pode ficar guardado por até 48 horas para reaproveitar em fotos do mesmo local. Se o serviço não responder, a foto sai apenas com as coordenadas.</p>
             </div>
           </div>
 
@@ -74,6 +75,7 @@ export default function AvisoPrivacidadePage() {
             </div>
           </div>
         </div>
+        <AtribuicaoMapas className="mt-8" />
       </div>
     </div>
   )

@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useIdleTimeout } from '@/hooks/useIdleTimeout'
 import { cn } from '@/lib/utils'
 import { LogOut, ClipboardList, ClipboardCheck, PenTool } from 'lucide-react'
+import AtribuicaoMapas from '@/components/AtribuicaoMapas'
 
 const TABS = [
   { to: '/campo', label: 'Atendimentos', icon: ClipboardList },
@@ -50,6 +51,7 @@ export default function FieldLayout() {
           <Link to="/privacidade" target="_blank" className="text-xs text-muted-foreground hover:text-foreground transition">
             Aviso de privacidade
           </Link>
+          <AtribuicaoMapas className="mt-1" />
         </div>
       </main>
     </div>

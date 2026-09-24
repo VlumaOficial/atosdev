@@ -9,6 +9,7 @@ import {
   LayoutDashboard, ClipboardList, Users, Building2, MapPin,
   Settings, LogOut, Menu, X, PenTool, ShieldCheck, Wrench, CheckSquare, ClipboardCheck,
 } from 'lucide-react'
+import AtribuicaoMapas from '@/components/AtribuicaoMapas'
 
 interface NavItem {
   label: string
@@ -100,6 +101,7 @@ export default function Sidebar() {
         </button>
 
         <VlumaSignature className="px-3 mt-3" />
+        <AtribuicaoMapas className="px-3 mt-1" />
       </div>
     </div>
   )

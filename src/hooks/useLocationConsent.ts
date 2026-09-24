@@ -13,7 +13,11 @@ import { useAuth } from '@/hooks/useAuth'
 //   v1 — GPS sob demanda, carimbado só na foto (F6 Bloco B)
 //   v2 (2026-09-23) — coordenada também enviada ao OpenStreetMap para
 //        virar endereço no carimbo
-export const VERSAO_TERMO_LOCALIZACAO = 2
+//   v3 (2026-09-24) — endereço passa a vir de um provedor de mapas
+//        contratado pela plataforma (hoje Nominatim; pode ser LocationIQ/
+//        OpenCage), via servidor do ATOS. Texto genérico de propósito:
+//        trocar de provedor no futuro não exige novo aceite
+export const VERSAO_TERMO_LOCALIZACAO = 3
 
 export function useLocationConsent() {
   const { user } = useAuth()

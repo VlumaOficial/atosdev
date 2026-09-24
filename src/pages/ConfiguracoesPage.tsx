@@ -8,10 +8,11 @@ import { PenTool, Image as ImageIcon, Loader2 } from 'lucide-react'
 import CarimboConfigCard from '@/components/CarimboConfigCard'
 import ArmazenamentoCard from '@/components/ArmazenamentoCard'
 import ExportacaoFotosCard from '@/components/ExportacaoFotosCard'
+import GeocodificacaoPlataformaCard from '@/components/GeocodificacaoPlataformaCard'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
 export default function ConfiguracoesPage() {
-  const { tenant, refreshTenant } = useAuth()
+  const { user, tenant, refreshTenant } = useAuth()
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -67,6 +68,7 @@ export default function ConfiguracoesPage() {
 
       <div className="space-y-4 max-w-2xl">
         <ArmazenamentoCard />
+        {user?.role === 'super_admin' && <GeocodificacaoPlataformaCard />}
         {tenant && <ExportacaoFotosCard />}
 
         <SecaoRecolhivel id="marca" icone={<ImageIcon size={16} className="text-primary" />}

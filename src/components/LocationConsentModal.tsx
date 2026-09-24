@@ -16,7 +16,7 @@ export default function LocationConsentModal({ open, onAceitar, onCancelar, term
       <div className="space-y-4">
         {termoAtualizado && (
           <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2">
-            O aviso mudou desde o seu último aceite: agora a foto também leva o endereço, obtido a partir da coordenada. Leia e aceite novamente para continuar.
+            O aviso mudou desde o seu último aceite: o endereço impresso na foto passa a ser consultado num provedor de mapas contratado pela plataforma. Leia e aceite novamente para continuar.
           </p>
         )}
         <div className="flex items-start gap-3">
@@ -28,7 +28,7 @@ export default function LocationConsentModal({ open, onAceitar, onCancelar, term
         <div className="flex items-start gap-3">
           <MapIcon size={18} className="text-primary flex-shrink-0 mt-0.5" />
           <p className="text-sm text-foreground">
-            Para escrever o <strong>endereço</strong> no carimbo, a coordenada daquele momento é enviada ao serviço de mapas OpenStreetMap. Só a coordenada — nenhum nome, e-mail ou dado da ordem de serviço.
+            Para escrever o <strong>endereço</strong> no carimbo, a coordenada daquele momento passa pelo servidor do ATOS e é consultada num provedor de mapas contratado pela plataforma (dados do OpenStreetMap). Só a coordenada — nenhum nome, e-mail ou dado da ordem de serviço.
           </p>
         </div>
         <Link to="/privacidade" target="_blank" className="text-xs text-primary hover:underline">
