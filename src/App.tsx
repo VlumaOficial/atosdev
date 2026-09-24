@@ -17,6 +17,7 @@ import ChecklistAvulsosPage from '@/pages/ChecklistAvulsosPage'
 import ConfiguracoesPage from '@/pages/ConfiguracoesPage'
 import AvisoPrivacidadePage from '@/pages/AvisoPrivacidadePage'
 import VerificarFotoPage from '@/pages/VerificarFotoPage'
+import AtualizacaoApp from '@/components/AtualizacaoApp'
 import FieldLayout from '@/components/layout/FieldLayout'
 import MyOrdersPage from '@/pages/field/MyOrdersPage'
 import FieldOrderPage from '@/pages/field/FieldOrderPage'
@@ -44,6 +45,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <AtualizacaoApp />
         <Routes>
           {/* Rota pública */}
           <Route path="/login" element={<LoginPage />} />

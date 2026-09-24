@@ -699,6 +699,24 @@ exportação ZIP → código de verificação → "liberar espaço"
   alterada" → restaurado → "autêntica"), mas agora a sobrescrita é
   bloqueada (403) para fotos; logo e assinatura continuam regraváveis
   (regressão da migration 021 testada)
+
+### 🔴→✅ Aba antiga rodando versão velha do app (2026-09-23, achado pelo usuário)
+- **Relato**: no celular, o link "Verificado · código" apareceu na
+  primeira foto; ao voltar da página de verificação sumiu, e uma foto
+  nova também saiu sem ele
+- **Diagnóstico (banco + arquivos)**: a foto das 00:45 tem código,
+  900×1600 e miniatura; a das 00:49 saiu **1600×2845, sem miniatura e
+  sem código** — assinatura exata da versão de ANTES das melhorias do
+  dia. Ou seja, o usuário voltou para uma aba aberta antes dos deploys:
+  app de página única roda o código de quando foi carregado até
+  recarregar. Risco real no campo (técnico deixa o app aberto por dias)
+- **Correção**: `vite.config.ts` gera `version.json` com o id do build
+  (SHA do commit na Vercel) e embute o mesmo id no app (`__BUILD_ID__`);
+  `AtualizacaoApp` checa ao voltar para a aba, ao focar e a cada 5 min;
+  havendo versão nova mostra a faixa "Nova versão do ATOS disponível —
+  Atualizar" e recarrega sozinho na PRÓXIMA troca de tela (nunca no meio
+  de checklist/formulário, pra não perder o que foi digitado).
+  `vercel.json`: `version.json` com no-store e index com no-cache
 - Sem migration
 
 ### Próximos blocos
