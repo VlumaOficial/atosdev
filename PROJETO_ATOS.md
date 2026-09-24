@@ -1295,3 +1295,64 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   para a discussão de planos. Pendente do usuário: URL, chave global e
   versão da Evolution
 
+---
+
+## 🔚 Estado ao encerrar a sessão de 2026-09-24 (retomar por aqui)
+
+**Fase atual: F6 em andamento** — Blocos A (assinatura no encerramento),
+B (evidências: câmera embutida, carimbo configurável, código/QR de
+autenticidade, ZIP, liberar espaço), C (relatório PDF automático no
+servidor), D níveis Básico e Intermediário (WhatsApp pelo aparelho,
+e-mail "via ATOS" ou próprio) e E (quem pode enviar) **feitos e
+testados**. Falta: **nível Avançado do D** (Evolution — desenho aprovado,
+não desenvolvido). Depois: F7 (painel gerencial).
+
+**Migrations desta sessão (023–034): todas aplicadas no DEV, PRD
+pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
+
+### Pendências abertas
+1. **Usuário testar Blocos D/E com e-mail e celular REAIS** (os destinos
+   usados nos testes não existem): e-mail "via ATOS" com PDF, WhatsApp
+   pelo aparelho, "Nenhum técnico", e-mail próprio (nível Intermediário
+   via Empresas). Nada foi confirmado como ENTREGUE ainda
+2. **Nível Avançado (Evolution)**: aguardando os testes acima + URL,
+   chave global e versão da Evolution da VPS do usuário. Desenho no
+   VISAO_ATOS.md (F6)
+3. Decidir depois do item 1: fechar a F6 (Evolution) ou seguir para a F7
+4. **Discussão de planos (F8)** — acumulou pauta: níveis de envio
+   (Básico/Intermediário/Avançado), Evolution x API oficial, custos
+   variáveis (VISAO 7.1: geocodificação, armazenamento, egress),
+   retenção de fotos, plano do Supabase (Free não sustenta operação real)
+5. Backlog: dashboard do Super Admin (UX do consumo de endereços e
+   armazenamento)
+6. Admin da Infoxtec preencher dados reais em "Marca e dados da
+   empresa" (nome de exibição, telefone, e-mail de contato, site)
+7. Acompanhar: 401 isolado no console visto uma vez (não reproduzido);
+   `npm audit` com 4 vulnerabilidades pré-existentes em ferramentas de
+   build (F10)
+8. Dados de teste no DEV: OS-0018 a OS-0024 (e fotos de teste na
+   OS-0010). DEV = HML, sem dados reais
+
+### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
+Token de acesso do Supabase (Management API), PAT do GitHub embutido no
+remote de `C:\vluma\atosdev`, senha de app do Zoho de
+noreply@vluma.com.br (segredo `SMTP_PADRAO_SENHA`), chave do LocationIQ
+(cadastrada pela tela do Super Admin).
+
+### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
+- Aplicar migrations 001–034 em ordem. **Atenção migration 030**: o
+  gatilho `fn_orders_relatorio_ao_concluir` tem a URL do projeto DEV
+  (`vgkiddqahubznlzkxfgb`) escrita — trocar pelo ref do PRD
+- Publicar as Edge Functions: `criar-tecnico` (verify_jwt true),
+  `verificar-foto` (false — pública), `geocodificar` (true),
+  `gerar-relatorio-os` (true), `enviar-relatorio` (true)
+- Segredos das funções: `SITE_URL` (domínio do PRD), `SMTP_PADRAO_HOST`
+  / `SMTP_PADRAO_USUARIO` / `SMTP_PADRAO_SENHA`
+- Vault: criar `atos_service_role_key` com a chave de serviço do PRD
+  (usada pelo gatilho do PDF)
+- Extensão `pg_net` (a migration 030 cria) e limite do bucket
+  `evidencias` em 25 MB (a migration 030 ajusta)
+- Super Admin: cadastrar a chave do LocationIQ em Configurações →
+  "Plataforma — endereço no carimbo" (mesmo provedor do DEV)
+- Keep-alive do Supabase (VISAO 9.5) em todos os ambientes
+
