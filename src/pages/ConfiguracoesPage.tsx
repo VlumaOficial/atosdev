@@ -11,6 +11,7 @@ import ExportacaoFotosCard from '@/components/ExportacaoFotosCard'
 import GeocodificacaoPlataformaCard from '@/components/GeocodificacaoPlataformaCard'
 import DadosEmpresaForm from '@/components/DadosEmpresaForm'
 import LiberarEspacoCard from '@/components/LiberarEspacoCard'
+import EnvioRelatorioCard from '@/components/EnvioRelatorioCard'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
 export default function ConfiguracoesPage() {
@@ -71,6 +72,7 @@ export default function ConfiguracoesPage() {
       <div className="space-y-4 max-w-2xl">
         <ArmazenamentoCard />
         {user?.role === 'super_admin' && <GeocodificacaoPlataformaCard />}
+        {tenant && <EnvioRelatorioCard />}
         {tenant && <ExportacaoFotosCard />}
         {tenant && <LiberarEspacoCard />}
 

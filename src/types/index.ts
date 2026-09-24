@@ -32,6 +32,7 @@ export interface Tenant {
   allow_signature_exception?: boolean
   trade_name?: string | null
   website?: string | null
+  envio_nivel?: 'basico' | 'intermediario' | 'avancado'
   created_at: string
   updated_at: string
 }

@@ -188,7 +188,7 @@ export default function FieldOrderPage() {
       {order.status === 'concluida' && (
         <Card className="p-4 mb-4">
           <p className="text-sm font-medium text-foreground mb-3">Relatório do atendimento</p>
-          <RelatorioOSButton orderId={order.id} numero={order.number} concluida />
+          <RelatorioOSButton orderId={order.id} numero={order.number} concluida cliente={order.client?.name ?? ''} />
         </Card>
       )}
 

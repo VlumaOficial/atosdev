@@ -937,6 +937,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 031_f6_dados_empresa | tenants.trade_name (nome de exibição) e website; cnpj_valido() (dígitos verificadores); atualizar_dados_empresa() (admin: nome de exibição, CNPJ, telefone, e-mail, site — razão social continua do Super Admin) | OK | Pendente | Sim |
 | 032_f6_liberar_espaco | colunas arquivo_removido_em/removido_em (evidências, verificação, relatórios); liberacoes_espaco (histórico) + RLS; os_para_liberar, arquivos_para_liberar (nível 1 só OS com PDF guardado), previa_liberar_espaco, registrar_liberacao (admin, só pasta da empresa) | OK | Pendente | Sim |
 | 033_f6_identidade_empresa | atualizar_dados_empresa sem CNPJ (admin: nome de exibição e contato); tenant_identidade_historico; atualizar_identidade_tenant() (só Super Admin: razão social + CNPJ validado, com histórico e fonte receita/manual) | OK | Pendente | Sim |
+| 034_f6_envio_relatorio | tenants.envio_nivel (basico/intermediario/avancado); tenant_envio_config (canais, mensagem, permissão Bloco E, SMTP próprio sem senha) + gatilho de padrão; salvar_config_envio, definir_senha_smtp (Vault), tem_senha_smtp, ler_senha_smtp (só service role), definir_nivel_envio (Super Admin) | OK | Pendente | Sim |
 
 ---
 
@@ -1226,4 +1227,30 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   servidor (`SMTP_PADRAO_HOST/USUARIO/SENHA`), nunca no git. **A senha
   de app foi enviada pelo chat → trocar no fim do MVP**, junto com os
   tokens (mesma política)
+
+### Blocos D + E — envio do relatório (2026-09-24)
+- **Na OS concluída** (técnico e admin), no card "Relatório do
+  atendimento", quando o PDF existe: **"Enviar por WhatsApp"** (celular
+  com DDD + mensagem editável → abre o WhatsApp DO APARELHO com a
+  mensagem e o link de verificação; registra `report_sent` com telefone
+  mascarado) e **"Enviar por e-mail"** (Edge Function
+  `enviar-relatorio`: PDF anexado + botão "Abrir o relatório e conferir
+  a autenticidade"; remetente padrão "<Empresa> via ATOS"
+  <noreply@vluma.com.br> com Responder-para = e-mail de contato da
+  empresa, ou o e-mail próprio no nível Intermediário+; registra evento
+  com e-mail mascarado). Linha do tempo: "Relatório enviado · Por
+  WhatsApp/e-mail para …"
+- **Regras no servidor** (e-mail): mesma empresa, OS concluída com PDF,
+  canal ligado; técnico só se permitido (todos / escolhidos / nenhum);
+  admin/gestor sempre. WhatsApp é link — a tela esconde o botão de quem
+  não pode
+- **Configurações → "Envio do relatório"** (admin): nível do plano,
+  canais on/off, mensagem padrão com {cliente} {os} {empresa} {link}
+  (precisa ter {link}) + exemplo ao vivo, quem pode enviar (Bloco E,
+  MultiCombobox de técnicos), e-mail próprio (Intermediário+: servidor,
+  usuário, senha → Vault, remetente; porta fixa 465; "Testar envio")
+- **Empresas (Super Admin)**: nível de envio por empresa (até a F8)
+- Nível Avançado (WhatsApp automático) ainda sem implementação — será
+  refinado com o usuário usando a **Evolution já instalada na VPS
+  dele**, com criação de instância e QR Code pela tela do ATOS
 

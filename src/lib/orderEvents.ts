@@ -11,7 +11,7 @@ export type OrderEventType =
   | 'reopened'
   | 'transferred'
   | 'edited'
-  | 'signed' | 'signature_absent'
+  | 'signed' | 'signature_absent' | 'report_sent'
 
 // Registra um evento na OS de forma centralizada (autor capturado do usuário logado)
 export async function registrarEvento(

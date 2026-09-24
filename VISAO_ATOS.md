@@ -173,6 +173,7 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - **Configurações da empresa ("Envio do relatório")**: canais ligados/desligados, mensagem padrão editável ({cliente}, {os}, {empresa}, {link}), quem pode enviar (Bloco E: empresa toda / técnicos escolhidos; gestor sempre pode), e-mail próprio (se o plano permitir)
 - Registro do envio na linha do tempo com **destino mascarado** (LGPD)
 - Remetente padrão: noreply@vluma.com.br (Zoho), credencial só em segredo do servidor
+- **Nível Avançado — Evolution (decisão do usuário, 2026-09-24):** o usuário já tem a Evolution API instalada na VPS dele; quando formos configurar, refinar juntos: criação da instância e leitura do QR Code **pela tela do ATOS** (por empresa), reconexão, onde ficam URL/chave da Evolution. Manter no desenho o **aviso de risco** levantado na pesquisa (API não oficial → risco de banimento do número) — opção consciente do cliente
 
 **Painel do Gestor — Disparo Manual**
 - Gestor dispara WhatsApp informando o número na hora

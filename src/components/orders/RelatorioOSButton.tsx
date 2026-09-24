@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { FileText, Loader2, RefreshCw } from 'lucide-react'
+import EnviarRelatorio from '@/components/orders/EnviarRelatorio'
 
 // Relatório PDF da OS (Bloco C). Gerado no SERVIDOR automaticamente
 // quando a OS é concluída (gatilho do banco). Aqui: baixar o gerado,
@@ -9,7 +10,7 @@ import { FileText, Loader2, RefreshCw } from 'lucide-react'
 
 interface Relatorio { id: string; versao: number; status: string; file_path: string | null; codigo: string | null; removido_em?: string | null }
 
-export default function RelatorioOSButton({ orderId, numero, concluida }: { orderId: string; numero: string; concluida: boolean }) {
+export default function RelatorioOSButton({ orderId, numero, concluida, cliente = '' }: { orderId: string; numero: string; concluida: boolean; cliente?: string }) {
   const [rel, setRel] = useState<Relatorio | null | undefined>(undefined)
   const [acao, setAcao] = useState<'baixando' | 'gerando' | null>(null)
   const [erro, setErro] = useState('')
@@ -70,6 +71,7 @@ export default function RelatorioOSButton({ orderId, numero, concluida }: { orde
           {acao === 'gerando' ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} {acao === 'gerando' ? 'Gerando relatório...' : 'Gerar relatório (PDF)'}
         </button>
       )}
+      {rel?.status === 'gerado' && rel.codigo && <EnviarRelatorio orderId={orderId} numero={numero} codigo={rel.codigo} cliente={cliente} />}
       {rel?.status === 'falha' && !acao && <p className="text-xs text-amber-400 mt-1">A geração automática falhou — toque em "Gerar relatório".</p>}
       {erro && <p className="text-xs text-red-400 mt-1">{erro}</p>}
     </div>

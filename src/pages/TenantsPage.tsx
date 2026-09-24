@@ -13,7 +13,7 @@ import { consultarCnpjReceita, formatarRazaoSocial, type DadosReceita } from '@/
 // opção B), com consulta à Receita (BrasilAPI) e histórico. O restante
 // da gestão de tenants (planos, status, limites) vem na F8.
 
-interface Tenant { id: string; name: string; trade_name: string | null; cnpj: string | null; status: string; plan: string | null }
+interface Tenant { id: string; name: string; trade_name: string | null; cnpj: string | null; status: string; plan: string | null; envio_nivel: string }
 interface Hist { id: string; alterado_em: string; cnpj_anterior: string | null; razao_anterior: string | null; cnpj_novo: string | null; razao_nova: string | null; fonte: string }
 
 export default function TenantsPage() {
@@ -30,7 +30,7 @@ export default function TenantsPage() {
   const [historico, setHistorico] = useState<Hist[]>([])
 
   async function carregar() {
-    const { data } = await supabase.from('tenants').select('id, name, trade_name, cnpj, status, plan').order('name')
+    const { data } = await supabase.from('tenants').select('id, name, trade_name, cnpj, status, plan, envio_nivel').order('name')
     setTenants((data as Tenant[]) ?? []); setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
@@ -75,7 +75,16 @@ export default function TenantsPage() {
               <p className="text-sm font-medium text-foreground">{t.trade_name || t.name}</p>
               <p className="text-xs text-muted-foreground">{t.trade_name ? t.name + ' · ' : ''}CNPJ {t.cnpj || '—'} · {t.status}{t.plan ? ' · ' + t.plan : ''}</p>
             </div>
-            <Button type="button" variant="outline" onClick={() => abrir(t)}><ShieldCheck size={14} /> Identidade legal</Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <select aria-label={'Nível de envio ' + (t.trade_name || t.name)} value={t.envio_nivel}
+                onChange={async e => { const { error } = await supabase.rpc('definir_nivel_envio', { p_tenant: t.id, p_nivel: e.target.value }); if (error) alert(error.message); carregar() }}
+                className="px-2 py-2 rounded-md bg-input border border-border text-xs text-foreground" title="Nível de envio do relatório (até a F8, definido aqui)">
+                <option value="basico">Envio: Básico</option>
+                <option value="intermediario">Envio: Intermediário</option>
+                <option value="avancado">Envio: Avançado</option>
+              </select>
+              <Button type="button" variant="outline" onClick={() => abrir(t)}><ShieldCheck size={14} /> Identidade legal</Button>
+            </div>
           </div>
         ))}
       </Card>
