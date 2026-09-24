@@ -852,6 +852,8 @@ exportação ZIP → código de verificação → "liberar espaço"
   no painel (pede a assinatura dele na 1ª vez), Cancelar fecha; exceção
   devolvida ao padrão (desligada); `arquivos_orfaos` não marca as
   assinaturas novas. OS de teste criadas: OS-0019, OS-0020, OS-0021
+- **Validado pelo usuário no celular real em 2026-09-24** ("validado,
+  ficou ótimo")
 - Sem migration
 
 ### Próximos blocos
