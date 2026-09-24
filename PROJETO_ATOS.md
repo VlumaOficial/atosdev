@@ -717,6 +717,15 @@ exportação ZIP → código de verificação → "liberar espaço"
   Atualizar" e recarrega sozinho na PRÓXIMA troca de tela (nunca no meio
   de checklist/formulário, pra não perder o que foi digitado).
   `vercel.json`: `version.json` com no-store e index com no-cache
+- Testado (URL pública, técnico real, versão nova simulada
+  interceptando `version.json`): mesma versão → sem faixa; versão nova →
+  faixa aparece ao focar; próxima troca de tela → recarregou sozinho em
+  /campo/checklists e a faixa sumiu. `version.json` publicado com o SHA
+  do commit (adf9f3d36dc0) e `Cache-Control: no-store`
+- Limitação: abas abertas ANTES deste deploy ainda não têm o verificador
+  — precisam ser recarregadas uma última vez manualmente
+- **Nome do selo/link**: usuário achou "Verificado · código" pouco
+  estético/intuitivo e pediu 5 opções — aguardando escolha
 - Sem migration
 
 ### Próximos blocos
