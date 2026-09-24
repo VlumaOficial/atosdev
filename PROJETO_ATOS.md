@@ -800,6 +800,9 @@ exportação ZIP → código de verificação → "liberar espaço"
   Um 401 isolado no console apareceu uma vez e não se repetiu em 3
   execuções seguidas (provável requisição interrompida pela recarga) —
   acompanhar
+- **Validado pelo usuário no celular real em 2026-09-24** ("tudo
+  funcionando"): QR do selo, foto preservada ao bloquear/voltar,
+  "voltar" fechando a foto
 - Sem migration
 
 ### Próximos blocos
