@@ -8,6 +8,7 @@ import {
   CAMPOS_CARIMBO, resolverConfigCarimbo, diferencasDoPadrao,
   type CampoCarimbo, type ConfigCarimbo,
 } from '@/lib/carimboConfig'
+import { nomeEmpresa } from '@/lib/empresa'
 
 // Configuração dos campos do carimbo (Incremento 3 do carimbo v2) com
 // prévia ao vivo — a prévia usa a MESMA função desenharCarimbo() do
@@ -70,7 +71,7 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
     if (!ctx) return
     fundoExemplo(ctx, w, h)
     desenharCarimbo(ctx, w, h, {
-      tenantName: tenant?.name ?? 'Sua empresa',
+      tenantName: nomeEmpresa(tenant) || 'Sua empresa',
       logoUrl,
       coords: EXEMPLO.coords,
       endereco: EXEMPLO.endereco,
@@ -79,7 +80,7 @@ export default function CarimboConfigCard({ logoUrl }: { logoUrl: string | null 
       codigo: 'K7P29XQ4M3TD',
       urlVerificacao: urlVerificacaoDe('K7P29XQ4M3TD'),
     }, logo, new Date())
-  }, [canvas, config, orientacao, logo, logoUrl, tenant?.name, user])
+  }, [canvas, config, orientacao, logo, logoUrl, tenant?.name, tenant?.trade_name, user])
 
   async function salvar(novo: ConfigCarimbo) {
     const anterior = config

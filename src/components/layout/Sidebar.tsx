@@ -10,6 +10,7 @@ import {
   Settings, LogOut, Menu, X, PenTool, ShieldCheck, Wrench, CheckSquare, ClipboardCheck,
 } from 'lucide-react'
 import AtribuicaoMapas from '@/components/AtribuicaoMapas'
+import { nomeEmpresa } from '@/lib/empresa'
 
 interface NavItem {
   label: string
@@ -61,7 +62,7 @@ export default function Sidebar() {
       {user.role !== 'super_admin' && tenant && (
         <div className="px-4 py-3 border-b border-border">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Empresa</p>
-          <p className="text-sm font-medium text-foreground truncate mt-0.5">{tenant.name}</p>
+          <p className="text-sm font-medium text-foreground truncate mt-0.5" title={tenant.name}>{nomeEmpresa(tenant)}</p>
         </div>
       )}
 

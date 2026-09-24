@@ -30,6 +30,8 @@ export interface Tenant {
   require_signature_to_complete: boolean
   stamp_config?: Record<string, boolean>
   allow_signature_exception?: boolean
+  trade_name?: string | null
+  website?: string | null
   created_at: string
   updated_at: string
 }

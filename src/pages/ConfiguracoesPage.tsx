@@ -9,6 +9,7 @@ import CarimboConfigCard from '@/components/CarimboConfigCard'
 import ArmazenamentoCard from '@/components/ArmazenamentoCard'
 import ExportacaoFotosCard from '@/components/ExportacaoFotosCard'
 import GeocodificacaoPlataformaCard from '@/components/GeocodificacaoPlataformaCard'
+import DadosEmpresaForm from '@/components/DadosEmpresaForm'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
 export default function ConfiguracoesPage() {
@@ -74,8 +75,8 @@ export default function ConfiguracoesPage() {
         {/* seções da EMPRESA — o Super Admin não pertence a nenhuma */}
         {tenant && (<>
         <SecaoRecolhivel id="marca" icone={<ImageIcon size={16} className="text-primary" />}
-          titulo="Marca da empresa"
-          descricao="Aparece no carimbo das fotos de evidência coletadas em campo."
+          titulo="Marca e dados da empresa"
+          descricao="Logo e dados que aparecem no carimbo das fotos e no relatório PDF."
           resumo={logoUrl
             ? <img src={logoUrl} alt="" className="h-6 max-w-[72px] object-contain rounded-sm" />
             : (logoLoading ? null : 'Sem logo')}>
@@ -95,6 +96,7 @@ export default function ConfiguracoesPage() {
             </div>
           </div>
           {logoErro && <p className="text-xs text-red-400 mt-2">{logoErro}</p>}
+          <DadosEmpresaForm />
         </SecaoRecolhivel>
 
         {!logoLoading && <CarimboConfigCard logoUrl={logoUrl} />}

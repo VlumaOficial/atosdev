@@ -934,6 +934,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 028_f6_assinatura_no_encerramento | tenants.allow_signature_exception + padrão "exigir assinatura" (Infoxtec ligada); orders.signature_absent_reason e technician_signature_path/signer_name/signed_at; atualizar_config_tenant com parâmetros opcionais; gatilho que barra conclusão sem assinatura exigida; arquivos_orfaos reconhece as novas assinaturas | OK | Pendente | Sim |
 | 029_f6_geocodificacao_plataforma | geocodificacao_config (provedor + chave, 1 linha), geocodificacao_cache (região ~55 m) e geocodificacao_uso (dia × empresa × provedor), todas sem leitura direta; funções definir_config_geocodificacao / status_geocodificacao (Super Admin), provedor_geocodificacao (qualquer logado), uso_geocodificacao (admin: própria empresa; super admin: todas), registrar_uso_geocodificacao (só service role) | OK | Pendente | Sim |
 | 030_f6_relatorio_pdf | order_reports (versões, status pendente/gerando/gerado/falha) + RLS leitura por empresa; fotos_verificacao.tipo (foto/relatorio) e gatilho aceita service role; pg_net; gatilho em orders: concluída → relatório pendente + chamada à Edge Function (chave no Vault); bucket 25 MB; arquivos_orfaos reconhece PDFs | OK | Pendente | Sim |
+| 031_f6_dados_empresa | tenants.trade_name (nome de exibição) e website; cnpj_valido() (dígitos verificadores); atualizar_dados_empresa() (admin: nome de exibição, CNPJ, telefone, e-mail, site — razão social continua do Super Admin) | OK | Pendente | Sim |
 
 ---
 
@@ -953,7 +954,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - [ ] Criação de técnicos via convite por e-mail (inviteUserByEmail)
 - [ ] Módulo de SLA + status e prioridades configuráveis por tenant
 - [ ] Aplicar todas as migrations no PRD ao replicar
-- [ ] Campo "nome fantasia/exibição" no tenant (nome longo cortado na sidebar)
+- [x] Campo "nome fantasia/exibição" no tenant (nome longo cortado na sidebar) — **feito em 2026-09-24** (migration 031, `trade_name`, editável pelo admin)
 - [ ] Ajuste de contraste do ícone ATOS na sidebar
 - [ ] **Responsividade do painel admin (acabamento pré-PRD, após F5-F7):** sidebar → menu hambúrguer; listagens no mobile com LISTA COMPACTA como padrão (não cards) + busca/filtros fortes, toggle para cards opcional; revisar modais. Aplicar em OS, Clientes, Unidades, Técnicos e Checklists
 - [ ] Aba "auditoria/histórico completo" da OS (mostrar também os eventos 'edited' ocultos da linha do tempo)
@@ -1122,4 +1123,16 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   Comprovado regenerando a OS-0018 (reabrir → concluir: v2 e v3 pelo
   gatilho do banco, versionamento ok): pág. 2 começa com "4. Evidências"
   + fotos e pág. 5 com "5. Assinaturas" + assinaturas
+
+### Dados da empresa editáveis pelo admin (2026-09-24, aprovado pelo usuário)
+- Configurações → "Marca e dados da empresa": logo + nome de exibição,
+  CNPJ (máscara + validação dos dígitos verificadores na tela E no
+  banco), telefone, e-mail de contato, site. Razão social só leitura
+  para o admin (dado contratual, do Super Admin)
+- Nome de exibição (`nomeEmpresa()`, cai para a razão social se vazio)
+  usado no menu lateral (resolve nome longo cortado — item do backlog),
+  painel, carimbo das fotos, prévia do carimbo, nome do ZIP, página
+  /verificar e cabeçalho do PDF. No PDF, quando o nome de exibição é
+  diferente, a razão social aparece na linha de contato (documento
+  oficial); linha de contato quebra em até 2 linhas
 

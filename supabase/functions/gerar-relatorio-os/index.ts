@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
   if (!order_id) return json({ erro: 'order_id obrigatório' }, 400)
 
   const { data: os } = await admin.from('orders')
-    .select('*, clients(name), locations(name, address, city, state), technician:users!orders_technician_id_fkey(name), tenants(name, cnpj, phone, email)')
+    .select('*, clients(name), locations(name, address, city, state), technician:users!orders_technician_id_fkey(name), tenants(name, trade_name, cnpj, phone, email, website)')
     .eq('id', order_id).single()
   if (!os) return json({ erro: 'OS não encontrada' }, 404)
 
@@ -211,16 +211,20 @@ Deno.serve(async (req) => {
     if (logoBytes) {
       try { const logo = await d.pdf.embedPng(logoBytes); const e = Math.min(90 / logo.width, 42 / logo.height); d.page.drawImage(logo, { x: M, y: d.y - logo.height * e, width: logo.width * e, height: logo.height * e }); xTit = M + logo.width * e + 12 } catch { /* segue sem logo */ }
     }
-    d.page.drawText(t(tn.name ?? ''), { x: xTit, y: d.y - 11, size: 12, font: d.bold, color: COR.texto })
-    const contato = [tn.cnpj && `CNPJ ${tn.cnpj}`, tn.phone, tn.email].filter(Boolean).join(' · ')
-    if (contato) d.page.drawText(t(contato), { x: xTit, y: d.y - 24, size: 8, font: d.reg, color: COR.fraco })
-    d.page.drawText(t(`RELATÓRIO DE ATENDIMENTO · ${os.number}`), { x: xTit, y: d.y - 40, size: 12.5, font: d.bold, color: COR.roxo })
+    const nomeExib = (tn.trade_name || tn.name || '') as string
+    d.page.drawText(t(nomeExib), { x: xTit, y: d.y - 11, size: 12, font: d.bold, color: COR.texto })
+    // razão social aparece quando o nome de exibição é outro (documento oficial)
+    const contato = [tn.trade_name && tn.trade_name !== tn.name ? tn.name : null, tn.cnpj && `CNPJ ${tn.cnpj}`, tn.phone, tn.email, tn.website].filter(Boolean).join(' · ')
+    const larguraCab = A4.w - M - 70 - xTit
+    const linhasContato = contato ? d.quebrar(contato, d.reg, 8, larguraCab).slice(0, 2) : []
+    linhasContato.forEach((l, i) => d.page.drawText(l, { x: xTit, y: d.y - 24 - i * 10, size: 8, font: d.reg, color: COR.fraco }))
+    d.page.drawText(t(`RELATÓRIO DE ATENDIMENTO · ${os.number}`), { x: xTit, y: d.y - 40 - Math.max(0, linhasContato.length - 1) * 10, size: 12.5, font: d.bold, color: COR.roxo })
     const tamQr = 58
     d.qr(urlVerif, A4.w - M - tamQr, d.y - tamQr, tamQr)
     d.page.drawText('Documento autenticado', { x: A4.w - M - tamQr - 4 - d.reg.widthOfTextAtSize('Documento autenticado', 7), y: d.y - 20, size: 7, font: d.reg, color: COR.fraco })
     const cod = fmtCodigo(codigo)
     d.page.drawText(cod, { x: A4.w - M - tamQr - 4 - d.bold.widthOfTextAtSize(cod, 8), y: d.y - 31, size: 8, font: d.bold, color: COR.texto })
-    d.y -= 70
+    d.y -= 70 + Math.max(0, linhasContato.length - 1) * 10
     d.page.drawLine({ start: { x: M, y: d.y }, end: { x: A4.w - M, y: d.y }, thickness: 0.8, color: COR.linha })
 
     // ---------- 1. dados ----------
@@ -340,7 +344,7 @@ Deno.serve(async (req) => {
       const pg = `Página ${i + 1} de ${paginas.length}`
       p.drawText(t(pg), { x: A4.w - M - d.reg.widthOfTextAtSize(t(pg), 7), y: M + 3, size: 7, font: d.reg, color: COR.fraco })
     })
-    d.pdf.setTitle(t(`Relatório de Atendimento ${os.number}`)); d.pdf.setAuthor(t(tn.name ?? 'ATOS')); d.pdf.setCreator('ATOS - Gestão de Campo')
+    d.pdf.setTitle(t(`Relatório de Atendimento ${os.number}`)); d.pdf.setAuthor(t(tn.trade_name || tn.name || 'ATOS')); d.pdf.setCreator('ATOS - Gestão de Campo')
 
     const bytes = await d.pdf.save()
     const caminho = `${tenant}/relatorios/${order_id}_v${rel.versao}.pdf`

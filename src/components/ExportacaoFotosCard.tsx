@@ -6,6 +6,7 @@ import { Combobox } from '@/components/ui/combobox'
 import { Button } from '@/components/ui/button'
 import { FileArchive, Loader2, Download, Search } from 'lucide-react'
 import { listarFotosParaExportar, gerarZip, nomeDoZip, type ItemExportacao } from '@/lib/exportacaoFotos'
+import { nomeEmpresa } from '@/lib/empresa'
 
 // Exportação das fotos (evidências, fotos de checklist e assinaturas) em
 // ZIP, em Configurações. Período pela data da foto + cliente opcional.
@@ -77,7 +78,7 @@ export default function ExportacaoFotosCard() {
     setProgresso({ baixadas: 0, total: itens.length })
     try {
       const cliente = clients.find(c => c.id === clienteId)?.name
-      const { faltando } = await gerarZip(itens, nomeDoZip(tenant?.name ?? 'empresa', de, ate, cliente), setProgresso)
+      const { faltando } = await gerarZip(itens, nomeDoZip(nomeEmpresa(tenant) || 'empresa', de, ate, cliente), setProgresso)
       setAviso(faltando
         ? `ZIP gerado. ${faltando} ${faltando === 1 ? 'arquivo não foi encontrado' : 'arquivos não foram encontrados'} — marcados na planilha fotos.csv.`
         : 'ZIP gerado e baixado. Nenhum arquivo fica guardado no servidor.')

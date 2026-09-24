@@ -1,5 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
 import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { nomeEmpresa } from '@/lib/empresa'
 
 const stats = [
   { label: 'OS Abertas', value: '—', icon: ClipboardList, color: 'text-blue-400', bg: 'bg-blue-500/10' },
@@ -19,7 +20,7 @@ export default function DashboardPage() {
           Olá, {user?.name.split(' ')[0]} 👋
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {tenant ? tenant.name : 'VLUMA Tecnologia — Super Admin'}
+          {tenant ? nomeEmpresa(tenant) : 'VLUMA Tecnologia — Super Admin'}
         </p>
       </div>
 

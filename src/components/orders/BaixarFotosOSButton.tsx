@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Download, Loader2 } from 'lucide-react'
 import { listarFotosParaExportar, gerarZip, nomeDoZip } from '@/lib/exportacaoFotos'
+import { nomeEmpresa } from '@/lib/empresa'
 
 // "Baixar fotos" de UMA OS em ZIP (evidências + fotos do checklist +
 // assinatura). Mesmo mecanismo da exportação em Configurações.
@@ -14,7 +15,7 @@ export default function BaixarFotosOSButton({ orderId, numero }: { orderId: stri
     try {
       const itens = await listarFotosParaExportar({ orderId })
       if (!itens.length) { setEstado('Sem fotos'); setTimeout(() => setEstado(null), 2500); return }
-      await gerarZip(itens, nomeDoZip(tenant?.name ?? 'empresa', undefined, undefined, numero),
+      await gerarZip(itens, nomeDoZip(nomeEmpresa(tenant) || 'empresa', undefined, undefined, numero),
         p => setEstado(`${p.baixadas}/${p.total}`))
       setEstado(null)
     } catch {

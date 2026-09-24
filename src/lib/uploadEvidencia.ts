@@ -432,13 +432,13 @@ async function buscarDadosTenant(): Promise<DadosTenant | { erro: string }> {
 
   const { data: perfil } = await supabase
     .from('users')
-    .select('tenant_id, name, tenants(name, stamp_config)')
+    .select('tenant_id, name, tenants(name, trade_name, stamp_config)')
     .eq('id', user.id)
     .single()
 
   const tenantId = perfil?.tenant_id
   if (!tenantId) return { erro: 'Usuário sem empresa vinculada.' }
-  const tenantName = (perfil as any)?.tenants?.name ?? ''
+  const tenantName = ((perfil as any)?.tenants?.trade_name || (perfil as any)?.tenants?.name) ?? ''
   const config = resolverConfigCarimbo((perfil as any)?.tenants?.stamp_config)
   const logoUrl = config.logo ? await urlLogoEmpresa() : null
 
