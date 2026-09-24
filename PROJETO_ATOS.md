@@ -1215,4 +1215,6 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   LTDA"; formatação → "Infoxtec Tecnologia e Servicos Ltda." (a Receita
   não tem acentos). **Tela Empresas do Super Admin não testada pelo
   navegador** (sem a senha dessa conta) — validação pelo usuário
+- **Tela Empresas / Identidade legal validada pelo usuário como Super
+  Admin em 2026-09-24** ("Validado")
 
