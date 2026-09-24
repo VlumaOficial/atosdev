@@ -163,6 +163,17 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 
 > **Refinamento (set/2026) — pendente de detalhamento técnico antes do Bloco D:** por ser SaaS multi-tenant, WhatsApp não pode ser uma credencial fixa da VLUMA. Cada tenant precisa de um **painel próprio de configuração** onde: (1) insere seus dados (remetente de e-mail/SMTP), (2) conecta sua **própria instância WhatsApp** via **leitura de QR Code** (fluxo de criação de instância + pareamento da Evolution API), e (3) **liga/desliga o canal WhatsApp** conforme o negócio dele precisa (nem todo cliente vai querer usar). Ou seja: o canal de envio é **configurável e opcional por tenant**, não um toggle binário só de "permitir/bloquear" do Admin VLUMA — isso é adicional ao controle de bloqueio já descrito abaixo, não substitui. Detalhar esse fluxo (gestão de instâncias Evolution multi-tenant, onde ficam as credenciais, reconexão se cair) antes de iniciar o Bloco D.
 
+**Envio do relatório — decisões (2026-09-24)**
+- **Pesquisa que mudou o desenho**: WhatsApp não oficial (Evolution/Z-API/Baileys) viola os termos do WhatsApp — número banido em 2–8 semanas, sem recurso → **não usar** (risco é do número do cliente e da reputação VLUMA). Supabase Edge Functions bloqueiam SMTP nas portas 25/587 — só **465 (SSL)**
+- **Três opções de envio, liberadas conforme o PLANO** (ideia do usuário): 
+  1. **Básico** — WhatsApp pelo **aparelho** (botão abre o WhatsApp do celular com mensagem pronta + link do relatório; sem API, sem conta, sem risco de banimento) + e-mail enviado pela plataforma: **"Empresa via ATOS" <noreply@vluma.com.br>**, com "Responder para" = e-mail de contato da empresa, PDF anexado + link de verificação
+  2. **Intermediário** — + **e-mail próprio** da empresa (SMTP do cliente, porta 465, senha no cofre do servidor, botão "Testar envio")
+  3. **Avançado** — + **WhatsApp oficial (Cloud API da Meta)** automático pelo número da empresa (exige verificação da empresa na Meta e modelos aprovados; custo por mensagem)
+  - Enquanto a F8 (planos) não existe, o **Super Admin libera por empresa** quais opções ela pode usar; a F8 só passa a ligar isso ao plano
+- **Configurações da empresa ("Envio do relatório")**: canais ligados/desligados, mensagem padrão editável ({cliente}, {os}, {empresa}, {link}), quem pode enviar (Bloco E: empresa toda / técnicos escolhidos; gestor sempre pode), e-mail próprio (se o plano permitir)
+- Registro do envio na linha do tempo com **destino mascarado** (LGPD)
+- Remetente padrão: noreply@vluma.com.br (Zoho), credencial só em segredo do servidor
+
 **Painel do Gestor — Disparo Manual**
 - Gestor dispara WhatsApp informando o número na hora
 - Gestor envia e-mail (destinatário, assunto, texto) **anexando uma ou várias OS**

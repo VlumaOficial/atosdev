@@ -1218,3 +1218,12 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - **Tela Empresas / Identidade legal validada pelo usuário como Super
   Admin em 2026-09-24** ("Validado")
 
+### Bloco D — decisões (2026-09-24)
+- Três opções de envio por plano (Básico / Intermediário / Avançado) —
+  ver VISAO_ATOS.md, F6. Super Admin libera por empresa até a F8
+- Remetente padrão **noreply@vluma.com.br** (Zoho, smtp.zoho.com:465
+  SSL) — login testado ok; credencial guardada SÓ como segredo do
+  servidor (`SMTP_PADRAO_HOST/USUARIO/SENHA`), nunca no git. **A senha
+  de app foi enviada pelo chat → trocar no fim do MVP**, junto com os
+  tokens (mesma política)
+
