@@ -746,6 +746,14 @@ exportação ZIP → código de verificação → "liberar espaço"
   Consulta pública (`src/lib/verificacao.ts`) via fetch com chave
   pública — não depende da sessão do usuário (usada também pela página
   /verificar)
+- Testado (URL pública, técnico real, perfil Pixel 5): selo → painel
+  "Foto autêntica — idêntica à enviada. Recebida pelo servidor em
+  23/09/2026, 21:44" (foto real FXN7-S46J-U2KF do usuário); nenhuma aba
+  aberta; "Compartilhar link" → link copiado
+  (…/verificar/FXN7S46JU2KF); sair e voltar ao app (visibilitychange +
+  blur/focus) → visualizador continua aberto com o selo; reabrir → selo
+  aparece; 0 erros. Ajuste visual junto: fundo do visualizador passou a
+  preto sólido (a tela de trás aparecia por transparência)
 - Sem migration
 
 ### Próximos blocos

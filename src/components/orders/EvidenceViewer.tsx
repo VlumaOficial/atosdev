@@ -77,7 +77,7 @@ export default function EvidenceViewer({ path, onFechar }: Props) {
   return (
     <Dialog.Root open={!!path} onOpenChange={(o) => { if (!o) onFechar() }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/90" />
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-black" />
         <Dialog.Content aria-describedby={undefined}
           // trocar de app/janela no celular não pode fechar o visualizador
           onFocusOutside={e => e.preventDefault()}
