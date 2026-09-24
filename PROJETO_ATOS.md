@@ -790,6 +790,16 @@ exportação ZIP → código de verificação → "liberar espaço"
   js-yaml, brace-expansion) — nenhuma do pacote novo. Registrado para a
   F10 (OWASP); não corrigido agora (`npm audit fix` pode subir a versão
   do Vite no meio da F6)
+- Testado ponta a ponta (URL pública, técnico real, câmera embutida):
+  botão do app "Foto autenticada · EQKS-YA83-PAKG"; **QR Code da foto
+  salva decodificado (jsQR) = https://atosdev.vercel.app/verificar/
+  EQKSYA83PAKG**; foto aberta vai para a URL (`?foto=…`), recarga reabre
+  a mesma foto, "voltar" fecha a foto e mantém na OS; versão nova +
+  câmera aberta + app em 2º plano → NÃO recarrega; câmera fechada + 2º
+  plano → recarregou em silêncio na mesma OS; nenhuma faixa exibida.
+  Um 401 isolado no console apareceu uma vez e não se repetiu em 3
+  execuções seguidas (provável requisição interrompida pela recarga) —
+  acompanhar
 - Sem migration
 
 ### Próximos blocos
@@ -922,3 +932,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-23: exportação de fotos em ZIP concluída e testada (Configurações + botão por OS, montado no navegador, sem arquivo temporário no servidor). Achados corrigidos no caminho: erros 400 de miniatura em fotos antigas e autoria de resposta de checklist nunca gravada (migration 025). Próximo: código de verificação de autenticidade.*
 
 *2026-09-23: código de verificação de autenticidade concluído e testado (migrations 026–027, Edge Function verificar-foto, página pública /verificar). Fotos de evidência passam a ser imutáveis também no storage. Próximo: "liberar espaço" (período escolhido pelo cliente) e depois a discussão do provedor de geocodificação para SaaS, antes do Bloco C (PDF).*
+
+*2026-09-24: UX da verificação fechada com o usuário — atualização silenciosa do app (sem faixa, só em momento seguro), foto aberta preservada na URL e selo fixo "Foto autenticada · CÓDIGO" com QR Code. Próximo: "liberar espaço" (período escolhido pelo cliente).*
