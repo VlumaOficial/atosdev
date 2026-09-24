@@ -153,6 +153,7 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
   - OpenCage: permite guardar para sempre, mas o plano GRATUITO é só para teste (não pode em produção) — pago a partir de US$ 50/mês
   - **LocationIQ: plano gratuito PERMITE uso comercial em produção** (5.000 consultas/dia), desde que haja link visível "Search by LocationIQ.com" no app; o endereço pode ser guardado para sempre; o cache para reaproveitar consultas é limitado a 48h no gratuito (ilimitado no pago, a partir de US$ 49/mês)
   - Recomendação: LocationIQ gratuito no PRD até ~5.000 consultas/dia; migrar para o pago quando o volume crescer
+  - **Troca de provedor pelo Super Admin (proposta 2026-09-24):** tela da plataforma onde o Super Admin escolhe o provedor (Nominatim / LocationIQ / OpenCage), cola a chave da API, clica em "Testar" e ativa — sem deploy. Requisitos: um adaptador por provedor na Edge Function (formato de resposta diferente → mesmo formato de endereço no carimbo); chave guardada só no servidor (nunca visível no navegador); contador de consultas do mês para acompanhar o limite
 
 **Envio da OS**
 - **Envio opcional** — o técnico decide se envia ao cliente
@@ -219,6 +220,21 @@ Modelo comercial **já definido em detalhe**. Todas as configurações são edit
 - **Override por cliente:** aumentar limites de um tenant manualmente e **sem cobrança**, sobrepondo o plano (cortesia, negociação, cliente estratégico)
 
 ---
+
+### 7.1. Custos variáveis da plataforma — para discutir na definição dos planos (registrado em 2026-09-24)
+
+> Levantamento para calibrar preço e limites dos planos. Valores aproximados, **confirmar nos sites oficiais antes de contratar**.
+
+| Item | Como cresce | Opção gratuita | Custo quando cresce | Observações |
+|------|-------------|----------------|---------------------|-------------|
+| **Endereço no carimbo (geocodificação)** | 1 consulta por foto (menos com cache do mesmo local) | LocationIQ: 5.000/dia, uso comercial com link "Search by LocationIQ.com"; cache de 48h | LocationIQ pago: a partir de US$ 49/mês (cache ilimitado); OpenCage: a partir de US$ 50/mês (10 mil/dia) — gratuito dele é só teste | Google descartado: não permite guardar o endereço para sempre. Estimativa: Infoxtec ~100 consultas/dia; limite gratuito ≈ 150 empresas desse porte |
+| **Armazenamento de fotos e PDFs (Supabase Storage)** | ~130–170 KB por foto + miniatura ~15 KB; PDF ~0,6–0,9 MB por OS | Supabase Free: 1 GB por projeto (todas as empresas) | Supabase Pro: US$ 25/mês com 100 GB incluídos; excedente barato por GB | Estimativa: Infoxtec (300 OS × 10 fotos/mês) ≈ 0,5–0,9 GB/mês → o Free não sustenta operação real. "Liberar espaço" e política de retenção por plano reduzem |
+| **Tráfego de saída (egress)** | Cada foto/PDF visualizado ou baixado | Incluído no plano Supabase (cota mensal) | Cobrado por GB acima da cota | Miniaturas nas listas já reduzem ~90% do tráfego das listas; exportação ZIP e PDFs consomem |
+| **Geração de PDF (Edge Function)** | 1 execução por OS concluída | Cota mensal de execuções no plano Supabase | Por milhão de execuções acima da cota | Baixo impacto esperado |
+| **WhatsApp (Evolution API, Bloco D)** | Por empresa (instância própria) | — | Servidor da Evolution (hospedagem própria) | A detalhar no Bloco D |
+| **E-mail (SMTP por empresa, Bloco D)** | Por envio | SMTP do próprio cliente | — | A detalhar no Bloco D |
+
+**Alavancas para os planos:** política de retenção de fotos por plano (ex.: 12/24 meses), cota de armazenamento por empresa (já medida em Configurações → Armazenamento), endereço no carimbo incluso em todos os planos (custo de centavos por empresa).
 
 ## 8. BACKLOG — DEFINIÇÕES JÁ ACORDADAS
 
