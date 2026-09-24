@@ -243,6 +243,8 @@ Modelo comercial **já definido em detalhe**. Todas as configurações são edit
 - **Landing page** para captação e conversão
 - **Onboarding do tenant:** do cadastro ao primeiro uso
 
+> **Decisão (2026-09-24) — consulta de CNPJ na Receita já existe e DEVE ser reusada na contratação SaaS:** `src/lib/cnpj.ts` (`consultarCnpjReceita`, via BrasilAPI — gratuita, sem chave) devolve razão social, nome fantasia, **situação cadastral** (ATIVA/BAIXADA/INAPTA/SUSPENSA), município/UF e telefone. Hoje o Super Admin usa em Empresas → "Identidade legal". No auto-cadastro (F8): preencher razão social automaticamente a partir do CNPJ, **bloquear CNPJ não ATIVO**, trava de CNPJ duplicado (uma empresa = um trial) e sugerir o nome fantasia como nome de exibição. Razão social e CNPJ continuam **fora do alcance do admin** depois do cadastro (identidade legal = contratante/cobrança).
+
 ### 8.2. Anti-fraude e Segurança
 - Trava de **cadastro duplicado** por e-mail, CPF ou CNPJ (uma empresa = um trial)
 - **Validação de CPF/CNPJ:** formato + dígito verificador, com consulta opcional à Receita

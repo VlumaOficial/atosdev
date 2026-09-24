@@ -19,6 +19,7 @@ import AvisoPrivacidadePage from '@/pages/AvisoPrivacidadePage'
 import VerificarFotoPage from '@/pages/VerificarFotoPage'
 import AtualizacaoApp from '@/components/AtualizacaoApp'
 import MinhaAssinaturaPage from '@/pages/MinhaAssinaturaPage'
+import TenantsPage from '@/pages/TenantsPage'
 import FieldLayout from '@/components/layout/FieldLayout'
 import MyOrdersPage from '@/pages/field/MyOrdersPage'
 import FieldOrderPage from '@/pages/field/FieldOrderPage'
@@ -112,7 +113,7 @@ export default function App() {
               path="tenants"
               element={
                 <ProtectedRoute allowedRoles={['super_admin']}>
-                  <PlaceholderPage title="Tenants — Super Admin" />
+                  <TenantsPage />
                 </ProtectedRoute>
               }
             />

@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
   { label: 'Clientes', to: '/clientes', icon: Building2, roles: ['super_admin','admin','gestor'] },
   { label: 'Unidades', to: '/locais', icon: MapPin, roles: ['super_admin','admin','gestor'] },
   { label: 'Usuários', to: '/usuarios', icon: Users, roles: ['super_admin','admin'] },
-  { label: 'Tenants', to: '/tenants', icon: ShieldCheck, roles: ['super_admin'] },
+  { label: 'Empresas', to: '/tenants', icon: ShieldCheck, roles: ['super_admin'] },
   { label: 'Configurações', to: '/configuracoes', icon: Settings, roles: ['super_admin','admin'] },
 ]
 

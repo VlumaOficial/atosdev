@@ -936,6 +936,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 030_f6_relatorio_pdf | order_reports (versões, status pendente/gerando/gerado/falha) + RLS leitura por empresa; fotos_verificacao.tipo (foto/relatorio) e gatilho aceita service role; pg_net; gatilho em orders: concluída → relatório pendente + chamada à Edge Function (chave no Vault); bucket 25 MB; arquivos_orfaos reconhece PDFs | OK | Pendente | Sim |
 | 031_f6_dados_empresa | tenants.trade_name (nome de exibição) e website; cnpj_valido() (dígitos verificadores); atualizar_dados_empresa() (admin: nome de exibição, CNPJ, telefone, e-mail, site — razão social continua do Super Admin) | OK | Pendente | Sim |
 | 032_f6_liberar_espaco | colunas arquivo_removido_em/removido_em (evidências, verificação, relatórios); liberacoes_espaco (histórico) + RLS; os_para_liberar, arquivos_para_liberar (nível 1 só OS com PDF guardado), previa_liberar_espaco, registrar_liberacao (admin, só pasta da empresa) | OK | Pendente | Sim |
+| 033_f6_identidade_empresa | atualizar_dados_empresa sem CNPJ (admin: nome de exibição e contato); tenant_identidade_historico; atualizar_identidade_tenant() (só Super Admin: razão social + CNPJ validado, com histórico e fonte receita/manual) | OK | Pendente | Sim |
 
 ---
 
@@ -1186,4 +1187,22 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   SHA-256 do PDF dentro do ZIP é idêntico ao registrado na verificação —
   a cópia guardada pelo cliente continua conferível em /verificar mesmo
   depois de o arquivo ser apagado do sistema. OS de teste: OS-0023/0024
+
+### Identidade legal da empresa — opção B + consulta à Receita (2026-09-24)
+- **Pergunta do usuário**: o admin não pode alterar a razão social?
+  Achado: inconsistência criada na migration 031 — CNPJ editável pelo
+  admin e razão social não, sendo os dois a identidade legal. Opções
+  levadas (A livre / B travado / C admin + Receita); **usuário escolheu
+  B com o recurso de consulta à API pública**, a ser reusado na
+  contratação SaaS (documentado no VISAO_ATOS.md, F8)
+- Admin: razão social e CNPJ só leitura em "Marca e dados da empresa"
+  ("para alterar, fale com o suporte VLUMA"); edita nome de exibição,
+  telefone, e-mail, site (migration 033 tira o CNPJ da função)
+- Super Admin: página **Empresas** (antes "Tenants", era só
+  placeholder) → "Identidade legal": CNPJ com máscara/validação,
+  **"Consultar na Receita"** (`src/lib/cnpj.ts`, BrasilAPI — gratuita,
+  sem chave, CORS liberado) preenche a razão social (formatada da
+  caixa-alta da Receita) e mostra situação cadastral (aviso se não
+  ATIVA), município/UF e telefone; salvar grava histórico (anterior →
+  novo, fonte "receita" ou "manual" se editada depois)
 
