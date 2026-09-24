@@ -214,8 +214,10 @@ Deno.serve(async (req) => {
     const nomeExib = (tn.trade_name || tn.name || '') as string
     d.page.drawText(t(nomeExib), { x: xTit, y: d.y - 11, size: 12, font: d.bold, color: COR.texto })
     // razão social aparece quando o nome de exibição é outro (documento oficial)
-    const contato = [tn.trade_name && tn.trade_name !== tn.name ? tn.name : null, tn.cnpj && `CNPJ ${tn.cnpj}`, tn.phone, tn.email, tn.website].filter(Boolean).join(' · ')
-    const larguraCab = A4.w - M - 70 - xTit
+    const contato = [tn.trade_name && tn.trade_name !== tn.name ? tn.name : null, tn.cnpj && `CNPJ ${tn.cnpj}`, tn.phone, tn.email, tn.website].filter(Boolean)
+      .map((x: string) => x.replace(/ /g, '\u00A0')).join(' · ') // cada dado inteiro na mesma linha (espaço não-separável)
+    // livre até o bloco da direita (QR 58 + "Documento autenticado" ~80)
+    const larguraCab = A4.w - M - 150 - xTit
     const linhasContato = contato ? d.quebrar(contato, d.reg, 8, larguraCab).slice(0, 2) : []
     linhasContato.forEach((l, i) => d.page.drawText(l, { x: xTit, y: d.y - 24 - i * 10, size: 8, font: d.reg, color: COR.fraco }))
     d.page.drawText(t(`RELATÓRIO DE ATENDIMENTO · ${os.number}`), { x: xTit, y: d.y - 40 - Math.max(0, linhasContato.length - 1) * 10, size: 12.5, font: d.bold, color: COR.roxo })

@@ -1135,4 +1135,14 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   /verificar e cabeçalho do PDF. No PDF, quando o nome de exibição é
   diferente, a razão social aparece na linha de contato (documento
   oficial); linha de contato quebra em até 2 linhas
+- Testado (URL pública, admin real): CNPJ com dígito errado → "CNPJ
+  inválido"; máscara aplicada; dados salvos no banco (CNPJ formatado);
+  menu lateral passou de "Infoxtec Tecnologia e Serviços Ltda." para
+  "Infoxtec"; PDF regenerado (OS-0022 v2/v3) com "Infoxtec" no título e
+  razão social + CNPJ + telefone + e-mail + site na linha de contato.
+  Achados no teste e corrigidos: linha de contato invadia o bloco
+  "Documento autenticado" (largura livre errada) e o telefone quebrava
+  no meio (cada dado agora fica inteiro). Dados de teste da Infoxtec
+  (telefone/site/e-mail fictícios) desfeitos ao final — o admin deve
+  preencher os dados reais
 
