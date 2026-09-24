@@ -1205,4 +1205,14 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   caixa-alta da Receita) e mostra situação cadastral (aviso se não
   ATIVA), município/UF e telefone; salvar grava histórico (anterior →
   novo, fonte "receita" ou "manual" se editada depois)
+- Testado (URL pública): admin vê razão social + CNPJ só leitura com
+  "fale com o suporte VLUMA", sem campo de CNPJ; salvar telefone
+  funciona com a nova função (valor de teste desfeito depois); admin em
+  /tenants é redirecionado (rota só Super Admin). Banco: admin →
+  "Apenas o suporte VLUMA (Super Admin) altera razão social e CNPJ";
+  Super Admin (impersonação, rollback) grava e registra histórico com
+  fonte. BrasilAPI pelo navegador → 200 "INFOXTEC TECNOLOGIA E SERVICOS
+  LTDA"; formatação → "Infoxtec Tecnologia e Servicos Ltda." (a Receita
+  não tem acentos). **Tela Empresas do Super Admin não testada pelo
+  navegador** (sem a senha dessa conta) — validação pelo usuário
 
