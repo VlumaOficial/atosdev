@@ -68,6 +68,8 @@ export async function removerArquivosDaOS(orderId: string, checklistIds: string[
     `${tenant}/assinaturas/${orderId}.png`,
   ]
   for (const id of checklistIds) nomes.push(...(await listarPasta(`${tenant}/checklist/${id}`)))
+  const { data: pdfs } = await supabase.storage.from(BUCKET).list(`${tenant}/relatorios`, { limit: 100, search: orderId })
+  for (const f of pdfs ?? []) if (f.id && f.name.startsWith(orderId)) nomes.push(`${tenant}/relatorios/${f.name}`)
   await removerEmLotes(nomes)
 }
 

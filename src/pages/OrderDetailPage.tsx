@@ -7,6 +7,7 @@ import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
 import ConcluirOSModal from '@/components/assinatura/ConcluirOSModal'
 import AssinaturasDaOS from '@/components/assinatura/AssinaturasDaOS'
+import RelatorioOSButton from '@/components/orders/RelatorioOSButton'
 import OrderEvidences from '@/components/orders/OrderEvidences'
 import BaixarFotosOSButton from '@/components/orders/BaixarFotosOSButton'
 import { PageHeader } from '@/components/ui/page-header'
@@ -199,6 +200,13 @@ export default function OrderDetailPage() {
             <p className="text-sm font-medium text-foreground mb-3">Assinaturas</p>
             <AssinaturasDaOS order={order as any} exige={!!(order.require_signature ?? tenant?.require_signature_to_complete)} />
           </Card>
+
+          {order.status === 'concluida' && (
+            <Card className="p-5">
+              <p className="text-sm font-medium text-foreground mb-3">Relatório do atendimento</p>
+              <RelatorioOSButton orderId={order.id} numero={order.number} concluida />
+            </Card>
+          )}
 
           <Card className="p-5">
             <OrderComments orderId={order.id} />

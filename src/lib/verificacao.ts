@@ -7,6 +7,7 @@ export interface ResultadoVerificacao {
   encontrado: boolean
   motivo?: string
   codigo?: string
+  tipo?: 'foto' | 'relatorio'
   empresa?: string | null
   os?: string | null
   carimbado_em?: string | null

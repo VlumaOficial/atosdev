@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
 
     const { data: reg } = await admin
       .from('fotos_verificacao')
-      .select('codigo, file_path, sha256, bytes, carimbado_em, enviado_em, tenants(name), orders(number)')
+      .select('codigo, tipo, file_path, sha256, bytes, carimbado_em, enviado_em, tenants(name), orders(number)')
       .eq('codigo', codigo)
       .maybeSingle()
     if (!reg) return json({ encontrado: false, motivo: 'nao_encontrado' })
@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
     return json({
       encontrado: true,
       codigo: reg.codigo,
+      tipo: (reg as any).tipo ?? 'foto',
       empresa: (reg as any).tenants?.name ?? null,
       os: (reg as any).orders?.number ?? null,
       carimbado_em: reg.carimbado_em,

@@ -933,6 +933,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 027_f6_evidencias_imutaveis | policy evidencias_update restrita a logo.png e assinaturas/ — fotos de evidência não podem mais ser sobrescritas | OK | Pendente | Sim |
 | 028_f6_assinatura_no_encerramento | tenants.allow_signature_exception + padrão "exigir assinatura" (Infoxtec ligada); orders.signature_absent_reason e technician_signature_path/signer_name/signed_at; atualizar_config_tenant com parâmetros opcionais; gatilho que barra conclusão sem assinatura exigida; arquivos_orfaos reconhece as novas assinaturas | OK | Pendente | Sim |
 | 029_f6_geocodificacao_plataforma | geocodificacao_config (provedor + chave, 1 linha), geocodificacao_cache (região ~55 m) e geocodificacao_uso (dia × empresa × provedor), todas sem leitura direta; funções definir_config_geocodificacao / status_geocodificacao (Super Admin), provedor_geocodificacao (qualquer logado), uso_geocodificacao (admin: própria empresa; super admin: todas), registrar_uso_geocodificacao (só service role) | OK | Pendente | Sim |
+| 030_f6_relatorio_pdf | order_reports (versões, status pendente/gerando/gerado/falha) + RLS leitura por empresa; fotos_verificacao.tipo (foto/relatorio) e gatilho aceita service role; pg_net; gatilho em orders: concluída → relatório pendente + chamada à Edge Function (chave no Vault); bucket 25 MB; arquivos_orfaos reconhece PDFs | OK | Pendente | Sim |
 
 ---
 
@@ -1055,4 +1056,43 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   provedor); mesma coordenada e ponto a ~20 m → fonte cache; consumo:
   locationiq 1 consulta + 2 cache; rodapé "Endereços: © OpenStreetMap ·
   Search by LocationIQ.com"
+
+### Bloco C — Relatório PDF da OS (2026-09-24, layout aprovado)
+- **Disparo pelo banco**: gatilho em `orders` (migration 030) — ao virar
+  "concluida" cria o registro `order_reports` pendente e chama a Edge
+  Function `gerar-relatorio-os` via pg_net. A chave de serviço usada na
+  chamada fica no **Vault** (segredo `atos_service_role_key`, criado
+  fora do git — no PRD precisa ser criado de novo). Não depende do
+  celular do técnico
+- **Edge Function `gerar-relatorio-os`** (pdf-lib + qrcode-generator,
+  fontes padrão com acentos do português): cabeçalho com logo, empresa,
+  CNPJ/contato, "RELATÓRIO DE ATENDIMENTO · OS-xxxx", QR + código
+  "Documento autenticado"; 1. Dados (cliente, unidade, endereço,
+  técnico, prioridade, situação, abertura/início/conclusão + duração);
+  2. Serviço (solicitado + relato); linha do tempo (sem "edited");
+  3. Checklist (item × resposta, foto → "nas evidências"); 4. Evidências
+  em grade 2 por linha com legenda, observação e código de cada foto
+  (fotos de checklist incluídas); 5. Assinaturas (cliente ou "CLIENTE
+  NÃO ASSINOU — motivo" em destaque; responsável); rodapé com data de
+  geração, link de verificação e "Página X de Y". Sem comentários
+  internos. Título de seção nunca fica sozinho no pé da página
+- Guardado em `{tenant}/relatorios/{os}_v{n}.pdf`; código + SHA-256 em
+  `fotos_verificacao` (tipo relatorio); OS reaberta e concluída de novo
+  = nova versão. Autorização: service role (papel lido do JWT já
+  validado pela plataforma) ou usuário da mesma empresa
+- **Achado**: comparar a chave de serviço com a variável de ambiente
+  falhou (formatos diferentes) → autorização passou a ler o papel
+  `service_role` do token validado
+- **Tamanho**: as fotos entram como estão (JPEG ≤1600 px, ~130–170 KB);
+  sem recompressão no servidor (Edge Function tem limite de CPU). PDF
+  fica ~0,1 MB sem fotos e ~0,2 MB por foto — a estimativa anterior de
+  0,6–0,9 MB vale para ~4 fotos. OS-0018 de teste (14 fotos, algumas
+  antigas de 600 KB) = 3,6 MB / 5 páginas
+- App: botão "Relatório (PDF)" na OS concluída (técnico e admin);
+  "Gerando relatório…" enquanto o servidor trabalha; "Gerar relatório"
+  como rede de segurança (OS antiga/falha). /verificar reconhece
+  relatório ("Relatório autêntico", "Abrir o relatório (PDF)", conferir
+  cópia em PDF). ZIP inclui o PDF de cada OS. Excluir OS apaga os PDFs
+- Segredo `SITE_URL` = https://atosdev.vluma.com.br (link de verificação
+  no PDF)
 

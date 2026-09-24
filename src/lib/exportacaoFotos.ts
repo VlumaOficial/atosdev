@@ -25,7 +25,7 @@ export interface ItemExportacao {
   caminho: string      // no bucket
   pasta: string        // no ZIP
   arquivo: string      // no ZIP
-  tipo: 'Evidência da OS' | 'Foto de checklist' | 'Assinatura do cliente'
+  tipo: 'Evidência da OS' | 'Foto de checklist' | 'Assinatura do cliente' | 'Relatório (PDF)'
   os: string
   cliente: string
   unidade: string
@@ -34,6 +34,7 @@ export interface ItemExportacao {
   dataHora: string     // ISO
   observacao: string
   codigo?: string
+  orderId?: string
 }
 
 function limpar(nome: string): string {
@@ -82,7 +83,7 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
       caminho: ev.file_path,
       pasta: pastaDaOS(o?.number, cliente, unidade),
       arquivo: `${carimboArquivo(ev.created_at)}_evidencia.jpg`,
-      tipo: 'Evidência da OS', os: o?.number ?? '', cliente, unidade, checklistItem: '',
+      tipo: 'Evidência da OS', os: o?.number ?? '', cliente, unidade, checklistItem: '', orderId: ev.order_id,
       autor: usuarios.get(ev.created_by) ?? '', dataHora: ev.created_at, observacao: ev.observacao ?? '',
     })
   }
@@ -119,7 +120,7 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
       itens.push({
         caminho: v, pasta,
         arquivo: `${carimboArquivo(dataHora)}_checklist_${limpar(r.label_snapshot ?? 'item').slice(0, 40)}.jpg`,
-        tipo: 'Foto de checklist', os: o?.number ?? '', cliente, unidade,
+        tipo: 'Foto de checklist', os: o?.number ?? '', cliente, unidade, orderId: inst?.order_id ?? undefined,
         checklistItem: `${inst?.title_snapshot ?? ''} › ${r.label_snapshot ?? ''}`,
         autor: usuarios.get(r.answered_by) ?? '', dataHora, observacao: '',
       })
@@ -144,19 +145,42 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
       caminho: o.signature_path,
       pasta: pastaDaOS(o.number, cliente, unidade),
       arquivo: `assinatura_${limpar(o.signer_name ?? 'cliente')}.png`,
-      tipo: 'Assinatura do cliente', os: o.number ?? '', cliente, unidade, checklistItem: '',
+      tipo: 'Assinatura do cliente', os: o.number ?? '', cliente, unidade, checklistItem: '', orderId: o.id,
       autor: o.signer_name ?? '', dataHora: o.signed_at ?? '', observacao: 'Assinado por ' + (o.signer_name ?? ''),
     })
   }
 
+  // relatório PDF (última versão gerada) de cada OS presente na exportação
+  const ordensNoZip = new Map<string, ItemExportacao>()
+  for (const it of itens) if (it.orderId && !ordensNoZip.has(it.orderId)) ordensNoZip.set(it.orderId, it)
+  if (f.orderId && !ordensNoZip.size) {
+    const { data: o } = await supabase.from('orders').select('id, number, clients(name), locations(name)').eq('id', f.orderId).maybeSingle()
+    if (o) ordensNoZip.set(o.id, { pasta: pastaDaOS((o as any).number, (o as any).clients?.name ?? '', (o as any).locations?.name ?? ''), os: (o as any).number, cliente: (o as any).clients?.name ?? '', unidade: (o as any).locations?.name ?? '' } as ItemExportacao)
+  }
+  if (ordensNoZip.size) {
+    const { data: rels } = await supabase.from('order_reports').select('order_id, versao, file_path, codigo, gerado_em')
+      .in('order_id', [...ordensNoZip.keys()]).eq('status', 'gerado').order('versao', { ascending: false })
+    const vistos = new Set<string>()
+    for (const r of (rels ?? []) as any[]) {
+      if (vistos.has(r.order_id) || !r.file_path) continue
+      vistos.add(r.order_id)
+      const ref = ordensNoZip.get(r.order_id)!
+      itens.push({
+        caminho: r.file_path, pasta: ref.pasta, arquivo: `Relatorio_${limpar(ref.os || 'OS')}${r.versao > 1 ? '_v' + r.versao : ''}.pdf`,
+        tipo: 'Relatório (PDF)', os: ref.os, cliente: ref.cliente, unidade: ref.unidade, checklistItem: '',
+        autor: 'ATOS', dataHora: r.gerado_em ?? '', observacao: '', codigo: r.codigo ?? undefined, orderId: r.order_id,
+      })
+    }
+  }
+
   // códigos de verificação (fotos anteriores ao recurso não têm)
-  const caminhosFotos = itens.filter(i => i.tipo !== 'Assinatura do cliente').map(i => i.caminho)
+  const caminhosFotos = itens.filter(i => i.tipo !== 'Assinatura do cliente' && i.tipo !== 'Relatório (PDF)').map(i => i.caminho)
   const codigos = new Map<string, string>()
   for (let i = 0; i < caminhosFotos.length; i += 200) {
     const { data } = await supabase.from('fotos_verificacao').select('codigo, file_path').in('file_path', caminhosFotos.slice(i, i + 200))
     for (const d of (data ?? []) as any[]) codigos.set(d.file_path, d.codigo)
   }
-  for (const it of itens) it.codigo = codigos.get(it.caminho)
+  for (const it of itens) if (it.tipo !== 'Relatório (PDF)') it.codigo = codigos.get(it.caminho)
 
   // nomes únicos dentro de cada pasta (duas fotos no mesmo minuto)
   const usados = new Set<string>()

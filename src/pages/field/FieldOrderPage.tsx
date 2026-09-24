@@ -7,6 +7,7 @@ import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
 import ConcluirOSModal from '@/components/assinatura/ConcluirOSModal'
 import AssinaturasDaOS from '@/components/assinatura/AssinaturasDaOS'
+import RelatorioOSButton from '@/components/orders/RelatorioOSButton'
 import OrderEvidences from '@/components/orders/OrderEvidences'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -183,6 +184,13 @@ export default function FieldOrderPage() {
         <p className="text-sm font-medium text-foreground mb-3">Assinaturas</p>
         <AssinaturasDaOS order={order as any} exige={!!(order.require_signature ?? tenant?.require_signature_to_complete)} />
       </Card>
+
+      {order.status === 'concluida' && (
+        <Card className="p-4 mb-4">
+          <p className="text-sm font-medium text-foreground mb-3">Relatório do atendimento</p>
+          <RelatorioOSButton orderId={order.id} numero={order.number} concluida />
+        </Card>
+      )}
 
       {actions.length > 0 && (
         <div className="space-y-2 mb-4">

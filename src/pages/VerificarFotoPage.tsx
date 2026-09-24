@@ -69,13 +69,13 @@ export default function VerificarFotoPage() {
         titulo: 'Código não encontrado', texto: r.motivo === 'formato' ? 'O código tem 12 caracteres (letras e números), por exemplo K7P2-9XQ4-M3TD.' : 'Confira se o código foi digitado exatamente como aparece na foto.' }
     } else if (!r.arquivo_disponivel) {
       status = { icone: <ShieldQuestion size={28} />, cor: 'text-amber-300 border-amber-500/30 bg-amber-500/10',
-        titulo: 'Código válido — foto não está mais armazenada', texto: 'O registro existe, mas a empresa removeu o arquivo do sistema. Ainda é possível conferir uma cópia abaixo.' }
+        titulo: r.tipo === 'relatorio' ? 'Código válido — relatório não está mais armazenado' : 'Código válido — foto não está mais armazenada', texto: 'O registro existe, mas a empresa removeu o arquivo do sistema. Ainda é possível conferir uma cópia abaixo.' }
     } else if (r.integra) {
       status = { icone: <ShieldCheck size={28} />, cor: 'text-green-300 border-green-500/30 bg-green-500/10',
-        titulo: 'Foto autêntica', texto: 'O arquivo guardado é idêntico ao enviado — não foi alterado desde o envio.' }
+        titulo: r.tipo === 'relatorio' ? 'Relatório autêntico' : 'Foto autêntica', texto: 'O arquivo guardado é idêntico ao original — não foi alterado desde que foi gerado/enviado.' }
     } else {
       status = { icone: <ShieldAlert size={28} />, cor: 'text-red-300 border-red-500/30 bg-red-500/10',
-        titulo: 'Foto alterada', texto: 'O arquivo guardado não corresponde ao registrado no envio.' }
+        titulo: r.tipo === 'relatorio' ? 'Relatório alterado' : 'Foto alterada', texto: 'O arquivo guardado não corresponde ao registrado originalmente.' }
     }
   }
 
@@ -114,23 +114,28 @@ export default function VerificarFotoPage() {
               <span className="text-muted-foreground">Código</span><span className="font-mono text-foreground">{formatar(r.codigo ?? '')}</span>
               <span className="text-muted-foreground">Empresa</span><span className="text-foreground">{r.empresa ?? '—'}</span>
               {r.os && <><span className="text-muted-foreground">Ordem de serviço</span><span className="text-foreground">{r.os}</span></>}
-              <span className="text-muted-foreground">Hora na foto</span><span className="text-foreground">{dataHora(r.carimbado_em)} <span className="text-muted-foreground text-xs">(relógio do aparelho)</span></span>
+              {r.tipo === 'relatorio'
+                ? <><span className="text-muted-foreground">Documento</span><span className="text-foreground">Relatório de atendimento (PDF)</span></>
+                : <><span className="text-muted-foreground">Hora na foto</span><span className="text-foreground">{dataHora(r.carimbado_em)} <span className="text-muted-foreground text-xs">(relógio do aparelho)</span></span></>}
               <span className="text-muted-foreground">Recebida em</span><span className="text-foreground">{dataHora(r.enviado_em)} <span className="text-muted-foreground text-xs">(relógio do servidor)</span></span>
             </div>
 
-            {relogioDivergente && (
+            {relogioDivergente && r.tipo !== 'relatorio' && (
               <div className="flex gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2">
                 <Clock size={14} className="flex-shrink-0 mt-px" />
                 <span>A hora impressa na foto difere {Math.abs(r.divergencia_relogio_min!)} min da hora em que o servidor recebeu o arquivo — o relógio do aparelho pode estar ajustado errado. Considere a hora do servidor.</span>
               </div>
             )}
 
-            {r.url_foto && <img src={r.url_foto} alt="Foto verificada" className="w-full rounded-lg border border-border" />}
+            {r.url_foto && (r.tipo === 'relatorio'
+              ? <a href={r.url_foto} target="_blank" rel="noreferrer" data-testid="abrir-relatorio"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10">Abrir o relatório (PDF)</a>
+              : <img src={r.url_foto} alt="Foto verificada" className="w-full rounded-lg border border-border" />)}
 
             <div className="bg-card border border-border rounded-lg p-4">
-              <p className="text-sm font-medium text-foreground">Tem uma cópia desta foto?</p>
+              <p className="text-sm font-medium text-foreground">Tem uma cópia {r.tipo === 'relatorio' ? 'deste relatório' : 'desta foto'}?</p>
               <p className="text-xs text-muted-foreground mt-0.5 mb-3">Envie o arquivo que você recebeu para conferir se é idêntico ao original. A conferência acontece no seu navegador — o arquivo não é enviado a lugar nenhum.</p>
-              <input type="file" accept="image/*" onChange={conferirCopia} className="hidden" id="copia" />
+              <input type="file" accept={r.tipo === 'relatorio' ? 'application/pdf' : 'image/*'} onChange={conferirCopia} className="hidden" id="copia" />
               <label htmlFor="copia" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-border text-sm text-foreground hover:bg-secondary cursor-pointer">
                 <Upload size={14} /> Conferir arquivo
               </label>
