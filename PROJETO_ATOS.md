@@ -1253,4 +1253,24 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - Nível Avançado (WhatsApp automático) ainda sem implementação — será
   refinado com o usuário usando a **Evolution já instalada na VPS
   dele**, com criação de instância e QR Code pela tela do ATOS
+- **Achado testando (corrigido)**: a biblioteca denomailer estourava o
+  limite de processamento da Edge Function (WORKER_RESOURCE_LIMIT) até
+  num e-mail simples sem anexo. Trocada por **nodemailer** (`npm:`),
+  porta 465 SSL — e-mail simples em 2,6 s. Mantido um modo
+  `diag` (só admin) que envia e-mail simples pelo remetente padrão,
+  útil para suporte. A tela passou a mostrar o erro real devolvido
+  pela função, não só a mensagem genérica
+- Testado ponta a ponta (URL pública, técnico e admin reais, OS-0022):
+  **WhatsApp** — celular incompleto recusado, máscara "(71) 99999-1234",
+  abriu api.whatsapp.com/send com o número e a mensagem montada
+  (empresa, OS, cliente, link de verificação), evento "(71) 9****-1234";
+  **e-mail via ATOS** com PDF anexado entregue a adm@vluma.com.br, evento
+  "a***@vluma.com.br, remetente atos"; **Bloco E** — "Nenhum técnico" →
+  botões somem para o técnico e o servidor recusa (403) mesmo chamando
+  direto; restaurado "Todos"; **nível Básico** — e-mail próprio
+  bloqueado na tela; **nível Intermediário** (definido pelo Super Admin)
+  — e-mail próprio configurado (conta noreply usada só no teste), senha
+  no Vault ("cadastrada"), "Testar envio" entregue, envio do técnico
+  "pelo e-mail da empresa". Limpeza ao final: e-mail próprio desligado,
+  senha removida do Vault, Infoxtec de volta ao nível Básico
 

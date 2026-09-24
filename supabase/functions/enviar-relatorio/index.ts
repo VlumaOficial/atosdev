@@ -1,5 +1,17 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts'
+import nodemailer from 'npm:nodemailer@6.9.16'
+
+// Cliente SMTP (nodemailer). A primeira versão usava denomailer, que no
+// runtime atual do Supabase estourava o limite de processamento
+// (WORKER_RESOURCE_LIMIT) até em e-mail simples — trocado em 2026-09-24.
+function criarCliente(host: string, usuario: string, senha: string) {
+  const t = nodemailer.createTransport({ host, port: 465, secure: true, auth: { user: usuario, pass: senha }, connectionTimeout: 15000, greetingTimeout: 10000, socketTimeout: 20000 })
+  return {
+    send: (m: { from: string; to: string; replyTo?: string; subject: string; content: string; html: string; attachments?: { filename: string; content: Uint8Array; contentType: string }[] }) =>
+      t.sendMail({ from: m.from, to: m.to, replyTo: m.replyTo, subject: m.subject, text: m.content, html: m.html, attachments: m.attachments }),
+    close: async () => { t.close() },
+  }
+}
 
 // Envio do relatório da OS por E-MAIL (Blocos D + E, 2026-09-24).
 // (WhatsApp do nível Básico é pelo aparelho — não passa por aqui.)
@@ -46,14 +58,14 @@ Deno.serve(async (req) => {
     const { data: senha } = await admin.rpc('ler_senha_smtp', { p_tenant: eu!.tenant_id })
     if (!senha || !cfg?.smtp_host || !cfg?.smtp_usuario) throw new Error('E-mail próprio incompleto (servidor, usuário ou senha).')
     return {
-      client: new SMTPClient({ connection: { hostname: cfg.smtp_host, port: 465, tls: true, auth: { username: cfg.smtp_usuario, password: senha as string } } }),
+      client: criarCliente(cfg.smtp_host, cfg.smtp_usuario, senha as string),
       from: `${cfg.smtp_remetente_nome || empresa} <${cfg.smtp_email_remetente || cfg.smtp_usuario}>`,
       replyTo: undefined as string | undefined,
     }
   }
   function smtpPadrao() {
     return {
-      client: new SMTPClient({ connection: { hostname: Deno.env.get('SMTP_PADRAO_HOST') ?? 'smtp.zoho.com', port: 465, tls: true, auth: { username: Deno.env.get('SMTP_PADRAO_USUARIO') ?? '', password: Deno.env.get('SMTP_PADRAO_SENHA') ?? '' } } }),
+      client: criarCliente(Deno.env.get('SMTP_PADRAO_HOST') ?? 'smtp.zoho.com', Deno.env.get('SMTP_PADRAO_USUARIO') ?? '', Deno.env.get('SMTP_PADRAO_SENHA') ?? ''),
       from: `${empresa.replace(/[<>"]/g, '')} via ATOS <${Deno.env.get('SMTP_PADRAO_USUARIO')}>`,
       replyTo: tenant?.email || undefined,
     }
@@ -70,6 +82,17 @@ Deno.serve(async (req) => {
     } catch (e) {
       return json({ ok: false, erro: 'Falha no e-mail próprio: ' + String((e as Error)?.message ?? e).slice(0, 200) })
     }
+  }
+
+  // ---- diagnóstico (admin): e-mail simples pelo remetente padrão, sem anexo
+  if (corpo?.diag && ['admin', 'super_admin'].includes(eu.role)) {
+    const t0 = Date.now()
+    try {
+      const s0 = smtpPadrao()
+      await s0.client.send({ from: s0.from, to: destino, subject: 'ATOS - diagnostico de envio', content: 'Teste simples do ATOS.', html: '<p>Teste simples do ATOS.</p>' })
+      await s0.client.close()
+      return json({ ok: true, ms: Date.now() - t0 })
+    } catch (e) { return json({ ok: false, ms: Date.now() - t0, erro: String((e as Error)?.message ?? e).slice(0, 300) }) }
   }
 
   // ---- envio do relatório
@@ -107,7 +130,7 @@ Deno.serve(async (req) => {
       from: s.from, to: destino, ...(s.replyTo ? { replyTo: s.replyTo } : {}),
       subject: `Relatório de atendimento ${os.number} — ${empresa}`,
       content: texto, html,
-      attachments: [{ filename: `Relatorio_${os.number}${rel.versao > 1 ? '_v' + rel.versao : ''}.pdf`, content: bytes, encoding: 'binary', contentType: 'application/pdf' }],
+      attachments: [{ filename: `Relatorio_${os.number}${rel.versao > 1 ? '_v' + rel.versao : ''}.pdf`, content: bytes, contentType: 'application/pdf' }],
     })
     await s.client.close()
   } catch (e) {
