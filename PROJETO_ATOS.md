@@ -1026,3 +1026,19 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   contratado pela plataforma, dados do OpenStreetMap") — trocar de
   provedor no futuro não exige novo aceite. Técnicos veem o termo
   atualizado uma vez
+- **Achado testando — Nominatim público bloqueia servidores**: da Edge
+  Function do Supabase o Nominatim responde HTTP 403 (bloqueio de IPs de
+  nuvem), mesmo com User-Agent e Referer identificados. Do navegador
+  funcionava; do servidor, não. Consequência: o LocationIQ (chave do
+  usuário) passa a ser necessário já no DEV. Até a chave ser cadastrada
+  pelo Super Admin, as fotos saem só com coordenadas (nunca bloqueia).
+  A falha agora devolve o motivo técnico (ex.: "nominatim 403"), e a
+  tela do Super Admin avisa
+- Testado (URL pública + banco): coordenada inválida → 400; técnico no
+  modo "testar" → 403; consumo registrado por empresa e por dia (3
+  falhas contadas); `status_geocodificacao` e `uso_geocodificacao` ok
+  como Super Admin; admin de empresa não troca provedor; LocationIQ sem
+  chave → "Informe a chave da API"; rodapé mostra "Endereços: ©
+  OpenStreetMap". Cache e endereço real serão testados com a chave do
+  LocationIQ
+

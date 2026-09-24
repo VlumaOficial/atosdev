@@ -11,7 +11,7 @@ import { MapPinned, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 // discussão de planos (VISAO_ATOS.md 7.1).
 
 const PROVEDORES = [
-  { value: 'nominatim', label: 'Nominatim (OpenStreetMap público) — sem chave, só para volume baixo' },
+  { value: 'nominatim', label: 'Nominatim (OpenStreetMap público) — bloqueia chamadas de servidor, não usar' },
   { value: 'locationiq', label: 'LocationIQ — gratuito até 5.000/dia com link de crédito' },
   { value: 'opencage', label: 'OpenCage — pago (gratuito só para teste)' },
 ]
@@ -107,6 +107,9 @@ export default function GeocodificacaoPlataformaCard() {
           <input id="geo-cache" type="number" min={0} max={8760} value={cacheHoras} onChange={e => setCacheHoras(Number(e.target.value))} className={campo} />
         </div>
         <p className="text-[11px] text-muted-foreground">LocationIQ gratuito: cache máximo de 48 h e link "Search by LocationIQ.com" visível (exibido automaticamente no rodapé).</p>
+        {status?.provedor === 'nominatim' && (
+          <p className="text-[11px] text-amber-400">O Nominatim público recusa chamadas vindas do servidor (HTTP 403) — enquanto ele estiver ativo, as fotos saem só com as coordenadas. Cadastre a chave do LocationIQ.</p>
+        )}
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={testar} disabled={testando}>{testando && <Loader2 size={14} className="animate-spin" />} Testar</Button>
           <Button type="button" variant="cta" onClick={salvar} loading={salvando}>Salvar e ativar</Button>

@@ -44,7 +44,7 @@ async function consultar(provedor: Provedor, chave: string | null, lat: number, 
   try {
     if (provedor === 'nominatim') {
       const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&accept-language=pt-BR&lat=${lat}&lon=${lng}`,
-        { signal: ctl.signal, headers: { 'User-Agent': 'ATOS-VLUMA/1.0 (atos@vluma.com.br)' } })
+        { signal: ctl.signal, headers: { 'User-Agent': 'ATOS-VLUMA/1.0 (atos@vluma.com.br)', 'Referer': 'https://atosdev.vercel.app/' } })
       if (!r.ok) throw new Error('nominatim ' + r.status)
       const j = await r.json()
       return j?.address ? formatarOSM(j.address) : null
@@ -126,8 +126,9 @@ Deno.serve(async (req) => {
       await admin.from('geocodificacao_cache').upsert({ chave: chaveCache, endereco, provedor, criado_em: new Date().toISOString() })
     }
     return json({ endereco, fonte: 'provedor' })
-  } catch (_e) {
+  } catch (e) {
     await registrar('falha')
-    return json({ endereco: null, fonte: 'falha' })   // nunca bloqueia a foto: carimbo sai só com coordenadas
+    // motivo técnico (status HTTP do provedor/timeout) — sem dado sensível
+    return json({ endereco: null, fonte: 'falha', motivo: String((e as Error)?.message ?? e).slice(0, 120) })   // nunca bloqueia a foto
   }
 })
