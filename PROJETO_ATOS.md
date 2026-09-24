@@ -837,6 +837,21 @@ exportação ZIP → código de verificação → "liberar espaço"
   (no celular, toque sem querer na borda enquanto o cliente assina).
   `Modal` ganhou `fecharAoClicarFora`; o de encerramento só fecha por
   Cancelar/X
+- Testado ponta a ponta (URL pública + banco): regra do banco por
+  impersonação (sem assinatura → bloqueia; exceção não permitida →
+  bloqueia; permitida → conclui). Técnico real: 1ª conclusão (OS-0019)
+  pediu e salvou a assinatura do responsável no perfil + cópia na OS;
+  OS-0021: toque fora não fecha o modal, "Concluir" sem assinar → erro,
+  Limpar desabilitado/habilitado/desabilitado conforme o traço, assinou
+  sem nome → erro, conclusão ok com cliente "Maria Cliente Teste" e
+  responsável aplicado do perfil, 2 assinaturas no corpo da OS; admin
+  ligou a exceção em Configurações → OS-0020 concluída com "Cliente não
+  pôde assinar" (motivo obrigatório testado), evento
+  `signature_absent` na linha do tempo, motivo em destaque no corpo;
+  "Minha assinatura" exibe e permite refazer; admin abre o MESMO modal
+  no painel (pede a assinatura dele na 1ª vez), Cancelar fecha; exceção
+  devolvida ao padrão (desligada); `arquivos_orfaos` não marca as
+  assinaturas novas. OS de teste criadas: OS-0019, OS-0020, OS-0021
 - Sem migration
 
 ### Próximos blocos
@@ -972,3 +987,6 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-23: código de verificação de autenticidade concluído e testado (migrations 026–027, Edge Function verificar-foto, página pública /verificar). Fotos de evidência passam a ser imutáveis também no storage. Próximo: "liberar espaço" (período escolhido pelo cliente) e depois a discussão do provedor de geocodificação para SaaS, antes do Bloco C (PDF).*
 
 *2026-09-24: UX da verificação fechada com o usuário — atualização silenciosa do app (sem faixa, só em momento seguro), foto aberta preservada na URL e selo fixo "Foto autenticada · CÓDIGO" com QR Code. Próximo: "liberar espaço" (período escolhido pelo cliente).*
+
+
+*2026-09-24: assinaturas no encerramento da OS concluídas e testadas (migration 028): cliente no modal "Concluir atendimento", responsável desenhado uma vez no perfil, exceção com motivo configurável, regra no banco, Limpar visível e modal que não fecha por toque fora. Próximo: "liberar espaço".*
