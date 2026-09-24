@@ -585,8 +585,11 @@ export async function urlMiniaturaEvidencia(path: string, segundos = 3600): Prom
 }
 
 // Código de verificação de uma foto (null em fotos anteriores ao recurso)
+// Lança em caso de falha de rede/sessão (quem chama tenta de novo) —
+// só "null" significa de fato "foto sem código"
 export async function codigoDaFoto(path: string): Promise<string | null> {
-  const { data } = await supabase.from('fotos_verificacao').select('codigo').eq('file_path', path).maybeSingle()
+  const { data, error } = await supabase.from('fotos_verificacao').select('codigo').eq('file_path', path).maybeSingle()
+  if (error) throw error
   return (data as any)?.codigo ?? null
 }
 

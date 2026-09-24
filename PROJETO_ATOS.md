@@ -726,6 +726,26 @@ exportação ZIP → código de verificação → "liberar espaço"
   — precisam ser recarregadas uma última vez manualmente
 - **Nome do selo/link**: usuário achou "Verificado · código" pouco
   estético/intuitivo e pediu 5 opções — aguardando escolha
+
+### 🔴→✅ Selo some ao voltar da página de verificação (2026-09-23, celular real)
+- **Relato**: tocar em "Verificado · código" abria nova janela; ao
+  voltar, o visualizador tinha fechado e, reabrindo a foto, o selo não
+  aparecia até recarregar a página
+- **Diagnóstico**: não reproduz no Chromium desktop (3 cenários: nova
+  aba, recarga, voltar) — é comportamento do Android ao trocar de
+  janela: Radix fecha o Dialog por "foco fora" e a busca do código não
+  era refeita nem retentada em caso de falha momentânea
+- **Correção (elimina a causa em vez de remendar)**: o app não abre mais
+  janela. O selo abre um **painel dentro do visualizador** com o
+  resultado (autêntica/alterada + hora do servidor), **"Compartilhar
+  link"** (share nativo do celular — WhatsApp, e-mail; sem share, copia
+  o link) e "Abrir página pública" como secundário. Visualizador não
+  fecha mais por troca de janela (`onFocusOutside`/`onInteractOutside`).
+  Código buscado com até 3 tentativas e de novo ao voltar para o app;
+  `codigoDaFoto` distingue falha (tenta de novo) de "sem código".
+  Consulta pública (`src/lib/verificacao.ts`) via fetch com chave
+  pública — não depende da sessão do usuário (usada também pela página
+  /verificar)
 - Sem migration
 
 ### Próximos blocos

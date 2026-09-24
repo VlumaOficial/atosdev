@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { consultarVerificacao, type ResultadoVerificacao } from '@/lib/verificacao'
 import AtosLogo from '@/components/brand/AtosLogo'
 import { ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Search, Upload, Clock } from 'lucide-react'
 
@@ -8,20 +8,7 @@ import { ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Search, Upload, Cloc
 // Quem recebe uma foto com o selo "ATOS Verificado · CÓDIGO" confere aqui.
 // Dados vêm da Edge Function verificar-foto (mínimo necessário, LGPD).
 
-interface Resultado {
-  encontrado: boolean
-  motivo?: string
-  codigo?: string
-  empresa?: string | null
-  os?: string | null
-  carimbado_em?: string | null
-  enviado_em?: string
-  divergencia_relogio_min?: number | null
-  arquivo_disponivel?: boolean
-  integra?: boolean | null
-  sha256?: string
-  url_foto?: string | null
-}
+type Resultado = ResultadoVerificacao
 
 const TOLERANCIA_RELOGIO_MIN = 10
 
@@ -52,9 +39,8 @@ export default function VerificarFotoPage() {
     if (!codigoUrl) { setResultado(null); return }
     let ativo = true
     setCarregando(true)
-    supabase.functions.invoke('verificar-foto', { body: { codigo: normalizar(codigoUrl) } })
-      .then(({ data }) => { if (ativo) setResultado((data as Resultado) ?? { encontrado: false, motivo: 'erro' }) })
-      .catch(() => { if (ativo) setResultado({ encontrado: false, motivo: 'erro' }) })
+    consultarVerificacao(normalizar(codigoUrl))
+      .then(d => { if (ativo) setResultado(d) })
       .finally(() => { if (ativo) setCarregando(false) })
     return () => { ativo = false }
   }, [codigoUrl])
