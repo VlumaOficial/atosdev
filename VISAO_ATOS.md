@@ -148,6 +148,11 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - Consequência: o PDF preserva as fotos — o "liberar espaço" pode apagar as fotos originais mantendo o PDF
 - **"Liberar espaço" em 2 níveis** (proposta aceita em princípio): (1) fotos originais, mantendo o PDF; (2) fotos + PDFs, exige ZIP antes. Antes de apagar, gera o PDF de OS que não tenham (concluídas antes do recurso ou falha na geração)
 - **Nova ordem (2026-09-24):** discussão do provedor de geocodificação para SaaS → Bloco C (PDF) → "liberar espaço"
+- **Geocodificação para SaaS — análise (2026-09-24), aguardando decisão:**
+  - Google descartado: termos só permitem guardar o resultado por 30 dias (fora de mapa Google) — incompatível com endereço gravado na foto
+  - OpenCage: permite guardar para sempre, mas o plano GRATUITO é só para teste (não pode em produção) — pago a partir de US$ 50/mês
+  - **LocationIQ: plano gratuito PERMITE uso comercial em produção** (5.000 consultas/dia), desde que haja link visível "Search by LocationIQ.com" no app; o endereço pode ser guardado para sempre; o cache para reaproveitar consultas é limitado a 48h no gratuito (ilimitado no pago, a partir de US$ 49/mês)
+  - Recomendação: LocationIQ gratuito no PRD até ~5.000 consultas/dia; migrar para o pago quando o volume crescer
 
 **Envio da OS**
 - **Envio opcional** — o técnico decide se envia ao cliente
