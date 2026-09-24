@@ -754,6 +754,20 @@ exportação ZIP → código de verificação → "liberar espaço"
   blur/focus) → visualizador continua aberto com o selo; reabrir → selo
   aparece; 0 erros. Ajuste visual junto: fundo do visualizador passou a
   preto sólido (a tela de trás aparecia por transparência)
+
+### Feedback de UX em teste real (2026-09-24) — aguardando decisão
+- Verificação dentro do visualizador validada pelo usuário no celular
+  (código HACK-8BT7-VP6E, "Foto autêntica")
+- **Faixa "Nova versão — Atualizar" considerada péssima para a UX**
+  (apareceu ao voltar ao app, com a foto já fechada). Proposta levada ao
+  usuário: atualização SILENCIOSA (sem faixa) feita com o app em segundo
+  plano e sem trabalho pendente, + estado da tela na URL (foto aberta)
+  para reabrir exatamente onde estava — inclusive quando o Android
+  descarta a aba por memória (causa provável da foto fechada)
+- **Selo na foto**: nome ainda NÃO foi trocado (aguardava escolha).
+  Usuário questionou se o selo é configurável e se precisa da URL.
+  Proposta: selo fixo (confiança = padrão único), "Foto autenticada ·
+  CÓDIGO" + QR Code no lugar da URL em texto
 - Sem migration
 
 ### Próximos blocos
