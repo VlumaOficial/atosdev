@@ -64,13 +64,15 @@ export default function ConfiguracoesPage() {
 
   return (
     <div>
-      <PageHeader title="Configurações" description="Preferências da sua empresa no ATOS" />
+      <PageHeader title="Configurações" description={tenant ? "Preferências da sua empresa no ATOS" : "Configurações da plataforma ATOS"} />
 
       <div className="space-y-4 max-w-2xl">
         <ArmazenamentoCard />
         {user?.role === 'super_admin' && <GeocodificacaoPlataformaCard />}
         {tenant && <ExportacaoFotosCard />}
 
+        {/* seções da EMPRESA — o Super Admin não pertence a nenhuma */}
+        {tenant && (<>
         <SecaoRecolhivel id="marca" icone={<ImageIcon size={16} className="text-primary" />}
           titulo="Marca da empresa"
           descricao="Aparece no carimbo das fotos de evidência coletadas em campo."
@@ -145,6 +147,7 @@ export default function ConfiguracoesPage() {
           </div>
           {erro && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2 mt-3">{erro}</div>}
         </Card>
+        </>)}
       </div>
     </div>
   )

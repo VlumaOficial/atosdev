@@ -1041,4 +1041,17 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   chave → "Informe a chave da API"; rodapé mostra "Endereços: ©
   OpenStreetMap". Cache e endereço real serão testados com a chave do
   LocationIQ
+- **LocationIQ ativado pelo usuário pela tela do Super Admin
+  (2026-09-24)** — "Testar" retornou endereço de Salvador em 175 ms; tela
+  validada na prática pelo usuário
+- Ajustes após o print do usuário: (1) LocationIQ devolve o nome do
+  estado ("Bahia") → função converte para a sigla (BA) em todos os
+  provedores; (2) Super Admin não vê mais seções de EMPRESA em
+  Configurações (Marca, Carimbo, Exportar, Assinatura) — não pertence a
+  nenhuma; título da página vira "Configurações da plataforma ATOS"
+- Testado com LocationIQ (técnico real): coordenada nova → "Rua
+  Guindaste dos Padres - Comércio, Salvador - BA, 40020-210" (fonte
+  provedor); mesma coordenada e ponto a ~20 m → fonte cache; consumo:
+  locationiq 1 consulta + 2 cache; rodapé "Endereços: © OpenStreetMap ·
+  Search by LocationIQ.com"
 

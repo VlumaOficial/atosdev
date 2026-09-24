@@ -26,11 +26,22 @@ const COORD_TESTE = { lat: -12.963623, lng: -38.471754 } // Salvador — endere�
 
 type Provedor = 'nominatim' | 'locationiq' | 'opencage'
 
+// alguns provedores (ex.: LocationIQ) devolvem o nome do estado, não a sigla
+const UF: Record<string, string> = {
+  'acre': 'AC', 'alagoas': 'AL', 'amapá': 'AP', 'amazonas': 'AM', 'bahia': 'BA', 'ceará': 'CE',
+  'distrito federal': 'DF', 'espírito santo': 'ES', 'goiás': 'GO', 'maranhão': 'MA', 'mato grosso': 'MT',
+  'mato grosso do sul': 'MS', 'minas gerais': 'MG', 'pará': 'PA', 'paraíba': 'PB', 'paraná': 'PR',
+  'pernambuco': 'PE', 'piauí': 'PI', 'rio de janeiro': 'RJ', 'rio grande do norte': 'RN',
+  'rio grande do sul': 'RS', 'rondônia': 'RO', 'roraima': 'RR', 'santa catarina': 'SC',
+  'são paulo': 'SP', 'sergipe': 'SE', 'tocantins': 'TO',
+}
+const siglaUF = (estado?: string) => estado ? (UF[estado.trim().toLowerCase()] ?? estado) : undefined
+
 function formatarOSM(a: Record<string, string>): string | null {
   const rua = a.road ?? a.pedestrian ?? a.footway
   const bairro = a.suburb ?? a.neighbourhood ?? a.quarter
   const cidade = a.city ?? a.town ?? a.village ?? a.municipality
-  const uf = (a['ISO3166-2-lvl4'] ?? '').replace(/^BR-/, '') || a.state_code || a.state
+  const uf = (a['ISO3166-2-lvl4'] ?? '').replace(/^BR-/, '') || a.state_code || siglaUF(a.state)
   const cep = a.postcode
   const p1 = [rua, bairro].filter(Boolean).join(' - ')
   const p2 = [cidade, uf].filter(Boolean).join(' - ')
