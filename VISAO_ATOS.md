@@ -142,6 +142,13 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
   - **Ordem acordada antes do Bloco C:** (1) carimbo v2 + ver/baixar ✅ → (2) endereço ✅ → (3) configuração de campos do carimbo por tenant → (4) código de verificação → (5) **discussão do provedor de geocodificação para SaaS** (custo por tenant, cota por plano, cache, LGPD/suboperador) → Bloco C (PDF)
 - Base construída na F5 (Bloco D): bucket privado `evidencias` isolado por tenant, compressão no navegador (1600px / qualidade 80%), limite de 5MB e URL assinada. O carimbo é aplicado no mesmo canvas da compressão, antes do envio
 
+**Relatório PDF — decisões (2026-09-24)**
+- O PDF é **gerado automaticamente quando a OS é concluída** e **guardado** como relatório oficial (o que o cliente recebe = o que fica arquivado), com **código de verificação** próprio, como as fotos. OS reaberta e concluída de novo gera nova versão
+- Gerado **no servidor**, não no celular do técnico (lição do bug de memória do Android): o técnico conclui e segue; se a geração falhar, o sistema tenta de novo
+- Consequência: o PDF preserva as fotos — o "liberar espaço" pode apagar as fotos originais mantendo o PDF
+- **"Liberar espaço" em 2 níveis** (proposta aceita em princípio): (1) fotos originais, mantendo o PDF; (2) fotos + PDFs, exige ZIP antes. Antes de apagar, gera o PDF de OS que não tenham (concluídas antes do recurso ou falha na geração)
+- **Nova ordem (2026-09-24):** discussão do provedor de geocodificação para SaaS → Bloco C (PDF) → "liberar espaço"
+
 **Envio da OS**
 - **Envio opcional** — o técnico decide se envia ao cliente
 - **Sem cadastro prévio de contato:** WhatsApp ou e-mail digitado no momento do envio

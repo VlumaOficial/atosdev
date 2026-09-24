@@ -992,3 +992,5 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 
 
 *2026-09-24: assinaturas no encerramento da OS concluídas e testadas (migration 028): cliente no modal "Concluir atendimento", responsável desenhado uma vez no perfil, exceção com motivo configurável, regra no banco, Limpar visível e modal que não fecha por toque fora. Próximo: "liberar espaço".*
+
+*2026-09-24: decisão — PDF gerado automaticamente NO SERVIDOR na conclusão da OS e guardado (relatório oficial, com código de verificação); "liberar espaço" em 2 níveis passa a depender dele. Nova ordem: geocodificação SaaS (discussão) → Bloco C (PDF) → liberar espaço. Detalhes em VISAO_ATOS.md, F6.*
