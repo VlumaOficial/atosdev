@@ -41,7 +41,7 @@
 | F3 | Ordens de Serviço (gestor) | MVP | Feito |
 | F4 | App de campo (técnico, mobile) | MVP | Feito |
 | F5 | Checklists dinâmicos | MVP | Feito |
-| F6 | Assinatura digital + PDF + WhatsApp | MVP | Em andamento (Blocos A e B feitos; bug de memória com correção implementada em 2026-09-23, aguardando validação no celular real — ver seção 4.3) |
+| F6 | Assinatura digital + PDF + WhatsApp | MVP | Em andamento — **atualizado 2026-09-24:** Blocos A, B, C, D (níveis Básico e Intermediário) e E feitos; falta o nível Avançado do D (WhatsApp automático via Evolution, a refinar com o usuário). Antes dizia: "Blocos A e B feitos; bug de memória…" (bug resolvido em 2026-09-23) |
 | F7 | Painel gerencial | MVP | Pendente |
 | — | Tenant Infoxtec criado manualmente | MVP | Feito |
 | F8 | Planos, Asaas, cobrança, trial | Backlog | — |
@@ -857,11 +857,15 @@ exportação ZIP → código de verificação → "liberar espaço"
 - Sem migration
 
 ### Próximos blocos
-- **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura)
+> **Atualização 2026-09-24:** C, D (Básico/Intermediário) e E foram
+> construídos — ver as seções "Bloco C", "Blocos D + E" mais abaixo
+> neste documento. Texto original mantido para histórico:
+- **C** — Geração do PDF (dados da OS + checklist + evidências + assinatura) — ✅ feito
 - **D** — Envio (WhatsApp/e-mail) — **pendente de detalhamento técnico**:
   painel multi-tenant com QR Code para conectar instância Evolution
-  própria de cada cliente (ver nota em `VISAO_ATOS.md`, seção F6)
-- **E** — Painel do gestor (disparo manual) + controle admin de bloqueio
+  própria de cada cliente (ver nota em `VISAO_ATOS.md`, seção F6) — ✅
+  Básico/Intermediário feitos; Avançado (Evolution) pendente
+- **E** — Painel do gestor (disparo manual) + controle admin de bloqueio — ✅ feito (permissões em Configurações → Envio do relatório; gestor/admin sempre podem enviar pela OS)
 
 ---
 
@@ -1264,13 +1268,20 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   **WhatsApp** — celular incompleto recusado, máscara "(71) 99999-1234",
   abriu api.whatsapp.com/send com o número e a mensagem montada
   (empresa, OS, cliente, link de verificação), evento "(71) 9****-1234";
-  **e-mail via ATOS** com PDF anexado entregue a adm@vluma.com.br, evento
+  **e-mail via ATOS** com PDF anexado ACEITO pelo servidor Zoho para adm@vluma.com.br, evento
   "a***@vluma.com.br, remetente atos"; **Bloco E** — "Nenhum técnico" →
   botões somem para o técnico e o servidor recusa (403) mesmo chamando
   direto; restaurado "Todos"; **nível Básico** — e-mail próprio
   bloqueado na tela; **nível Intermediário** (definido pelo Super Admin)
   — e-mail próprio configurado (conta noreply usada só no teste), senha
-  no Vault ("cadastrada"), "Testar envio" entregue, envio do técnico
+  no Vault ("cadastrada"), "Testar envio" aceito pelo servidor, envio do técnico
   "pelo e-mail da empresa". Limpeza ao final: e-mail próprio desligado,
   senha removida do Vault, Infoxtec de volta ao nível Básico
+- **Correção de registro (2026-09-24, apontada pelo usuário)**: os
+  destinos usados nos testes (adm@vluma.com.br, adm@infoxtec.com.br)
+  **não existem como caixas de e-mail** — o que foi comprovado é que o
+  servidor Zoho ACEITOU as mensagens (sem erro); a ENTREGA não foi
+  comprovada (provavelmente voltaram como "endereço inexistente" para
+  noreply@). Entrega real fica para o teste do usuário com um e-mail
+  próprio
 

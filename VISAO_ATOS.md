@@ -82,7 +82,7 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 | **F3** | Ordens de Serviço (visão do Gestor) | Sim | ✅ Concluída |
 | **F4** | App de Campo (visão do Técnico, mobile) | Sim | ✅ Concluída |
 | **F5** | Checklists dinâmicos de verificação | Sim | ✅ Concluída |
-| **F6** | Assinatura digital, evidências, PDF e envio | Sim | 🔄 Em andamento (Blocos A e B feitos — atualizado em 2026-09-23; antes dizia só "Bloco A feito") |
+| **F6** | Assinatura digital, evidências, PDF e envio | Sim | 🔄 Em andamento — **atualizado 2026-09-24:** Blocos A, B, C, D (Básico/Intermediário) e E feitos; falta o nível Avançado (Evolution). Antes: "Blocos A e B feitos" |
 | **F7** | Painel gerencial e indicadores | Sim | ⏳ Pendente |
 | **F8** | Planos, Asaas, cobrança, trial | Não | 📋 Backlog |
 | **F9** | Integração GLPI | Não | 📋 Backlog |
