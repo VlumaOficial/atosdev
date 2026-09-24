@@ -158,9 +158,16 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
   // relatório PDF (última versão gerada) de cada OS presente na exportação
   const ordensNoZip = new Map<string, ItemExportacao>()
   for (const it of itens) if (it.orderId && !ordensNoZip.has(it.orderId)) ordensNoZip.set(it.orderId, it)
-  if (f.orderId && !ordensNoZip.size) {
-    const { data: o } = await supabase.from('orders').select('id, number, clients(name), locations(name)').eq('id', f.orderId).maybeSingle()
-    if (o) ordensNoZip.set(o.id, { pasta: pastaDaOS((o as any).number, (o as any).clients?.name ?? '', (o as any).locations?.name ?? ''), os: (o as any).number, cliente: (o as any).clients?.name ?? '', unidade: (o as any).locations?.name ?? '' } as ItemExportacao)
+  // OS pedidas explicitamente entram SEMPRE, mesmo sem nenhuma foto — o
+  // relatório PDF delas tem que ir no ZIP (bug achado testando o
+  // "liberar espaço": nível 1 apagou as fotos e o ZIP obrigatório do
+  // nível 2 saiu sem o PDF)
+  const pedidas = [...(f.orderId ? [f.orderId] : []), ...(f.orderIds ?? [])].filter(id => !ordensNoZip.has(id))
+  if (pedidas.length) {
+    const { data: os } = await supabase.from('orders').select('id, number, clients(name), locations(name)').in('id', pedidas)
+    for (const o of (os ?? []) as any[]) {
+      ordensNoZip.set(o.id, { pasta: pastaDaOS(o.number, o.clients?.name ?? '', o.locations?.name ?? ''), os: o.number, cliente: o.clients?.name ?? '', unidade: o.locations?.name ?? '' } as ItemExportacao)
+    }
   }
   if (ordensNoZip.size) {
     const { data: rels } = await supabase.from('order_reports').select('order_id, versao, file_path, codigo, gerado_em')

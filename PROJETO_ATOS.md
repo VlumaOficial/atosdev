@@ -1168,4 +1168,17 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   removido (nível 2) mostra aviso; /verificar diz "a empresa removeu o
   arquivo do sistema em dd/mm" (o código continua válido e a cópia
   pode ser conferida); ZIP e exportação ignoram o que já foi removido
+- Testado ponta a ponta (URL pública, admin real) numa OS isolada
+  (OS-0023, conclusão ajustada para 15/01/2026 para não tocar outras):
+  nível 1 → prévia "169 KB: 1 foto de 1 OS", botão só habilita com a
+  frase, foto + miniatura apagadas, PDF mantido; nível 2 → prévia "1
+  relatório PDF", confirmação só aparece depois do ZIP, PDF apagado;
+  histórico com as 2 operações; OS mostra "Foto removida em…" e
+  "Relatório removido em…"; /verificar da foto e do PDF: "a empresa
+  removeu o arquivo do sistema em 24/09/2026"; 0 erros
+- **Bug achado no teste (corrigido)**: o ZIP obrigatório do nível 2 saiu
+  SÓ com fotos.csv — como o nível 1 já tinha apagado as fotos, a OS não
+  aparecia nos itens e o PDF dela não entrava. Agora as OS pedidas
+  entram sempre no ZIP com o PDF, mesmo sem nenhuma foto. (Na OS-0023 de
+  teste o PDF foi apagado sem ir no ZIP — só dado de teste.)
 

@@ -107,7 +107,7 @@ export default function LiberarEspacoCard() {
       }
       const { error: eReg } = await supabase.rpc('registrar_liberacao', { p_de: de, p_ate: ate, p_nivel: nivel, p_removidos: removidos, p_bytes: bytes })
       if (eReg) throw eReg
-      setResultado(`${formatarBytes(bytes)} liberados — ${removidos.length} arquivos de ${previa.qtd_os} OS.${removidos.length < arquivos.length ? ` ${arquivos.length - removidos.length} não puderam ser apagados.` : ''}`)
+      setResultado(`${formatarBytes(bytes)} liberados — ${removidos.length} ${removidos.length === 1 ? 'arquivo' : 'arquivos'} de ${previa.qtd_os} OS.${removidos.length < arquivos.length ? ` ${arquivos.length - removidos.length} não puderam ser apagados.` : ''}`)
       setPrevia(null); setConfirmacao(''); setZipOk(false)
       carregarHistorico()
     } catch (e: any) {
@@ -208,7 +208,7 @@ export default function LiberarEspacoCard() {
               {historico.map(h => (
                 <div key={h.id} className="py-1.5 text-xs flex flex-wrap justify-between gap-2">
                   <span className="text-foreground">{new Date(h.executado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · {nomes[h.executado_por ?? ''] ?? '—'}</span>
-                  <span className="text-muted-foreground">Nível {h.nivel} · OS de {dataBR(h.periodo_de)} a {dataBR(h.periodo_ate)} · {h.qtd_arquivos} arquivos · {formatarBytes(Number(h.bytes))}</span>
+                  <span className="text-muted-foreground">Nível {h.nivel} · OS de {dataBR(h.periodo_de)} a {dataBR(h.periodo_ate)} · {h.qtd_arquivos} {h.qtd_arquivos === 1 ? 'arquivo' : 'arquivos'} · {formatarBytes(Number(h.bytes))}</span>
                 </div>
               ))}
             </div>
