@@ -82,6 +82,7 @@ export default function EvidenceViewer({ path, onFechar }: Props) {
           // trocar de app/janela no celular não pode fechar o visualizador
           onFocusOutside={e => e.preventDefault()}
           onInteractOutside={e => e.preventDefault()}
+          data-seguro-recarregar=""
           className="fixed inset-0 z-[60] flex flex-col focus:outline-none">
           <div className="flex items-center justify-between gap-2 px-4 py-3 text-white">
             <div className="min-w-0">
@@ -89,7 +90,7 @@ export default function EvidenceViewer({ path, onFechar }: Props) {
               {codigo && (
                 <button type="button" onClick={abrirPainel} aria-expanded={painel}
                   className="inline-flex items-center gap-1 text-[11px] text-green-300 hover:underline" data-testid="codigo-verificacao">
-                  <ShieldCheck size={12} /> Verificado · {formatarCodigo(codigo)}
+                  <ShieldCheck size={12} /> Foto autenticada · {formatarCodigo(codigo)}
                 </button>
               )}
             </div>

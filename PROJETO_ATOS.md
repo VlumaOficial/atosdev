@@ -768,6 +768,28 @@ exportação ZIP → código de verificação → "liberar espaço"
   Usuário questionou se o selo é configurável e se precisa da URL.
   Proposta: selo fixo (confiança = padrão único), "Foto autenticada ·
   CÓDIGO" + QR Code no lugar da URL em texto
+  → **Aprovado pelo usuário ("ok pode seguir") e implementado em
+  2026-09-24:**
+  - **Atualização silenciosa** (`AtualizacaoApp` sem faixa): versão nova
+    é aplicada recarregando o app ESCONDIDO quando ele vai para segundo
+    plano, ou na próxima troca de tela — só se `haTrabalhoPendente()`
+    (src/lib/trabalhoPendente.ts) disser que nada se perde: sem upload
+    em andamento, sem checklist com respostas não salvas, sem janela/
+    modal aberto (formulário, câmera, checklist) e sem campo de texto
+    digitado em foco. Visualizador de foto é marcado como seguro
+  - **Foto aberta na URL** (`useFotoAberta`, `?foto=caminho`): recarga
+    (atualização ou Android descartando a aba) reabre a mesma foto; o
+    "voltar" do celular fecha a foto em vez de sair da OS
+  - **Selo fixo "Foto autenticada · CÓDIGO" + QR Code** (lib
+    `qrcode-generator`, MIT, sem dependências) com o link direto da
+    verificação daquela foto, no lugar da URL em texto; botão do app e
+    textos da página /verificar, prévia do carimbo e aviso de
+    privacidade atualizados
+- `npm audit` acusa 4 vulnerabilidades (2 moderadas, 2 altas)
+  PRÉ-EXISTENTES, em ferramentas de build (esbuild, browserslist,
+  js-yaml, brace-expansion) — nenhuma do pacote novo. Registrado para a
+  F10 (OWASP); não corrigido agora (`npm audit fix` pode subir a versão
+  do Vite no meio da F6)
 - Sem migration
 
 ### Próximos blocos

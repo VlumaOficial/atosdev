@@ -6,6 +6,8 @@ import { useLocationConsent } from '@/hooks/useLocationConsent'
 import LocationConsentModal from '@/components/LocationConsentModal'
 import CameraCaptura from '@/components/orders/CameraCaptura'
 import EvidenceViewer from '@/components/orders/EvidenceViewer'
+import { useFotoAberta } from '@/hooks/useFotoAberta'
+import { useTrabalhoPendente } from '@/lib/trabalhoPendente'
 import { X, Loader2, MapPin, RotateCcw, Image as ImageIcon } from 'lucide-react'
 
 const ERRO_LOCALIZACAO_MSG: Record<ErroLocalizacao, string> = {
@@ -23,7 +25,7 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
 }) {
   const [preview, setPreview] = useState<string | null>(null)
   const [texto, setTexto] = useState(evidencia.observacao ?? '')
-  const [ampliada, setAmpliada] = useState(false)
+  const foto = useFotoAberta(evidencia.file_path)
 
   useEffect(() => {
     let ativo = true
@@ -36,7 +38,7 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
       <div className="relative bg-black/20">
         {preview
           ? (
-            <button type="button" onClick={() => setAmpliada(true)} className="block w-full" aria-label="Ver evidência em tela cheia">
+            <button type="button" onClick={foto.abrir} className="block w-full" aria-label="Ver evidência em tela cheia">
               {/* object-contain: a foto inteira aparece (retrato ou paisagem) — com object-cover o carimbo sumia em foto retrato */}
               <img src={preview} alt="Evidência" className="w-full h-40 object-contain" />
             </button>
@@ -49,7 +51,7 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
           </button>
         )}
       </div>
-      <EvidenceViewer path={ampliada ? evidencia.file_path : null} onFechar={() => setAmpliada(false)} />
+      <EvidenceViewer path={foto.aberta ? evidencia.file_path : null} onFechar={foto.fechar} />
       <div className="p-2">
         {readOnly ? (
           texto && <p className="text-xs text-muted-foreground whitespace-pre-wrap">{texto}</p>
@@ -76,6 +78,7 @@ export default function OrderEvidences({ orderId, readOnly }: { orderId: string;
   const [arquivoPendente, setArquivoPendente] = useState<File | null>(null)
   const [consentModalAberto, setConsentModalAberto] = useState(false)
   const [cameraAberta, setCameraAberta] = useState(false)
+  useTrabalhoPendente(enviando)
 
   async function processarArquivo(file: File) {
     setErro('')

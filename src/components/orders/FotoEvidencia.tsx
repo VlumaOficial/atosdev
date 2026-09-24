@@ -5,6 +5,8 @@ import { useLocationConsent } from '@/hooks/useLocationConsent'
 import LocationConsentModal from '@/components/LocationConsentModal'
 import CameraCaptura from '@/components/orders/CameraCaptura'
 import EvidenceViewer from '@/components/orders/EvidenceViewer'
+import { useFotoAberta } from '@/hooks/useFotoAberta'
+import { useTrabalhoPendente } from '@/lib/trabalhoPendente'
 import { Camera, X, Loader2, MapPin, RotateCcw } from 'lucide-react'
 
 interface Props {
@@ -29,8 +31,9 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
   const [arquivoPendente, setArquivoPendente] = useState<File | null>(null)
   const [consentModalAberto, setConsentModalAberto] = useState(false)
   const [cameraAberta, setCameraAberta] = useState(false)
-  const [ampliada, setAmpliada] = useState(false)
+  const foto = useFotoAberta(value)
   const { aceito, termoAtualizado, loaded, aceitar } = useLocationConsent()
+  useTrabalhoPendente(enviando)
 
   useEffect(() => {
     let ativo = true
@@ -107,10 +110,10 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
   if (preview) {
     return (
       <div className="relative inline-block">
-        <button type="button" onClick={() => setAmpliada(true)} className="block" aria-label="Ver evidência em tela cheia">
+        <button type="button" onClick={foto.abrir} className="block" aria-label="Ver evidência em tela cheia">
           <img src={preview} alt="Evidência" className="max-h-48 rounded-md border border-border" />
         </button>
-        <EvidenceViewer path={ampliada ? value : null} onFechar={() => setAmpliada(false)} />
+        <EvidenceViewer path={foto.aberta ? value : null} onFechar={foto.fechar} />
         {!readOnly && (
           <button type="button" onClick={handleRemover}
             className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-red-500/80 transition">

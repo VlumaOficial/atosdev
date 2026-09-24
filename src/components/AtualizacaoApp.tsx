@@ -1,16 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { RefreshCw } from 'lucide-react'
+import { haTrabalhoPendente } from '@/lib/trabalhoPendente'
 
-// Mantém o app na versão mais recente. Um app de página única continua
-// rodando o código de quando a aba foi carregada — técnico que deixa o
-// ATOS aberto por dias fica sem correções (achado em 2026-09-23: foto
-// tirada numa aba antiga saiu sem código de verificação e sem miniatura).
+// Mantém o app na versão mais recente SEM incomodar ninguém (decisão de
+// UX 2026-09-24: a faixa "Nova versão — Atualizar" foi considerada
+// péssima — técnico no campo não deve tomar decisão técnica).
 //
-// Checa /version.json ao voltar para a aba e a cada 5 min. Havendo
-// versão nova: mostra a faixa "Atualizar" e recarrega sozinho na PRÓXIMA
-// troca de tela (momento seguro — nunca no meio de um checklist ou
-// formulário sendo preenchido, pra não perder o que foi digitado).
+// Um app de página única roda o código de quando a aba foi carregada;
+// técnico que deixa o ATOS aberto por dias ficaria sem correções (achado
+// 2026-09-23). Então: checa /version.json ao sair/voltar da aba e a cada
+// 5 min; havendo versão nova, recarrega em SILÊNCIO no primeiro momento
+// seguro:
+//  - app em segundo plano (celular bloqueado / outro app) e sem trabalho
+//    pendente → recarrega escondido; ao voltar já está na versão nova,
+//    na mesma tela (rota + foto aberta ficam na URL)
+//  - ou na próxima troca de tela (sem trabalho pendente)
+// Nunca recarrega com formulário/checklist/câmera/upload em andamento.
 
 const INTERVALO_MS = 5 * 60 * 1000
 
@@ -25,44 +30,41 @@ async function buildPublicado(): Promise<string | null> {
 }
 
 export default function AtualizacaoApp() {
-  const [novaVersao, setNovaVersao] = useState(false)
+  const pendente = useRef(false)
   const location = useLocation()
   const primeiraRota = useRef(true)
 
   useEffect(() => {
     let ativo = true
+    const tentarAplicar = () => {
+      if (pendente.current && document.visibilityState === 'hidden' && !haTrabalhoPendente()) window.location.reload()
+    }
     async function checar() {
       const publicado = await buildPublicado()
-      if (ativo && publicado && publicado !== __BUILD_ID__) setNovaVersao(true)
+      if (ativo && publicado && publicado !== __BUILD_ID__) {
+        pendente.current = true
+        tentarAplicar()
+      }
     }
     checar()
     const timer = setInterval(checar, INTERVALO_MS)
-    const aoVoltar = () => { if (document.visibilityState === 'visible') checar() }
-    document.addEventListener('visibilitychange', aoVoltar)
-    window.addEventListener('focus', aoVoltar)
+    const aoMudarVisibilidade = () => {
+      if (document.visibilityState === 'hidden') { tentarAplicar(); if (!pendente.current) checar() }
+      else checar()
+    }
+    document.addEventListener('visibilitychange', aoMudarVisibilidade)
     return () => {
       ativo = false
       clearInterval(timer)
-      document.removeEventListener('visibilitychange', aoVoltar)
-      window.removeEventListener('focus', aoVoltar)
+      document.removeEventListener('visibilitychange', aoMudarVisibilidade)
     }
   }, [])
 
-  // troca de tela com versão nova pendente → recarrega já na tela de destino
+  // troca de tela com versão nova pendente → recarrega já no destino
   useEffect(() => {
     if (primeiraRota.current) { primeiraRota.current = false; return }
-    if (novaVersao) window.location.reload()
-  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (pendente.current && !haTrabalhoPendente()) window.location.reload()
+  }, [location.pathname])
 
-  if (!novaVersao) return null
-  return (
-    <div role="status" data-testid="nova-versao"
-      className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 px-4 py-2.5 rounded-full bg-primary text-primary-foreground shadow-lg text-sm">
-      <span>Nova versão do ATOS disponível</span>
-      <button type="button" onClick={() => window.location.reload()}
-        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 font-medium">
-        <RefreshCw size={13} /> Atualizar
-      </button>
-    </div>
-  )
+  return null
 }

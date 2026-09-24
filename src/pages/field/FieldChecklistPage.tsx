@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useChecklistInstance, temResposta } from '@/hooks/useChecklistInstance'
 import ChecklistFillList from '@/components/checklists/ChecklistFillList'
+import { useTrabalhoPendente } from '@/lib/trabalhoPendente'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft, Building2, MapPin } from 'lucide-react'
@@ -23,6 +24,8 @@ export default function FieldChecklistPage() {
   const [salvandoProgresso, setSalvandoProgresso] = useState(false)
   const [concluindo, setConcluindo] = useState(false)
   const [erro, setErro] = useState('')
+  // respostas editadas e ainda não salvas: app não pode se atualizar
+  useTrabalhoPendente(respLocal !== null || salvandoProgresso || concluindo)
 
   if (loading) {
     return <div className="flex items-center justify-center py-16"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>

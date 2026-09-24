@@ -50,7 +50,7 @@ export default function AvisoPrivacidadePage() {
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Código de verificação da foto</p>
-              <p className="text-sm text-muted-foreground mt-0.5">Cada foto de evidência recebe um código único impresso no selo ATOS. Quem tiver o código pode conferir, em /verificar, se a foto é autêntica — vendo a própria foto, a empresa, o número da OS e os horários. Nome, e-mail ou outros dados do técnico não são exibidos.</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Cada foto de evidência recebe um código único e um QR Code impressos no selo "Foto autenticada". Quem tiver o código pode conferir, em /verificar, se a foto é autêntica — vendo a própria foto, a empresa, o número da OS e os horários. Nome, e-mail ou outros dados do técnico não são exibidos.</p>
             </div>
           </div>
 

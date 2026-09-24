@@ -3,6 +3,7 @@ import { urlLogoEmpresa } from '@/lib/uploadLogo'
 import type { Coordenadas } from '@/lib/geolocation'
 import { obterEndereco } from '@/lib/geocodificacao'
 import { resolverConfigCarimbo, type ConfigCarimbo } from '@/lib/carimboConfig'
+import qrcode from 'qrcode-generator'
 
 // Limite no MAIOR lado (retrato ou paisagem). Antes era só na largura:
 // retrato saía 1600×2845 — ~3× o espaço da paisagem, e ainda AMPLIADO
@@ -29,7 +30,7 @@ export interface DadosCarimbo {
   config: ConfigCarimbo
   contexto?: ContextoCarimbo
   codigo?: string | null        // código de verificação (selo "ATOS Verificado")
-  siteVerificacao?: string      // ex.: atosdev.vercel.app/verificar
+  urlVerificacao?: string       // vai no QR Code do selo (…/verificar/CÓDIGO)
 }
 
 // Código de verificação: 12 caracteres sem os ambíguos (I, L, O, 0, 1) —
@@ -54,8 +55,30 @@ export function formatarCodigo(codigo: string): string {
   return codigo.replace(/(.{4})(?=.)/g, '$1-')
 }
 
-export function siteVerificacaoAtual(): string {
-  return `${window.location.host}/verificar`
+export function urlVerificacaoDe(codigo: string): string {
+  return `${window.location.origin}/verificar/${codigo}`
+}
+
+// QR Code num cartão branco (zona de silêncio incluída) — quem recebe a
+// foto aponta a câmera e cai direto na verificação daquela foto
+function desenharQr(ctx: CanvasRenderingContext2D, texto: string, x: number, y: number, tamanho: number) {
+  const qr = qrcode(0, 'M')
+  qr.addData(texto)
+  qr.make()
+  const n = qr.getModuleCount()
+  const borda = 2                         // módulos de margem branca
+  const modulo = tamanho / (n + 2 * borda)
+  ctx.fillStyle = '#ffffff'
+  retanguloArredondado(ctx, x, y, tamanho, tamanho, modulo * 1.2)
+  ctx.fillStyle = '#000000'
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (qr.isDark(r, c)) {
+        // +0.5px evita frestas entre módulos no anti-aliasing
+        ctx.fillRect(x + (c + borda) * modulo, y + (r + borda) * modulo, modulo + 0.5, modulo + 0.5)
+      }
+    }
+  }
 }
 
 function carregarImagem(url: string): Promise<HTMLImageElement> {
@@ -136,26 +159,31 @@ export function desenharCarimbo(
   ctx.fillStyle = grad
   ctx.fillRect(0, altura - alturaDegrade, largura, alturaDegrade)
 
-  // --- marca ATOS (canto superior direito)
+  // --- selo ATOS (canto superior direito). Decisão 2026-09-24: selo
+  // FIXO, igual em todas as fotos de todas as empresas (como carimbo de
+  // cartório — o valor está em ser reconhecível e difícil de imitar);
+  // "Foto autenticada · CÓDIGO" + QR Code no lugar da URL em texto
   comSombra(ctx, u)
   ctx.textAlign = 'right'
   ctx.textBaseline = 'top'
+  let xTextoSelo = largura - margem
+  if (dados.codigo && dados.urlVerificacao) {
+    const tamQr = 12 * u
+    semSombra(ctx)
+    desenharQr(ctx, dados.urlVerificacao, largura - margem - tamQr, margem, tamQr)
+    comSombra(ctx, u)
+    xTextoSelo = largura - margem - tamQr - 1.6 * u
+  }
   ctx.fillStyle = COR_ATOS
   ctx.font = `bold ${4.6 * u}px ${fonte}`
-  ctx.fillText('ATOS', largura - margem, margem)
+  ctx.fillText('ATOS', xTextoSelo, margem)
   ctx.fillStyle = COR_ATOS_SUB
-  ctx.font = `${2.6 * u}px ${fonte}`
   if (dados.codigo) {
-    // selo de autenticidade (decisão de produto 2026-09-23): a marca ATOS
-    // vale como prova — o código confere a foto em /verificar/CÓDIGO
     ctx.font = `bold ${2.8 * u}px ${fonte}`
-    ctx.fillText(`Verificado · ${formatarCodigo(dados.codigo)}`, largura - margem, margem + 5.4 * u)
-    if (dados.siteVerificacao) {
-      ctx.font = `${2.2 * u}px ${fonte}`
-      ctx.fillText(dados.siteVerificacao, largura - margem, margem + 8.8 * u)
-    }
+    ctx.fillText(`Foto autenticada · ${formatarCodigo(dados.codigo)}`, xTextoSelo, margem + 5.4 * u)
   } else {
-    ctx.fillText('Gestão de Campo', largura - margem, margem + 5.2 * u)
+    ctx.font = `${2.6 * u}px ${fonte}`
+    ctx.fillText('Gestão de Campo', xTextoSelo, margem + 5.2 * u)
   }
 
   // --- bloco inferior esquerdo, desenhado de baixo pra cima
@@ -441,7 +469,7 @@ async function carimbar(
     config: cfg,
     contexto: { ...contexto, tecnico: cfg.tecnico ? dados.nomeUsuario : null },
     codigo,
-    siteVerificacao: siteVerificacaoAtual(),
+    urlVerificacao: urlVerificacaoDe(codigo),
   }, quando)
   return { ...foto, codigo, carimbadoEm: quando }
 }

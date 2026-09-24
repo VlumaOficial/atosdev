@@ -5,7 +5,8 @@ import AtosLogo from '@/components/brand/AtosLogo'
 import { ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Search, Upload, Clock } from 'lucide-react'
 
 // Página PÚBLICA (sem login) de verificação de autenticidade de foto.
-// Quem recebe uma foto com o selo "ATOS Verificado · CÓDIGO" confere aqui.
+// Quem recebe uma foto com o selo "Foto autenticada · CÓDIGO" confere aqui
+// (lendo o QR Code do selo ou digitando o código).
 // Dados vêm da Edge Function verificar-foto (mínimo necessário, LGPD).
 
 type Resultado = ResultadoVerificacao
@@ -84,7 +85,7 @@ export default function VerificarFotoPage() {
         <Link to="/" className="inline-block mb-6"><AtosLogo size={30} /></Link>
         <h1 className="text-xl font-semibold text-foreground">Verificar foto</h1>
         <p className="text-sm text-muted-foreground mt-1 mb-5">
-          Digite o código impresso no selo <strong className="text-foreground">ATOS Verificado</strong> da foto de evidência.
+          Aponte a câmera para o QR Code do selo <strong className="text-foreground">Foto autenticada</strong> ou digite o código impresso na foto.
         </p>
 
         <form onSubmit={buscar} className="flex gap-2">
