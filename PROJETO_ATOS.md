@@ -932,6 +932,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 026_f6_verificacao_fotos | tabela fotos_verificacao (código, sha256, hora do servidor, autor; imutável, sem UPDATE/DELETE) + gatilho que força tenant/autor/hora e bloqueia arquivo de outra empresa | OK | Pendente | Sim |
 | 027_f6_evidencias_imutaveis | policy evidencias_update restrita a logo.png e assinaturas/ — fotos de evidência não podem mais ser sobrescritas | OK | Pendente | Sim |
 | 028_f6_assinatura_no_encerramento | tenants.allow_signature_exception + padrão "exigir assinatura" (Infoxtec ligada); orders.signature_absent_reason e technician_signature_path/signer_name/signed_at; atualizar_config_tenant com parâmetros opcionais; gatilho que barra conclusão sem assinatura exigida; arquivos_orfaos reconhece as novas assinaturas | OK | Pendente | Sim |
+| 029_f6_geocodificacao_plataforma | geocodificacao_config (provedor + chave, 1 linha), geocodificacao_cache (região ~55 m) e geocodificacao_uso (dia × empresa × provedor), todas sem leitura direta; funções definir_config_geocodificacao / status_geocodificacao (Super Admin), provedor_geocodificacao (qualquer logado), uso_geocodificacao (admin: própria empresa; super admin: todas), registrar_uso_geocodificacao (só service role) | OK | Pendente | Sim |
 
 ---
 
@@ -994,3 +995,34 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 *2026-09-24: assinaturas no encerramento da OS concluídas e testadas (migration 028): cliente no modal "Concluir atendimento", responsável desenhado uma vez no perfil, exceção com motivo configurável, regra no banco, Limpar visível e modal que não fecha por toque fora. Próximo: "liberar espaço".*
 
 *2026-09-24: decisão — PDF gerado automaticamente NO SERVIDOR na conclusão da OS e guardado (relatório oficial, com código de verificação); "liberar espaço" em 2 níveis passa a depender dele. Nova ordem: geocodificação SaaS (discussão) → Bloco C (PDF) → liberar espaço. Detalhes em VISAO_ATOS.md, F6.*
+
+### Geocodificação como serviço da plataforma (2026-09-24)
+- **Decisões do usuário**: mesmo provedor em DEV e PRD; troca de provedor
+  simplificada pelo Super Admin; ambiente preparado para dados de
+  consumo geral e por empresa; custos registrados para a discussão de
+  planos (VISAO_ATOS.md 7.1); ordem técnica delegada
+- Análise de provedores (VISAO_ATOS.md F6): Google descartado (não
+  permite guardar o endereço para sempre); OpenCage gratuito é só teste;
+  **LocationIQ gratuito permite produção comercial** (5.000/dia, link
+  "Search by LocationIQ.com", cache máx. 48 h) → recomendado. Até o
+  usuário criar a conta/chave, a estrutura roda com Nominatim
+- **Edge Function `geocodificar`** (verify_jwt=true): adaptadores
+  Nominatim / LocationIQ / OpenCage → mesmo formato "Rua - Bairro,
+  Cidade - UF, CEP"; cache compartilhado por região (~55 m) respeitando
+  as horas configuradas; registra consulta/cache/falha por empresa e por
+  dia; timeout 5 s; falha nunca bloqueia a foto. Modo "testar" (só Super
+  Admin) consulta um endereço conhecido sem salvar
+- **Tela do Super Admin** em Configurações ("Plataforma — endereço no
+  carimbo"): provedor, chave (mascarada, nunca volta ao navegador), horas
+  de cache, Testar, Salvar e ativar (vale na hora para todas as
+  empresas); consumo de hoje (com limite diário gratuito do provedor) e
+  do mês, geral e por empresa
+- Chamada saiu do navegador (`src/lib/geocodificacao.ts` chama a função;
+  sem cache local, para o consumo por empresa ficar exato)
+- **Crédito do provedor** (`AtribuicaoMapas`): "Endereços: ©
+  OpenStreetMap" (+ "Search by LocationIQ.com" quando for o LocationIQ)
+  no rodapé do app de campo, no menu lateral e no aviso de privacidade
+- **Termo de localização v3**: texto genérico ("provedor de mapas
+  contratado pela plataforma, dados do OpenStreetMap") — trocar de
+  provedor no futuro não exige novo aceite. Técnicos veem o termo
+  atualizado uma vez
