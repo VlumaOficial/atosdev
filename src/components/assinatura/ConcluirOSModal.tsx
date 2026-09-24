@@ -117,7 +117,8 @@ export default function ConcluirOSModal({ open, order, onClose, onConcluir }: Pr
 
   return (
     <Modal open={open} onOpenChange={o => { if (!o && !salvando) onClose() }} title="Concluir atendimento"
-      description="Relato, assinatura do cliente e do responsável" className="max-w-lg">
+      description="Relato, assinatura do cliente e do responsável" className="max-w-lg"
+      fecharAoClicarFora={false}>
       <div className="space-y-5">
         <div>
           <Label htmlFor="relato">Relato do atendimento</Label>

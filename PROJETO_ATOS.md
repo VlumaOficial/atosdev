@@ -832,6 +832,11 @@ exportação ZIP → código de verificação → "liberar espaço"
   habilitado só com traço; dica "Assine aqui com o dedo"
 - Corpo da OS (técnico e admin) mostra as assinaturas só para leitura
   (`AssinaturasDaOS`); componente antigo `OrderSignature` removido
+- **Achado testando (corrigido)**: um toque FORA do modal de
+  encerramento o fechava e descartava relato + assinaturas desenhadas
+  (no celular, toque sem querer na borda enquanto o cliente assina).
+  `Modal` ganhou `fecharAoClicarFora`; o de encerramento só fecha por
+  Cancelar/X
 - Sem migration
 
 ### Próximos blocos
