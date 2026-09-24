@@ -958,6 +958,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - [ ] Aba "auditoria/histórico completo" da OS (mostrar também os eventos 'edited' ocultos da linha do tempo)
 - [ ] Auto-atribuição: técnico pegar OS do backlog (Aberta sem técnico) — F4+
 - [ ] Mapa visual embutido na tela do técnico (hoje só botão "Abrir no mapa")
+- [ ] **Painel (dashboard) do Super Admin** — incluir a melhoria de UX do consumo de endereços (hoje texto corrido em Configurações → "Plataforma — endereço no carimbo"): gráficos por dia/empresa, destaque do limite diário, histórico mensal; junto com armazenamento por empresa. Pedido do usuário em 2026-09-24, adiado para não travar o Bloco C
 
 ---
 
