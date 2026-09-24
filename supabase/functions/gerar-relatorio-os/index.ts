@@ -90,7 +90,9 @@ class Doc {
       this.y -= size + (o.entre ?? 3)
     }
   }
-  // "minimo" = espaço do conteúdo que vem logo depois: o título nunca fica sozinho no pé da página
+  // "minimo" = altura do PRIMEIRO bloco que vem logo depois do título (a
+  // mesma usada no garantir() desse bloco): título e começo do conteúdo
+  // ficam sempre na mesma página
   secao(titulo: string, minimo = 40) {
     this.garantir(minimo + 34); this.y -= 8
     this.page.drawRectangle({ x: M, y: this.y - 18, width: A4.w - 2 * M, height: 18, color: COR.faixa })
@@ -302,8 +304,9 @@ Deno.serve(async (req) => {
     }
 
     // ---------- 5. assinaturas ----------
-    d.secao(`${todasFotos.length ? (checklists.length ? '5' : '4') : (checklists.length ? '4' : '3')}. ASSINATURAS`, 110)
-    d.garantir(120)
+    const ALTURA_ASSINATURAS = 125
+    d.secao(`${todasFotos.length ? (checklists.length ? '5' : '4') : (checklists.length ? '4' : '3')}. ASSINATURAS`, ALTURA_ASSINATURAS)
+    d.garantir(ALTURA_ASSINATURAS)
     const topoAss = d.y, cwA = (A4.w - 2 * M - 20) / 2
     const blocoAss = async (x: number, titulo: string, path: string | null, nome: string | null, quando: string | null) => {
       d.y = topoAss

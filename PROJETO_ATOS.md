@@ -1110,4 +1110,16 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - Observação: o PDF v1 da OS-0018 (teste) foi gerado antes do ajuste
   do título de seção sozinho no pé da página; relatórios novos já saem
   corrigidos
+- **Feedback do usuário no PDF da OS-0018 (2026-09-24)**: (1) origem do
+  CNPJ/e-mail no cabeçalho — vêm do cadastro do tenant (nome, cnpj,
+  phone, email), preenchido pelo Super Admin na criação; e-mail hoje
+  coincide com o login do admin. Proposta: admin editar "dados da
+  empresa no relatório" em Configurações (aguardando decisão);
+  (2) títulos "4. Evidências" e "5. Assinaturas" sozinhos no pé da
+  página. O 1º já estava corrigido para relatórios novos; o 2º NÃO —
+  a reserva do título (110) era menor que o bloco de assinaturas (120).
+  Regra agora: a reserva do título = altura do 1º bloco que vem depois.
+  Comprovado regenerando a OS-0018 (reabrir → concluir: v2 e v3 pelo
+  gatilho do banco, versionamento ok): pág. 2 começa com "4. Evidências"
+  + fotos e pág. 5 com "5. Assinaturas" + assinaturas
 
