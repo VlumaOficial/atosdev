@@ -935,6 +935,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 029_f6_geocodificacao_plataforma | geocodificacao_config (provedor + chave, 1 linha), geocodificacao_cache (região ~55 m) e geocodificacao_uso (dia × empresa × provedor), todas sem leitura direta; funções definir_config_geocodificacao / status_geocodificacao (Super Admin), provedor_geocodificacao (qualquer logado), uso_geocodificacao (admin: própria empresa; super admin: todas), registrar_uso_geocodificacao (só service role) | OK | Pendente | Sim |
 | 030_f6_relatorio_pdf | order_reports (versões, status pendente/gerando/gerado/falha) + RLS leitura por empresa; fotos_verificacao.tipo (foto/relatorio) e gatilho aceita service role; pg_net; gatilho em orders: concluída → relatório pendente + chamada à Edge Function (chave no Vault); bucket 25 MB; arquivos_orfaos reconhece PDFs | OK | Pendente | Sim |
 | 031_f6_dados_empresa | tenants.trade_name (nome de exibição) e website; cnpj_valido() (dígitos verificadores); atualizar_dados_empresa() (admin: nome de exibição, CNPJ, telefone, e-mail, site — razão social continua do Super Admin) | OK | Pendente | Sim |
+| 032_f6_liberar_espaco | colunas arquivo_removido_em/removido_em (evidências, verificação, relatórios); liberacoes_espaco (histórico) + RLS; os_para_liberar, arquivos_para_liberar (nível 1 só OS com PDF guardado), previa_liberar_espaco, registrar_liberacao (admin, só pasta da empresa) | OK | Pendente | Sim |
 
 ---
 
@@ -1145,4 +1146,26 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   no meio (cada dado agora fica inteiro). Dados de teste da Infoxtec
   (telefone/site/e-mail fictícios) desfeitos ao final — o admin deve
   preencher os dados reais
+
+### "Liberar espaço" (2026-09-24, desenho aprovado pelo usuário)
+- Configurações → "Liberar espaço" (admin): período pela data de
+  conclusão/cancelamento da OS; **nível 1** (fotos + miniaturas,
+  mantém o PDF — PDFs faltantes gerados antes pelo botão "Gerar
+  relatórios que faltam") ou **nível 2** (fotos + PDFs — botão de apagar
+  só libera depois de "Baixar ZIP do período", que usa exatamente as OS
+  do período); "Calcular" mostra quantas fotos/PDFs/MB de quantas OS;
+  confirmação digitando LIBERAR ESPAÇO; histórico (quando, quem,
+  nível, período, arquivos, tamanho)
+- **Achado no desenho (corrigido antes de liberar)**: OS cancelada não
+  gera PDF — no nível 1 as fotos dela seriam apagadas sem registro.
+  Nível 1 agora só mexe em OS com relatório PDF guardado; fotos de OS
+  sem PDF só saem no nível 2 (que exige o ZIP)
+- Nunca apaga: assinaturas, logo, dados da OS, linha do tempo, códigos
+  de verificação. Remoção física pela Storage API; banco marca
+  `arquivo_removido_em`/`removido_em`
+- Depois de liberado: card da evidência mostra "Foto removida em dd/mm
+  (está no relatório PDF da OS)"; foto de checklist idem; relatório
+  removido (nível 2) mostra aviso; /verificar diz "a empresa removeu o
+  arquivo do sistema em dd/mm" (o código continua válido e a cópia
+  pode ser conferida); ZIP e exportação ignoram o que já foi removido
 

@@ -29,14 +29,18 @@ function EvidenceCard({ evidencia, readOnly, onRemover, onSalvarObservacao }: {
 
   useEffect(() => {
     let ativo = true
-    urlMiniaturaEvidencia(evidencia.file_path).then(url => { if (ativo) setPreview(url) })
+    if (!evidencia.arquivo_removido_em) urlMiniaturaEvidencia(evidencia.file_path).then(url => { if (ativo) setPreview(url) })
     return () => { ativo = false }
   }, [evidencia.file_path])
 
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
       <div className="relative bg-black/20">
-        {preview
+        {evidencia.arquivo_removido_em
+          ? <div className="w-full h-40 flex flex-col items-center justify-center text-center px-2 text-[11px] text-muted-foreground" data-testid="foto-removida">
+              Foto removida em {new Date(evidencia.arquivo_removido_em).toLocaleDateString('pt-BR')}<br />(está no relatório PDF da OS)
+            </div>
+          : preview
           ? (
             <button type="button" onClick={foto.abrir} className="block w-full" aria-label="Ver evidência em tela cheia">
               {/* object-contain: a foto inteira aparece (retrato ou paisagem) — com object-cover o carimbo sumia em foto retrato */}

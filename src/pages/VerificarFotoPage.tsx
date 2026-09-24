@@ -69,7 +69,7 @@ export default function VerificarFotoPage() {
         titulo: 'Código não encontrado', texto: r.motivo === 'formato' ? 'O código tem 12 caracteres (letras e números), por exemplo K7P2-9XQ4-M3TD.' : 'Confira se o código foi digitado exatamente como aparece na foto.' }
     } else if (!r.arquivo_disponivel) {
       status = { icone: <ShieldQuestion size={28} />, cor: 'text-amber-300 border-amber-500/30 bg-amber-500/10',
-        titulo: r.tipo === 'relatorio' ? 'Código válido — relatório não está mais armazenado' : 'Código válido — foto não está mais armazenada', texto: 'O registro existe, mas a empresa removeu o arquivo do sistema. Ainda é possível conferir uma cópia abaixo.' }
+        titulo: r.tipo === 'relatorio' ? 'Código válido — relatório não está mais armazenado' : 'Código válido — foto não está mais armazenada', texto: `O registro existe, mas a empresa removeu o arquivo do sistema${r.removido_em ? ' em ' + new Date(r.removido_em).toLocaleDateString('pt-BR') : ''}. Ainda é possível conferir uma cópia abaixo.` }
     } else if (r.integra) {
       status = { icone: <ShieldCheck size={28} />, cor: 'text-green-300 border-green-500/30 bg-green-500/10',
         titulo: r.tipo === 'relatorio' ? 'Relatório autêntico' : 'Foto autêntica', texto: 'O arquivo guardado é idêntico ao original — não foi alterado desde que foi gerado/enviado.' }

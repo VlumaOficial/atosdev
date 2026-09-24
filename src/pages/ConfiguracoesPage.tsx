@@ -10,6 +10,7 @@ import ArmazenamentoCard from '@/components/ArmazenamentoCard'
 import ExportacaoFotosCard from '@/components/ExportacaoFotosCard'
 import GeocodificacaoPlataformaCard from '@/components/GeocodificacaoPlataformaCard'
 import DadosEmpresaForm from '@/components/DadosEmpresaForm'
+import LiberarEspacoCard from '@/components/LiberarEspacoCard'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
 export default function ConfiguracoesPage() {
@@ -71,6 +72,7 @@ export default function ConfiguracoesPage() {
         <ArmazenamentoCard />
         {user?.role === 'super_admin' && <GeocodificacaoPlataformaCard />}
         {tenant && <ExportacaoFotosCard />}
+        {tenant && <LiberarEspacoCard />}
 
         {/* seções da EMPRESA — o Super Admin não pertence a nenhuma */}
         {tenant && (<>

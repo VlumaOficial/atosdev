@@ -7,7 +7,7 @@ import { FileText, Loader2, RefreshCw } from 'lucide-react'
 // acompanhar enquanto gera, e "Gerar relatório" como rede de segurança
 // (OS concluída antes do recurso ou falha na geração).
 
-interface Relatorio { id: string; versao: number; status: string; file_path: string | null; codigo: string | null }
+interface Relatorio { id: string; versao: number; status: string; file_path: string | null; codigo: string | null; removido_em?: string | null }
 
 export default function RelatorioOSButton({ orderId, numero, concluida }: { orderId: string; numero: string; concluida: boolean }) {
   const [rel, setRel] = useState<Relatorio | null | undefined>(undefined)
@@ -16,7 +16,7 @@ export default function RelatorioOSButton({ orderId, numero, concluida }: { orde
   const tentativasPoll = useRef(0)
 
   async function carregar() {
-    const { data } = await supabase.from('order_reports').select('id, versao, status, file_path, codigo')
+    const { data } = await supabase.from('order_reports').select('id, versao, status, file_path, codigo, removido_em')
       .eq('order_id', orderId).order('versao', { ascending: false }).limit(1).maybeSingle()
     setRel((data as Relatorio) ?? null)
     return data as Relatorio | null
@@ -52,6 +52,10 @@ export default function RelatorioOSButton({ orderId, numero, concluida }: { orde
   if (!concluida || rel === undefined) return null
   const gerandoNoServidor = rel && (rel.status === 'pendente' || rel.status === 'gerando')
   const base = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition disabled:opacity-60'
+
+  if (rel?.removido_em) {
+    return <p className="text-sm text-muted-foreground" data-testid="relatorio-os">Relatório removido em {new Date(rel.removido_em).toLocaleDateString('pt-BR')} (liberar espaço). Se foi baixado antes, o código de verificação dele continua valendo.</p>
+  }
 
   return (
     <div data-testid="relatorio-os">

@@ -19,6 +19,7 @@ export interface FiltroExportacao {
   ate?: string         // ISO (inclusive)
   clienteId?: string
   orderId?: string
+  orderIds?: string[]   // OS específicas (ex.: ZIP obrigatório antes de liberar espaço)
 }
 
 export interface ItemExportacao {
@@ -68,10 +69,12 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
   let qEv = supabase
     .from('order_evidences')
     .select('file_path, observacao, created_at, created_by, order_id, orders(number, client_id, clients(name), locations(name))')
+    .is('arquivo_removido_em', null)
     .order('created_at')
   if (f.orderId) qEv = qEv.eq('order_id', f.orderId)
-  if (f.de) qEv = qEv.gte('created_at', f.de)
-  if (f.ate) qEv = qEv.lte('created_at', f.ate)
+  if (f.orderIds) qEv = qEv.in('order_id', f.orderIds)
+  if (f.de && !f.orderIds) qEv = qEv.gte('created_at', f.de)
+  if (f.ate && !f.orderIds) qEv = qEv.lte('created_at', f.ate)
   const { data: evidencias, error: e1 } = await qEv
   if (e1) throw e1
   for (const ev of (evidencias ?? []) as any[]) {
@@ -94,10 +97,11 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
     .select('value, label_snapshot, answered_at, answered_by, checklist_instances!inner(id, title_snapshot, order_id, client_id, clients(name), locations(name), orders(number, client_id, clients(name), locations(name)))')
     .order('answered_at')
   if (f.orderId) qCk = qCk.eq('checklist_instances.order_id', f.orderId)
+  if (f.orderIds) qCk = qCk.in('checklist_instances.order_id', f.orderIds)
   // a resposta é gravada no mesmo momento ou depois da foto, então
   // answered_at >= "de" nunca descarta foto do período (o "até" é
   // conferido pela data da própria foto, logo abaixo)
-  if (f.de) qCk = qCk.gte('answered_at', f.de)
+  if (f.de && !f.orderIds) qCk = qCk.gte('answered_at', f.de)
   const { data: respostas, error: e2 } = await qCk
   if (e2) throw e2
   for (const r of (respostas ?? []) as any[]) {
@@ -113,7 +117,7 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
       // data da foto = carimbo no nome do arquivo (ms), cai para a resposta
       const ms = Number(v.match(/-(\d{13})\.jpg$/i)?.[1])
       const dataHora = ms ? new Date(ms).toISOString() : r.answered_at
-      if (!noPeriodo(dataHora)) continue
+      if (!f.orderIds && !noPeriodo(dataHora)) continue
       const pasta = o
         ? pastaDaOS(o.number, cliente, unidade)
         : 'Checklists avulsos/' + limpar([inst?.title_snapshot, cliente, unidade].filter(Boolean).join(' - '))
@@ -133,9 +137,10 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
     .select('id, number, client_id, signature_path, signer_name, signed_at, technician_id, clients(name), locations(name)')
     .not('signature_path', 'is', null)
   if (f.orderId) qAs = qAs.eq('id', f.orderId)
+  if (f.orderIds) qAs = qAs.in('id', f.orderIds)
   if (f.clienteId) qAs = qAs.eq('client_id', f.clienteId)
-  if (f.de) qAs = qAs.gte('signed_at', f.de)
-  if (f.ate) qAs = qAs.lte('signed_at', f.ate)
+  if (f.de && !f.orderIds) qAs = qAs.gte('signed_at', f.de)
+  if (f.ate && !f.orderIds) qAs = qAs.lte('signed_at', f.ate)
   const { data: assinaturas, error: e3 } = await qAs
   if (e3) throw e3
   for (const o of (assinaturas ?? []) as any[]) {
@@ -159,7 +164,7 @@ export async function listarFotosParaExportar(f: FiltroExportacao): Promise<Item
   }
   if (ordensNoZip.size) {
     const { data: rels } = await supabase.from('order_reports').select('order_id, versao, file_path, codigo, gerado_em')
-      .in('order_id', [...ordensNoZip.keys()]).eq('status', 'gerado').order('versao', { ascending: false })
+      .in('order_id', [...ordensNoZip.keys()]).eq('status', 'gerado').is('removido_em', null).order('versao', { ascending: false })
     const vistos = new Set<string>()
     for (const r of (rels ?? []) as any[]) {
       if (vistos.has(r.order_id) || !r.file_path) continue

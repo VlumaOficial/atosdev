@@ -26,6 +26,7 @@ const ERRO_LOCALIZACAO_MSG: Record<ErroLocalizacao, string> = {
 
 export default function FotoEvidencia({ instanceId, fieldId, value, onChange, readOnly }: Props) {
   const [preview, setPreview] = useState<string | null>(null)
+  const [semArquivo, setSemArquivo] = useState(false) // caminho gravado, arquivo apagado (liberar espaço)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
   const [arquivoPendente, setArquivoPendente] = useState<File | null>(null)
@@ -38,9 +39,11 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
   useEffect(() => {
     let ativo = true
     if (value) {
-      urlMiniaturaEvidencia(value).then(url => { if (ativo) setPreview(url) })
+      setSemArquivo(false)
+      urlMiniaturaEvidencia(value).then(url => { if (ativo) { setPreview(url); setSemArquivo(!url) } })
     } else {
       setPreview(null)
+      setSemArquivo(false)
     }
     return () => { ativo = false }
   }, [value])
@@ -122,6 +125,10 @@ export default function FotoEvidencia({ instanceId, fieldId, value, onChange, re
         )}
       </div>
     )
+  }
+
+  if (semArquivo) {
+    return <p className="text-xs text-muted-foreground italic" data-testid="foto-removida">Foto removida (está no relatório PDF da OS).</p>
   }
 
   if (readOnly) {

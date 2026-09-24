@@ -14,6 +14,7 @@ export interface ResultadoVerificacao {
   enviado_em?: string
   divergencia_relogio_min?: number | null
   arquivo_disponivel?: boolean
+  removido_em?: string | null
   integra?: boolean | null
   sha256?: string
   url_foto?: string | null
