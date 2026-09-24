@@ -1285,3 +1285,13 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   noreply@). Entrega real fica para o teste do usuário com um e-mail
   próprio
 
+### Nível Avançado (WhatsApp automático) — desenho aprovado, aguardando (2026-09-24)
+- Desenho da integração com a Evolution (instância por empresa, QR Code
+  pela tela do ATOS, aviso de risco com aceite, envio automático com
+  PDF, fallback para o modo aparelho) **aprovado pelo usuário e
+  documentado no VISAO_ATOS.md (F6)** — **não desenvolver ainda**: o
+  usuário vai primeiro testar os Blocos D/E recém-entregues. Como
+  oferecer (Evolution / API oficial / as duas, e em qual plano) fica
+  para a discussão de planos. Pendente do usuário: URL, chave global e
+  versão da Evolution
+
