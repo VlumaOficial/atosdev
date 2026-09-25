@@ -148,7 +148,7 @@ export default function ChecklistAvulsosPage() {
       }
       setModalOpen(false)
       recarregar()
-      if (form.recorrencia && !editSerie) setAba('recorrencias')
+      if (!editSerie) setAba(form.recorrencia ? 'recorrencias' : 'checklists')
     } catch (err: any) {
       setFormError(err?.message ?? 'Não foi possível salvar.')
     } finally {
