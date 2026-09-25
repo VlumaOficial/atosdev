@@ -950,6 +950,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 040_lista_checklists_avulsos | listar_checklists_avulsos (página + total + contagens, filtros, situação no banco), proximas_das_series | OK | Pendente | Sim |
 | 041_lista_os | listar_os (página + total + contagens; situação, aberta em, cliente, unidade, técnico/sem técnico, prioridade, busca) | OK | Pendente | Sim |
 | 042_orders_leitura_tecnico | orders_select: técnico lê só as OS atribuídas a ele | OK | Pendente | Sim |
+| 043_seguranca_tecnico_dados_os | pode_ver_os, pode_ver_checklist, pode_acessar_arquivo; policies de checklist_instances/answers/targets/answer_history (histórico só leitura), order_comments/events/evidences/reports, fotos_verificacao e storage evidencias restritas ao que o técnico pode ver | OK | Pendente | Sim |
 
 ---
 
@@ -973,7 +974,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - [ ] Ajuste de contraste do ícone ATOS na sidebar
 - [ ] **Responsividade do painel admin (acabamento pré-PRD, após F5-F7):** — *parcial em 2026-09-25: página não fica mais larga que a tela no celular (`min-w-0` no `<main>`); o resto segue pendente. Esclarecido ao usuário: responsividade do painel NÃO está garantida — o foco mobile garantido é o app do técnico; painel admin é uso principal em desktop até este item ser feito* — sidebar → menu hambúrguer; listagens no mobile com LISTA COMPACTA como padrão (não cards) + busca/filtros fortes, toggle para cards opcional; revisar modais. Aplicar em OS, Clientes, Unidades, Técnicos e Checklists
 - [x] **(F10) Policy de `orders`: técnico lê todas as OS da empresa pela API** — restringir às dele (achado 2026-09-25) — **feito em 2026-09-25, migration 042**
-- [ ] **(F10) Tabelas filhas da OS** (comentários, eventos, evidências, checklists da OS/respostas, relatórios): técnico ainda lê as de OS que não são dele pela API — restringir junto com a revisão OWASP
+- [x] **(F10) Tabelas filhas da OS** (comentários, eventos, evidências, checklists da OS/respostas, relatórios): técnico ainda lê as de OS que não são dele pela API — restringir junto com a revisão OWASP — **feito em 2026-09-25 (migration 043), antecipado da F10: o usuário já tinha autorizado os dois blocos; eu havia perguntado de novo sem necessidade**
   - **Levantamento detalhado 2026-09-25 (pergunta do usuário "quais são os resíduos?")** — mais sério que o descrito antes: (A) LEITURA por empresa em `order_comments`, `order_events`, `order_evidences`, `order_reports`, `fotos_verificacao` e no storage `evidencias` (fotos, assinaturas, PDFs e a listagem dos arquivos); (B) **LEITURA E ESCRITA** (policy ALL por empresa) em `checklist_instances`, `checklist_answers`, `checklist_instance_targets` e **`checklist_answer_history`** — técnico pode concluir/reabrir/excluir checklist de outro, mudar respostas, se atribuir e **apagar a trilha de auditoria da F5**. No DEV hoje: 57 checklists avulsos de outros legíveis/alteráveis pelo técnico; OS de outros sem filhos. Recomendação levada ao usuário: corrigir antes da F7 (ao menos o bloco B; histórico só leitura para todos, gravado só pelo gatilho), com reteste completo do fluxo do técnico — aguardando decisão
 - [ ] Aba "auditoria/histórico completo" da OS (mostrar também os eventos 'edited' ocultos da linha do tempo)
 - [ ] Auto-atribuição: técnico pegar OS do backlog (Aberta sem técnico) — F4+
@@ -1675,6 +1676,41 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
 - Dados de teste no DEV: 60 checklists "Teste Volume N" e "Teste
   Concluído Antigo" (além dos da recorrência) — apagar após a validação
 
+### Segurança — técnico só acessa dados das próprias OS/checklists (2026-09-25, migration 043)
+- Corrige os blocos A (leitura) e B (leitura e escrita) do levantamento
+  acima. Funções SECURITY DEFINER `pode_ver_os`, `pode_ver_checklist` e
+  `pode_acessar_arquivo(caminho, escrita)` (pelo padrão do caminho no
+  bucket: `os/{OS}`, `checklist/{checklist}`, `assinaturas/{OS}`,
+  `assinaturas/tecnicos/{usuário}`, `relatorios/{OS}`, `logo.png`)
+- Admin/gestor/Super Admin: empresa inteira (inalterado). Técnico: só
+  OS atribuídas a ele, checklists dessas OS e avulsos em que está
+  atribuído, e os arquivos correspondentes + logo (leitura) + a própria
+  assinatura de perfil. **Histórico de respostas: só leitura para
+  todos** (grava só o gatilho). Atribuições, criação e exclusão de
+  checklists: só admin/gestor. Logo: gravação só admin/gestor. Inclusão
+  de comentário/evento/evidência/verificação só em OS/arquivo que a
+  pessoa pode ver
+- Ajuste de tela junto: botão "Remover" do checklist da OS só para
+  admin/gestor (o técnico via o botão, que agora falharia)
+- Rollback das policies antigas guardado antes de aplicar (fora do git)
+- Testado: bateria por impersonação (técnico vê 9 avulsos dele — antes
+  57 de outros; não conclui/altera checklist de outro, não se atribui,
+  não apaga histórico, não comenta nem registra evento em OS de outro;
+  atualiza e responde os próprios; arquivos: própria OS/checklist/
+  relatório/assinatura sim, de outro e de outra empresa não, logo lê
+  mas não grava; admin: tudo, e nem ele apaga histórico). Fluxo completo
+  na URL pública com câmera simulada, técnico real em OS de teste
+  (OS-0025): evidência pela câmera (foto + miniatura + código de
+  verificação), miniatura e "Foto autenticada" no visualizador,
+  comentário, checklist da OS com Sim + foto do item (arquivo em
+  `checklist/{id}`), conclusão do checklist, conclusão da OS com
+  assinatura do cliente e do responsável, relatório PDF gerado no
+  servidor e baixado pelo técnico; técnico não vê "Remover"; aba
+  Checklists do técnico só com os dele. Admin: relatório, assinaturas e
+  foto do checklist da OS do técnico, 66 avulsos, logo em
+  Configurações. 0 erros de console
+- Dados de teste: OS-0025 "Teste Segurança 043" (concluída, com PDF)
+
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de
@@ -1686,7 +1722,7 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–042 em ordem. **038 instala o pg_cron e agenda
+- Aplicar migrations 001–043 em ordem. **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
   IBGE das Unidades existentes) e conferir que os feriados nacionais do
