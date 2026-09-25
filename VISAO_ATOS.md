@@ -352,6 +352,13 @@ Pedido do usuário: registrar feriados nacionais, escala de trabalho dos funcion
   - **Registro de ponto REMOVIDO do escopo** (inclusive a "jornada operacional") — descartado pela complexidade formal (Portaria 671/REP-P, LGPD). A Etapa 4 deixa de existir
   - **No lugar do ponto: notificação diária ao funcionário** informando onde iniciar a escala do dia, com as OS e checklists em nome dele. A refinar com o usuário — ele tem um **desenvolvimento existente que pode ser aproveitado**
   - Horário de atendimento (um para a empresa inteira x por equipe/região): **a refinar**
+- **Pedido do usuário (2026-09-25):** definir AGORA todo o domínio de horário com visão de produto (destrava recorrência, deixa pronto SLA e envio de mensagens) + sugestão de nome. **Proposta levada, aguardando decisão:**
+  - **Nome do módulo: "Calendários"** (padrão do GLPI/ITSM, conhecido do público; evita "Jornada", termo trabalhista ligado ao ponto descartado). Reservar "Agenda" para uma futura visão de OS em calendário
+  - **Seis conceitos, cada um com um dono:** (1) fuso horário da empresa; (2) feriados em camadas (plataforma/UF/município/empresa + ponto facultativo) + dias especiais (ex.: 24/12 até 12h); (3) **horários de atendimento NOMEADOS e reutilizáveis** ("Comercial", "24x7", "Estendido"), um marcado como padrão da empresa — resolve "por empresa x por equipe": cliente/contrato/equipe escolhe um; (4) escalas da equipe (modelos semanais e cíclicos 12x36/6x1, atribuição com vigência, exceções folga/férias/atestado/troca, local de início do dia); (5) horário de funcionamento da Unidade do cliente (opcional, alerta ao agendar); (6) funções de tempo no banco (é dia útil? próximo momento útil? horas úteis entre A e B?) usadas por recorrência, SLA e mensagens
+  - **Distinção central:** horário de ATENDIMENTO (quando a empresa atende o cliente → SLA) ≠ ESCALA (quando a pessoa trabalha → notificação diária, atribuição)
+  - **Achado técnico:** Unidade guarda cidade/UF como texto livre — feriado municipal exige código IBGE da cidade (preenchido pelo CEP/lista, BrasilAPI)
+  - **Alerta trabalhista (PO):** mensagem ao funcionário fora do horário de trabalho pode caracterizar sobreaviso (Súmula 428 TST) → notificação diária deve respeitar a escala (ex.: no início do turno ou X min antes), nunca à noite por padrão
+  - **Entrega proposta:** desenhar tudo agora; construir já fuso + feriados + horários de atendimento + funções (destrava recorrência e prepara SLA); escalas junto com a notificação diária (após refinamento)
 
 ## 10. ECOSSISTEMA VLUMA — PRODUTO IRMÃO: CLAREZZA
 
