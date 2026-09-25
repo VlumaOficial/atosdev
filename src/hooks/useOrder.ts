@@ -20,7 +20,8 @@ export function useOrder(id: string | undefined) {
       .eq('id', id)
       .single()
     if (error) {
-      setError(error.message)
+      // PGRST116 = nenhuma linha: OS inexistente ou sem acesso (técnico só vê as próprias — migration 042)
+      setError(error.code === 'PGRST116' ? 'Ordem de serviço não encontrada ou não atribuída a você.' : error.message)
       setOrder(null)
     } else {
       setOrder(data as Order)
