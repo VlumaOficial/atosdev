@@ -118,6 +118,9 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 > - **Recorrência estruturada:** padrão (não se repete / diária / semanal com dias da semana / mensal por dia ou "2ª terça" / anual) + "a cada N", início, término (sem término / após N / até data), prazo para concluir → situação "atrasada"; resumo em texto e prévia das próximas datas
 > - **Técnica:** regra guardada no padrão iCalendar (RRULE, o mesmo do Outlook/Google), "série" separada das ocorrências, geração pelo banco (pg_cron diário) só da próxima ocorrência dentro de uma janela; editar "só esta / esta e as seguintes"; pausar série
 > - **Decisões 2026-09-25:** nome "avulso" mantido por enquanto; recorrência entra antes da F7; UX detalhada (lista de atalhos + "Personalizar..." em modal) e exemplos levados ao usuário, aguardando aprovação
+> - **Aprovado 2026-09-25:** UX = campo "Repetir" com atalhos + "Personalizar..." em modal por cima (resumo em texto + próximas 5 datas); fim de semana = só aviso/destaque na prévia (sem mover data automaticamente)
+> - **Decidido (Engenharia/PO/UX, delegado pelo usuário) 2026-09-25 — dia 29/30/31 em mês curto:** a ocorrência cai no **último dia do mês** (não pula o mês, como faria o RRULE puro); o resumo avisa "nos meses mais curtos, no último dia". O modal também oferece "no último dia do mês" e "na última <dia da semana>" explícitos
+> - **Feriados:** usuário pediu um módulo próprio (feriados, escala, horário de atendimento) como base para ponto, envio de escala e SLA — ver seção 9.8
 
 ### F6 — Assinatura Digital, Evidências e Envio 🔄 (EM ANDAMENTO)
 **A fase mais rica do MVP.** Definições refinadas:
@@ -333,6 +336,16 @@ Tela para consultar o **histórico de alterações das respostas de checklist** 
 **Pendente (este item de backlog):** a **tela de consulta/visualização** desse histórico — navegável, filtrável, para o gestor auditar quem alterou o quê e quando. Encaixa perto da **F7 (painel gerencial)** ou como módulo de auditoria dedicado. Consome os dados que já estarão sendo capturados desde a F5.
 
 ---
+
+### 9.8. Módulo "Calendário e Jornada" — base para recorrência, SLA, escala e ponto (proposta 2026-09-25, aguardando decisão)
+Pedido do usuário: registrar feriados nacionais, escala de trabalho dos funcionários e horário de atendimento da equipe, para depois incorporar **registro de ponto, envio de escala e controle de SLA**.
+
+**Ideia central:** uma única base de "tempo de trabalho" que todos os módulos consultam — nunca cada módulo com sua regra de dia útil.
+- **Etapa 1 — Calendário da empresa** (pequena; antes da recorrência): feriados (nacionais mantidos pela plataforma; estaduais/municipais aplicados pela UF/cidade da **unidade**; próprios da empresa; tipo "feriado" ou "ponto facultativo" — ex.: Carnaval não é feriado nacional, a empresa decide) + horário de atendimento da empresa por dia da semana. "Dia útil" passa a ser definido por aqui
+- **Etapa 2 — Escalas** (modelos 5x2, 6x1, 12x36, turnos, plantão/sobreaviso; atribuição por técnico com vigência) + **envio/publicação da escala** ao técnico com ciência registrada
+- **Etapa 3 — SLA** (já no backlog): prazo em horas úteis = expediente − feriados da unidade, pausa fora do horário
+- **Etapa 4 — Ponto**: produto regulado (Portaria MTP 671/2021 — REP-P, arquivos AFD/AEJ, comprovante, registro do programa no INPI) + LGPD (GPS/foto na marcação muda o princípio "GPS só na evidência"). Decidir **construir x integrar** (Pontomais/Tangerino/Sólides etc.) antes, com contador/advogado trabalhista
+- Etapas 2–4 ficam **fora do MVP** (proposta); Etapa 1 entra agora por ser pré-requisito da recorrência
 
 ## 10. ECOSSISTEMA VLUMA — PRODUTO IRMÃO: CLAREZZA
 

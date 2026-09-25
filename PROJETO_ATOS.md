@@ -1346,6 +1346,12 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
    agora); (b) recorrência será feita ANTES da F7; (c) desenho da tela
    ainda não aprovado — usuário pediu detalhe da UX (modal?) e exemplos
    de combinações (diário conta sábado/domingo?)
+   → **Atualização 2026-09-25:** UX aprovada (atalhos + "Personalizar..."
+   em modal; fim de semana só com aviso); dia 31 em mês curto decidido
+   pela equipe = último dia do mês. Feriados viraram pedido de módulo
+   próprio "Calendário e Jornada" (feriados, escala, horário de
+   atendimento → base de ponto, escala e SLA) — proposta em 4 etapas no
+   VISAO_ATOS.md 9.8, aguardando decisão
 
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
