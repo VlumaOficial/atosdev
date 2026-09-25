@@ -946,6 +946,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 036_endereco_estruturado | locations.cep/logradouro/numero/complemento/bairro + gatilho que monta address e acerta UF pelo IBGE; cpf_valido, formatar_documento, gatilho de CPF/CNPJ do cliente (só quando muda); salvar_cliente (cliente + unidade principal numa transação, SECURITY INVOKER); definir_sede_tenant (Super Admin) | OK | Pendente | Sim |
 | 037_unidade_documento | locations.documento (CPF ou CNPJ, opcional); normalizar_documento() — regra única de CPF/CNPJ usada pelos gatilhos de clients e locations (valida só quando muda) | OK | Pendente | Sim |
 | 038_recorrencia_checklists | checklist_series + checklist_instances.serie_id/data_prevista/prazo; fn_regra_erro, datas_da_regra, datas_da_serie, previa_recorrencia, gerar_ocorrencias (só servidor), salvar_serie, definir_situacao_serie, alterar_ocorrencia, fn_hoje_empresa; pg_cron + job atos-gerar-ocorrencias (hora em hora) | OK | Pendente | Sim |
+| 039_recorrencia_ajustes | fn_regra_norm; aviso_da_data (feriado/fim de semana + unidade fechada); previa_recorrencia usa o aviso; salvar_serie mantém o início (ritmo) quando a regra não muda | OK | Pendente | Sim |
 
 ---
 
@@ -1577,6 +1578,7 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   concluiu uma ocorrência → Concluídos 1. Segurança (impersonação,
   rollback): técnico não cria/pausa/remarca nem dispara a geração;
   admin não grava série direto na tabela; regra inválida recusada
+- **Atualização 2026-09-25 (mesma data) — os 3 "limites" abaixo foram CORRIGIDOS pela migration 039.** Eles ficaram de fora da primeira entrega por decisão minha, sem consulta ao usuário (dois contrariavam o desenho aprovado e um era defeito); o usuário apontou que não se pede validação com ajustes pendentes. Correções: (1) **defeito** — editar a série reancorava o ritmo mesmo sem mudar a repetição; agora, se a regra não muda (`fn_regra_norm` ignora ordem dos dias), o início original é mantido e só uma regra nova começa na data escolhida; (2) aviso de fim de semana/feriado também no checklist que não se repete e em "Remarcar só este"; (3) aviso de **unidade fechada** no dia da semana (horário de funcionamento da unidade, migration 035) na prévia, no checklist único e ao remarcar — tudo pela mesma função `aviso_da_data()`, sem bloquear. Ajuste de UX junto: criar checklist único leva para a aba Checklists. Testado na URL pública (0 erros): "a cada 2 dias" 25/09, 27/09, 29/09, 01/10 → trocado só o título → mesmas datas; 12/10 → "Nossa Senhora Aparecida"; unidade de teste fechada aos domingos → prévia "todo domingo" e remarcar para 11/10 avisam "Domingo · Unidade fechada", 13/10 e 14/10 sem aviso; regressão completa da recorrência (admin + técnico) repassada. Texto original:
 - **Limites conhecidos (v1)**: "esta e as seguintes" reancora a série
   na data escolhida (ex.: "a cada 2 dias" passa a contar dali);
   "Remarcar só este" não avisa se a nova data cai em feriado; o aviso
@@ -1596,7 +1598,7 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–038 em ordem. **038 instala o pg_cron e agenda
+- Aplicar migrations 001–039 em ordem. **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
   IBGE das Unidades existentes) e conferir que os feriados nacionais do
