@@ -201,6 +201,7 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - **Bloqueio por técnico:** Admin define quais técnicos podem enviar OS
 
 ### F7 — Painel Gerencial ⏳
+> **Refinamento 2026-09-25 (em discussão):** técnico **não** ganha painel próprio — a visão atual do app de campo basta (decisão do usuário), com acesso restrito às próprias OS/checklists já garantido no banco (migrations 042/043). Painel é do gestor/admin. Proposta de KPIs levada ao usuário (situação/backlog, atrasos, concluídas no período com comparação, tempo médio em horas úteis, produtividade e carga por técnico, ranking e **reincidência** por cliente/unidade, evolução, checklists no prazo e **comprovação do serviço** — % com assinatura, foto e relatório enviado). Pergunta do usuário: criar o painel sem o SLA? Recomendação: **SLA v1 antes da F7** (a base de horas úteis já existe), para o painel nascer com "no prazo / em risco / vencido" — aguardando decisão
 Indicadores da operação: OS abertas / em andamento / concluídas, **produtividade por técnico**, **tempo médio de atendimento**, OS por cliente.
 
 ### LGPD no MVP (obrigatório — não é pós-MVP)
