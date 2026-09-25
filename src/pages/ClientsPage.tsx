@@ -418,7 +418,7 @@ export default function ClientsPage() {
 
 function CidadeCliente({ c }: { c: Client }) {
   const p = principalDe(c)
-  if (p?.cidade_ibge) return <span className="text-xs text-muted-foreground">{p.city} - {p.state}</span>
-  if (!p) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20" title="Edite o cliente e escolha a unidade principal">sem unidade principal</span>
-  return <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20" title="Informe a cidade no endereço principal (feriados e SLA)">sem cidade</span>
+  if (p?.cidade_ibge) return <span className="whitespace-nowrap text-xs text-muted-foreground">{p.city} - {p.state}</span>
+  if (!p) return <span className="whitespace-nowrap text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20" title="Edite o cliente e escolha a unidade principal">sem unidade principal</span>
+  return <span className="whitespace-nowrap text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20" title="Informe a cidade no endereço principal (feriados e SLA)">sem cidade</span>
 }
