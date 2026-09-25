@@ -215,21 +215,24 @@ export default function Feriados() {
         </Card>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <select aria-label="Ano" value={ano} onChange={e => setAno(Number(e.target.value))}
-          className="px-2 py-1.5 rounded-md bg-input border border-border text-sm text-foreground">
-          {ANOS.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <div className="flex flex-wrap gap-1.5 flex-1">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <select aria-label="Ano" value={ano} onChange={e => setAno(Number(e.target.value))}
+            className="px-2 py-1.5 rounded-md bg-input border border-border text-sm text-foreground">
+            {ANOS.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <div className="flex-1" />
+          {podeEditar && <Button variant="cta" size="sm" onClick={novo}><Plus size={14} /> {plataforma ? 'Novo feriado da plataforma' : 'Novo feriado'}</Button>}
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
           {FILTROS.filter(f => !plataforma || f.k !== 'empresa').map(f => (
             <button key={f.k} type="button" onClick={() => setFiltro(f.k)}
-              className={cn('px-2.5 py-1 rounded-full text-xs border transition',
+              className={cn('px-2.5 py-1 rounded-full text-xs border transition whitespace-nowrap',
                 filtro === f.k ? 'bg-primary/15 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:text-foreground')}>
               {f.r}
             </button>
           ))}
         </div>
-        {podeEditar && <Button variant="cta" size="sm" onClick={novo}><Plus size={14} /> {plataforma ? 'Novo feriado da plataforma' : 'Novo feriado'}</Button>}
       </div>
 
       {plataforma && !carregando && !temNacionais && (
