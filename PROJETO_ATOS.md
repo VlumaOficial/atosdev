@@ -1433,6 +1433,25 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   12:00). Desfeitos: Carnaval como folga, horário 24x7, almoço no
   Comercial, fuso Manaus, unidade de teste em Feira de Santana
 
+### Endereço de Clientes/Unidades — levantado em 2026-09-25, aguardando decisão
+- **Pedido do usuário**: os clientes da Infoxtec não têm UF/cidade;
+  definir a terminologia (clientes da plataforma x clientes das
+  empresas) e ajustar ANTES da recorrência
+- **Diagnóstico**: o Cliente tem um único campo livre "Endereço"
+  (obrigatório na tela, mas o Atakarejo está vazio — cadastrado antes);
+  esse texto só é copiado para a Unidade principal na CRIAÇÃO do cliente
+  (gatilho da migration 004) — **editar o endereço do cliente depois não
+  atualiza a Unidade** (dados divergem). Nomes das Unidades principais =
+  nome do cliente (por isso "Cliente Trigger Teste"/"SERGIO…" aparecem
+  como Unidades)
+- BrasilAPI conferida: CEP devolve rua, bairro, cidade, UF **e código
+  IBGE**; CNPJ devolve endereço completo **e código IBGE** (Infoxtec:
+  Rua Silveira Martins, 27, sala 102, Cabula, Salvador/BA, 2927408)
+- Proposta (glossário, endereço estruturado só na Unidade, CEP/CNPJ
+  preenchendo, sede pela Receita) no VISAO_ATOS.md 9.8
+- **Dúvida respondida**: "repete todo ano" = mesmo dia e mês todo ano,
+  qualquer dia da semana; feriado de data móvel é cadastrado por ano
+
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de

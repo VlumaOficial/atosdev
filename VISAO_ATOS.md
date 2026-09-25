@@ -361,6 +361,13 @@ Pedido do usuário: registrar feriados nacionais, escala de trabalho dos funcion
   - **Entrega proposta:** desenhar tudo agora; construir já fuso + feriados + horários de atendimento + funções (destrava recorrência e prepara SLA); escalas junto com a notificação diária (após refinamento)
   - **APROVADO pelo usuário (2026-09-25):** nome "Calendários"; distinção atendimento x escala com horários de atendimento nomeados + padrão; horário de funcionamento da Unidade **entra agora**; código IBGE na Unidade (existentes ajustadas automaticamente); ordem de construção (1. base de tempo → 2. recorrência → 3. F7 → 4. escalas + notificação diária → 5. SLA)
   - **Etapa 1 CONCLUÍDA em 2026-09-25** (migration 035, testada na URL pública — ver PROJETO_ATOS.md): fuso, feriados em camadas, horários de atendimento nomeados, horário da Unidade com cidade IBGE e funções de tempo. **Próximo: recorrência dos checklists** (desenho já aprovado, seção F5)
+  - **Endereço de Clientes/Unidades — proposta (2026-09-25), aguardando decisão** (pré-requisito da recorrência, a pedido do usuário):
+    - **Glossário fixo:** Super Admin → **Empresas** (tenants = clientes da plataforma VLUMA); dentro da empresa → **Clientes** (quem a empresa atende) e **Unidades** (endereços físicos do cliente; a principal nasce com o cliente). Nunca "cliente" para tenant na interface
+    - **Endereço estruturado** num componente único (Cliente e Unidade): CEP (preenche rua, bairro, cidade/UF com código IBGE) + número + complemento; cidade sempre da lista do IBGE
+    - **Endereço mora só na Unidade** (fonte única): o bloco de endereço do modal do Cliente edita a Unidade principal, na criação e na edição
+    - **CNPJ do cliente → "Consultar na Receita"** preenche nome, telefone e endereço completo (reuso de `src/lib/cnpj.ts`)
+    - **Sede da empresa pela Receita** na Identidade legal do Super Admin
+    - Em aberto: CPF para cliente pessoa física; quais campos do endereço são obrigatórios
   - **Notificação diária fora da escala (decisão do usuário):** por padrão respeita a escala, **mas o gestor pode enviar fora do horário**, com aviso claro de que o funcionário está fora da escala (registrar quem enviou e quando)
 
 ## 10. ECOSSISTEMA VLUMA — PRODUTO IRMÃO: CLAREZZA
