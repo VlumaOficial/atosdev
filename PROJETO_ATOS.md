@@ -1711,6 +1711,12 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   Configurações. 0 erros de console
 - Dados de teste: OS-0025 "Teste Segurança 043" (concluída, com PDF)
 
+### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
+- **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
+  "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
+  Único Atrasado", OS-0018 a OS-0025 e fotos de teste na OS-0010. Não
+  apagar antes — servem de massa para testes e validação
+
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de

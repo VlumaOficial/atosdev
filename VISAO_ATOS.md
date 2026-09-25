@@ -204,6 +204,32 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 > **Refinamento 2026-09-25 (em discussão):** técnico **não** ganha painel próprio — a visão atual do app de campo basta (decisão do usuário), com acesso restrito às próprias OS/checklists já garantido no banco (migrations 042/043). Painel é do gestor/admin. Proposta de KPIs levada ao usuário (situação/backlog, atrasos, concluídas no período com comparação, tempo médio em horas úteis, produtividade e carga por técnico, ranking e **reincidência** por cliente/unidade, evolução, checklists no prazo e **comprovação do serviço** — % com assinatura, foto e relatório enviado). Pergunta do usuário: criar o painel sem o SLA? Recomendação: **SLA v1 antes da F7** (a base de horas úteis já existe), para o painel nascer com "no prazo / em risco / vencido" — aguardando decisão
 Indicadores da operação: OS abertas / em andamento / concluídas, **produtividade por técnico**, **tempo médio de atendimento**, OS por cliente.
 
+### SLA no padrão ITSM + KPIs do painel — proposta para refinamento (2026-09-25)
+Pedido do usuário: refinamento completo (painel de configuração de criticidade/categoria × SLA, padrões ITSM) e KPIs pensados para **N empresas de vários segmentos**, com a melhor experiência. Ordem sugerida: **SLA antes da F7** (aguardando decisão).
+
+**Modelo ITSM (ITIL, simplificado para PME de campo):**
+- **Tipo de OS**: Corretiva (incidente) · Preventiva (planejada — liga com checklists recorrentes) · Instalação/Requisição · Visita técnica/Orçamento
+- **Catálogo por empresa**: Categoria → Subcategoria (ex.: CFTV › Câmera sem imagem), com **modelos prontos por segmento** (CFTV/segurança, redes/TI, manutenção predial, climatização, elétrica) escolhidos na configuração inicial e editáveis
+- **Prioridade pela matriz Impacto × Urgência** → P1 Crítica, P2 Alta, P3 Média, P4 Baixa; a categoria sugere impacto/urgência; **modo simples** opcional (escolhe a prioridade direto). Atuais: urgente→P1, alta→P2, normal→P3
+- **Metas de SLA**: Resposta (até atribuir/primeiro contato, opcional) · **Atendimento** (até o técnico iniciar no local) · **Solução** (até concluir), em horas úteis do **horário de atendimento** escolhido na política (módulo Calendários: ex. P1 24x7, demais Comercial) e feriados da cidade da unidade
+- **Hierarquia de políticas** (a mais específica vence): Cliente + Categoria → Cliente (contrato) → Categoria → Prioridade (padrão)
+- **Relógio**: pausas com **motivos configuráveis** que param ou não o SLA (ex.: "aguardando cliente" para; "falta de peça nossa" não); **agendamento a pedido do cliente** vira o novo prazo acordado; troca de prioridade/categoria recalcula a partir da abertura e registra na linha do tempo
+- **Estados**: No prazo · Em risco (≥ 75% consumido, configurável) · Vencido → ao concluir: Cumprido / Violado, com **justificativa obrigatória** da violação (causa, vira indicador)
+- **Alertas e escalonamento**: aviso no app a 75% e 100% para gestor (depois WhatsApp/e-mail, junto da notificação diária)
+- **Tela de configuração** (menu próprio "Catálogo e SLA"): assistente inicial por segmento; abas Categorias · Prioridades (matriz) · Políticas de SLA · Motivos de pausa · Contratos de clientes; prévia "uma OS P2 aberta hoje às 16h vence em…"
+- **Na operação**: formulário da OS sugere prioridade pela categoria e mostra "Atendimento até… · Solução até…"; lista de OS com coluna/filtro de SLA e **abre em "Em aberto" ordenada pelo vencimento** (resolve a pendência do padrão da lista); app do técnico ordena por vencimento com selo "vence em 2 h"
+
+**KPIs do painel (valem para qualquer segmento — medem OS/SLA, não o tipo de serviço):**
+- **Agora** (tempo real, clicáveis → lista filtrada): Vencidos · Em risco · Sem técnico · Preventivas atrasadas · P1/P2 em aberto
+- **Desempenho do período** (com meta e variação vs período anterior): **% SLA cumprido** (indicador principal, meta configurável) · Concluídas · **MTTA** (tempo médio até atendimento) · **MTTR** (tempo médio de solução, horas úteis) · **Resolução na 1ª visita** (sem reabertura/nova OS da mesma unidade e categoria em 30 dias) · Idade do backlog (0–2, 3–7, 8–15, >15 dias)
+- **Equipe**: por técnico — carga atual, concluídas, % SLA, MTTR, 1ª visita
+- **Clientes**: volume, % SLA e reincidência por cliente/unidade (base de um futuro **relatório mensal de SLA por cliente**)
+- **Preventivas**: % do plano cumprido no prazo; corretivas × preventivas (maturidade da manutenção)
+- **Comprovação do serviço** (diferencial ATOS): % com assinatura do cliente, com foto, com relatório enviado
+- Depois (backlog): satisfação do cliente (CSAT) em 1 clique no relatório enviado; painel personalizável
+
+**UX do painel**: filtros no topo (período "Este mês", cliente, técnico, categoria); faixa "Agora" primeiro; cada número com contexto (meta, variação, tendência); cor só para situação; tudo clicável até a lista; um gráfico de evolução (abertas × concluídas + linha de % SLA) e barras de idade do backlog; tabelas curtas de equipe e clientes; celular empilha na mesma ordem; estados vazios que ensinam (ex.: "sem preventivas — configure uma recorrência")
+
 ### LGPD no MVP (obrigatório — não é pós-MVP)
 Como a captura de GPS envolve dados de localização:
 - **Termo de consentimento** de uso de localização, aceito no primeiro acesso do técnico
