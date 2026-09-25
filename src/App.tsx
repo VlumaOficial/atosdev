@@ -6,6 +6,7 @@ import LoginPage from '@/pages/LoginPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
+import CalendariosPage from '@/pages/CalendariosPage'
 import ClientsPage from '@/pages/ClientsPage'
 import LocationsPage from '@/pages/LocationsPage'
 import TechniciansPage from '@/pages/TechniciansPage'
@@ -114,6 +115,15 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['super_admin']}>
                   <TenantsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="calendarios"
+              element={
+                <ProtectedRoute allowedRoles={['super_admin', 'admin', 'gestor']}>
+                  <CalendariosPage />
                 </ProtectedRoute>
               }
             />

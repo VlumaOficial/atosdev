@@ -33,6 +33,9 @@ export interface Tenant {
   trade_name?: string | null
   website?: string | null
   envio_nivel?: 'basico' | 'intermediario' | 'avancado'
+  fuso_horario?: string
+  sede_cidade_ibge?: string | null
+  sede_cidade?: string | null
   created_at: string
   updated_at: string
 }

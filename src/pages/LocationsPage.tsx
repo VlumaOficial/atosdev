@@ -10,9 +10,12 @@ import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Combobox } from '@/components/ui/combobox'
 import { DataListView, type Column } from '@/components/ui/data-list-view'
-import { MapPin, Plus, Pencil, Trash2, Building2, Power } from 'lucide-react'
+import { MapPin, Plus, Pencil, Trash2, Building2, Power, Clock } from 'lucide-react'
+import CidadeSelect from '@/components/calendario/CidadeSelect'
+import SemanaEditor from '@/components/calendario/SemanaEditor'
+import { ufDoIbge, resumoSemana, validarSemana, ordenarSemana, MODELOS_SEMANA } from '@/lib/calendario'
 
-const emptyForm: LocationInput = { client_id: '', name: '', address: '', city: '', state: '' }
+const emptyForm: LocationInput = { client_id: '', name: '', address: '', city: '', state: '', cidade_ibge: null, horario_funcionamento: null }
 
 const mapLocation = (row: any): Location => ({ ...row })
 
@@ -71,7 +74,8 @@ export default function LocationsPage() {
   function openEdit(l: Location) {
     setEditing(l)
     setFormActive(l.active)
-    setForm({ client_id: l.client_id, name: l.name, address: l.address, city: l.city, state: l.state })
+    setForm({ client_id: l.client_id, name: l.name, address: l.address, city: l.city, state: l.state,
+      cidade_ibge: l.cidade_ibge ?? null, horario_funcionamento: l.horario_funcionamento ?? null })
     setFormError('')
     setModalOpen(true)
   }
@@ -87,12 +91,20 @@ export default function LocationsPage() {
       setFormError('O nome do local é obrigatório.')
       return
     }
+    let horario = form.horario_funcionamento ?? null
+    if (horario) {
+      const problema = validarSemana(horario)
+      if (problema) { setFormError('Horário de funcionamento — ' + problema); return }
+      horario = ordenarSemana(horario)
+      if (!Object.keys(horario).length) horario = null
+    }
+    const dados = { ...form, horario_funcionamento: horario }
     setSaving(true)
     try {
       if (editing) {
-        await updateLocation(editing.id, { ...form, active: formActive } as any)
+        await updateLocation(editing.id, { ...dados, active: formActive } as any)
       } else {
-        await createLocation(form)
+        await createLocation(dados)
       }
       setModalOpen(false)
       refetch()
@@ -289,6 +301,8 @@ export default function LocationsPage() {
         onOpenChange={setModalOpen}
         title={editing ? 'Editar local' : 'Nova unidade'}
         description={editing ? 'Atualize os dados da unidade' : 'Cadastre uma unidade vinculada a um cliente'}
+        className={form.horario_funcionamento ? 'max-w-xl' : undefined}
+        fecharAoClicarFora={false}
       >
         <form onSubmit={handleSave} className="space-y-4">
           <div>
@@ -311,15 +325,33 @@ export default function LocationsPage() {
             <Label htmlFor="address">Endereço</Label>
             <Input id="address" value={form.address ?? ''} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Rua, número, bairro" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="city">Cidade</Label>
-              <Input id="city" value={form.city ?? ''} onChange={e => setForm({ ...form, city: e.target.value })} placeholder="Cidade" />
+          <div>
+            <CidadeSelect idPrefixo="unidade-cidade"
+              uf={ufDoIbge(form.cidade_ibge) ?? (form.state && /^[A-Za-z]{2}$/.test(form.state.trim()) ? form.state.trim().toUpperCase() : '')}
+              ibge={form.cidade_ibge ?? ''}
+              onChange={v => setForm({ ...form, state: v.uf, city: v.nome || null, cidade_ibge: v.ibge || null })} />
+            {!form.cidade_ibge && form.city && (
+              <p className="text-[11px] text-amber-300 mt-1">Cidade digitada antes: "{form.city}". Escolha na lista para os feriados municipais valerem nesta unidade.</p>
+            )}
+          </div>
+
+          <div className="rounded-md border border-border px-3 py-2.5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-foreground flex items-center gap-1.5"><Clock size={13} /> Horário de funcionamento <span className="text-xs text-muted-foreground font-normal">(opcional)</span></p>
+                <p className="text-xs text-muted-foreground">Quando a unidade recebe o técnico (ex.: loja das 10h às 22h). O ATOS avisa ao agendar fora dele.</p>
+                {form.horario_funcionamento && <p className="text-xs text-foreground mt-1" data-testid="unidade-horario-resumo">{resumoSemana(ordenarSemana(form.horario_funcionamento))}</p>}
+              </div>
+              <button type="button" onClick={() => setForm({ ...form, horario_funcionamento: form.horario_funcionamento ? null : JSON.parse(JSON.stringify(MODELOS_SEMANA[0].semana)) })}
+                className="text-xs text-primary hover:underline flex-shrink-0">
+                {form.horario_funcionamento ? 'Remover' : 'Informar'}
+              </button>
             </div>
-            <div>
-              <Label htmlFor="state">Estado</Label>
-              <Input id="state" value={form.state ?? ''} onChange={e => setForm({ ...form, state: e.target.value })} placeholder="UF" />
-            </div>
+            {form.horario_funcionamento && (
+              <div className="mt-3">
+                <SemanaEditor valor={form.horario_funcionamento} onChange={s => setForm({ ...form, horario_funcionamento: s })} mostrarModelos={false} />
+              </div>
+            )}
           </div>
 
           {editing && (

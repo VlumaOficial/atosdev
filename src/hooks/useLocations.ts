@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import type { Semana } from '@/lib/calendario'
 
 export interface Location {
   id: string
@@ -9,6 +10,8 @@ export interface Location {
   address: string | null
   city: string | null
   state: string | null
+  cidade_ibge?: string | null
+  horario_funcionamento?: Semana | null
   active: boolean
   created_at: string
   client?: { id: string; name: string } | null
@@ -20,6 +23,8 @@ export interface LocationInput {
   address?: string | null
   city?: string | null
   state?: string | null
+  cidade_ibge?: string | null
+  horario_funcionamento?: Semana | null
 }
 
 export function useLocations(clientId?: string) {
