@@ -6,6 +6,8 @@ export interface MyChecklist {
   title_snapshot: string
   status: 'pendente' | 'em_andamento' | 'concluido'
   recurrence: string | null
+  data_prevista: string | null
+  prazo: string | null
   created_at: string
   client?: { id: string; name: string } | null
   location?: { id: string; name: string } | null
@@ -14,7 +16,7 @@ export interface MyChecklist {
 const SELECT = `
   instance_id,
   checklist_instances!inner (
-    id, title_snapshot, status, recurrence, created_at,
+    id, title_snapshot, status, recurrence, data_prevista, prazo, created_at,
     client:clients(id, name), location:locations(id, name)
   )
 `

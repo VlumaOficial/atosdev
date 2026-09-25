@@ -9,6 +9,9 @@ export interface ChecklistAvulso {
   title_snapshot: string
   status: 'pendente' | 'em_andamento' | 'concluido'
   recurrence: string | null
+  serie_id: string | null
+  data_prevista: string | null
+  prazo: string | null
   client_id: string | null
   location_id: string | null
   created_at: string
@@ -24,6 +27,28 @@ export interface ChecklistAvulsoInput {
   location_id?: string | null
   recurrence?: string | null
   technician_ids: string[]
+  data_prevista?: string | null
+  prazo?: string | null
+}
+
+// Série de recorrência (migration 038) — as ocorrências são geradas pelo banco
+export interface ChecklistSerie {
+  id: string
+  template_id: string
+  titulo: string
+  client_id: string | null
+  location_id: string | null
+  tecnicos: string[]
+  regra: any
+  resumo: string
+  inicio: string
+  termino_tipo: 'nunca' | 'apos' | 'em'
+  termino_qtd: number | null
+  termino_data: string | null
+  prazo_dias: number
+  situacao: 'ativa' | 'pausada' | 'encerrada'
+  client?: { id: string; name: string } | null
+  location?: { id: string; name: string } | null
 }
 
 const SELECT = `
@@ -45,6 +70,7 @@ export function useChecklistAvulsos() {
       .from('checklist_instances')
       .select(SELECT)
       .eq('context_type', 'avulso')
+      .order('data_prevista', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
     if (error) {
       setError(error.message)
@@ -70,6 +96,8 @@ export function useChecklistAvulsos() {
         client_id: input.client_id || null,
         location_id: input.location_id || null,
         recurrence: input.recurrence || null,
+        data_prevista: input.data_prevista || null,
+        prazo: input.prazo || input.data_prevista || null,
         status: 'pendente',
         created_by: user?.id ?? null,
       })
@@ -95,4 +123,18 @@ export function useChecklistAvulsos() {
   }
 
   return { checklists, loading, error, fetchChecklists, createChecklistAvulso, deleteChecklistAvulso }
+}
+
+export function useChecklistSeries() {
+  const [series, setSeries] = useState<ChecklistSerie[]>([])
+  const [loading, setLoading] = useState(true)
+  const fetchSeries = useCallback(async () => {
+    const { data } = await supabase.from('checklist_series')
+      .select('*, client:clients(id, name), location:locations(id, name)')
+      .order('situacao').order('titulo')
+    setSeries((data ?? []) as ChecklistSerie[])
+    setLoading(false)
+  }, [])
+  useEffect(() => { fetchSeries() }, [fetchSeries])
+  return { series, loading, fetchSeries }
 }
