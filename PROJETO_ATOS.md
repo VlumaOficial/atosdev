@@ -1438,6 +1438,10 @@ Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de
 noreply@vluma.com.br (segredo `SMTP_PADRAO_SENHA`), chave do LocationIQ
 (cadastrada pela tela do Super Admin).
+**2026-09-25:** novo token da Management API e as senhas dos usuários de
+teste (Super Admin, admin Infoxtec, técnico atendimento@) foram enviados
+pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
+sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - Aplicar migrations 001–035 em ordem. Depois da 035, rodar
