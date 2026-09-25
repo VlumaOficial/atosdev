@@ -949,6 +949,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 039_recorrencia_ajustes | fn_regra_norm; aviso_da_data (feriado/fim de semana + unidade fechada); previa_recorrencia usa o aviso; salvar_serie mantém o início (ritmo) quando a regra não muda | OK | Pendente | Sim |
 | 040_lista_checklists_avulsos | listar_checklists_avulsos (página + total + contagens, filtros, situação no banco), proximas_das_series | OK | Pendente | Sim |
 | 041_lista_os | listar_os (página + total + contagens; situação, aberta em, cliente, unidade, técnico/sem técnico, prioridade, busca) | OK | Pendente | Sim |
+| 042_orders_leitura_tecnico | orders_select: técnico lê só as OS atribuídas a ele | OK | Pendente | Sim |
 
 ---
 
@@ -971,7 +972,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - [x] Campo "nome fantasia/exibição" no tenant (nome longo cortado na sidebar) — **feito em 2026-09-24** (migration 031, `trade_name`, editável pelo admin)
 - [ ] Ajuste de contraste do ícone ATOS na sidebar
 - [ ] **Responsividade do painel admin (acabamento pré-PRD, após F5-F7):** — *parcial em 2026-09-25: página não fica mais larga que a tela no celular (`min-w-0` no `<main>`); o resto segue pendente. Esclarecido ao usuário: responsividade do painel NÃO está garantida — o foco mobile garantido é o app do técnico; painel admin é uso principal em desktop até este item ser feito* — sidebar → menu hambúrguer; listagens no mobile com LISTA COMPACTA como padrão (não cards) + busca/filtros fortes, toggle para cards opcional; revisar modais. Aplicar em OS, Clientes, Unidades, Técnicos e Checklists
-- [ ] **(F10) Policy de `orders`: técnico lê todas as OS da empresa pela API** — restringir às dele (achado 2026-09-25)
+- [x] **(F10) Policy de `orders`: técnico lê todas as OS da empresa pela API** — restringir às dele (achado 2026-09-25) — **feito em 2026-09-25, migration 042**
+- [ ] **(F10) Tabelas filhas da OS** (comentários, eventos, evidências, checklists da OS/respostas, relatórios): técnico ainda lê as de OS que não são dele pela API — restringir junto com a revisão OWASP
 - [ ] Aba "auditoria/histórico completo" da OS (mostrar também os eventos 'edited' ocultos da linha do tempo)
 - [ ] Auto-atribuição: técnico pegar OS do backlog (Aberta sem técnico) — F4+
 - [ ] Mapa visual embutido na tela do técnico (hoje só botão "Abrir no mapa")
@@ -1653,6 +1655,18 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   fora; 90 → entra; 120 → OS-0003 entra e o botão some; checklist
   concluído há 45 dias só aparece depois de "Ver mais antigos". Celular
   sem rolagem horizontal nas duas listas (393 px)
+- **Atualização 2026-09-25: achado abaixo CORRIGIDO (autorizado pelo
+  usuário — "Ajuste"), migration 042**: `orders_select` agora limita o
+  técnico às OS atribuídas a ele (admin/gestor/Super Admin inalterados).
+  Conferido por impersonação (técnico 16 próprias / 0 de outros; admin
+  17) e na URL pública (app do técnico lista e abre as dele com linha do
+  tempo e relatório; admin segue com 17). Junto, ajuste pequeno: abrir
+  pela URL uma OS de outro técnico mostrava "Cannot coerce the result to
+  a single JSON object" → agora "Ordem de serviço não encontrada ou não
+  atribuída a você." **Resta para a F10**: tabelas filhas da OS
+  (`order_comments`, `order_events`, `order_evidences`, checklists da OS
+  e respostas, `order_reports`) ainda liberam leitura por empresa — o
+  técnico lê pela API dados de OS que não são dele. Texto original:
 - **Achado de segurança (para a F10, não alterado agora)**: a policy de
   `orders` deixa o **técnico ler todas as OS da empresa** pelo banco
   (não só as dele) — conferido por impersonação (17 de 17). A tela do
@@ -1671,7 +1685,7 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–041 em ordem. **038 instala o pg_cron e agenda
+- Aplicar migrations 001–042 em ordem. **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
   IBGE das Unidades existentes) e conferir que os feriados nacionais do
