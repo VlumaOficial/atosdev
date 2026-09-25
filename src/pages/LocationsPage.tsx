@@ -11,9 +11,10 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Combobox } from '@/components/ui/combobox'
 import { DataListView, type Column } from '@/components/ui/data-list-view'
 import { MapPin, Plus, Pencil, Trash2, Building2, Power, Clock } from 'lucide-react'
-import CidadeSelect from '@/components/calendario/CidadeSelect'
+import EnderecoForm from '@/components/EnderecoForm'
+import { ENDERECO_VAZIO, enderecoDaUnidade, colunasEndereco, type Endereco } from '@/lib/endereco'
 import SemanaEditor from '@/components/calendario/SemanaEditor'
-import { ufDoIbge, resumoSemana, validarSemana, ordenarSemana, MODELOS_SEMANA } from '@/lib/calendario'
+import { resumoSemana, validarSemana, ordenarSemana, MODELOS_SEMANA } from '@/lib/calendario'
 
 const emptyForm: LocationInput = { client_id: '', name: '', address: '', city: '', state: '', cidade_ibge: null, horario_funcionamento: null }
 
@@ -47,6 +48,7 @@ export default function LocationsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Location | null>(null)
   const [form, setForm] = useState<LocationInput>(emptyForm)
+  const [endereco, setEndereco] = useState<Endereco>({ ...ENDERECO_VAZIO })
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [formActive, setFormActive] = useState(true)
@@ -67,6 +69,7 @@ export default function LocationsPage() {
     setEditing(null)
     setFormActive(true)
     setForm(emptyForm)
+    setEndereco({ ...ENDERECO_VAZIO })
     setFormError('')
     setModalOpen(true)
   }
@@ -76,6 +79,7 @@ export default function LocationsPage() {
     setFormActive(l.active)
     setForm({ client_id: l.client_id, name: l.name, address: l.address, city: l.city, state: l.state,
       cidade_ibge: l.cidade_ibge ?? null, horario_funcionamento: l.horario_funcionamento ?? null })
+    setEndereco(enderecoDaUnidade(l))
     setFormError('')
     setModalOpen(true)
   }
@@ -91,6 +95,10 @@ export default function LocationsPage() {
       setFormError('O nome do local é obrigatório.')
       return
     }
+    if (!endereco.cidade_ibge) {
+      setFormError('Informe a UF e a cidade da unidade (usadas nos feriados e no SLA).')
+      return
+    }
     let horario = form.horario_funcionamento ?? null
     if (horario) {
       const problema = validarSemana(horario)
@@ -98,7 +106,7 @@ export default function LocationsPage() {
       horario = ordenarSemana(horario)
       if (!Object.keys(horario).length) horario = null
     }
-    const dados = { ...form, horario_funcionamento: horario }
+    const dados = { client_id: form.client_id, name: form.name, horario_funcionamento: horario, ...colunasEndereco(endereco) }
     setSaving(true)
     try {
       if (editing) {
@@ -185,9 +193,9 @@ export default function LocationsPage() {
       key: 'location',
       header: 'Cidade / UF',
       render: l => (
-        <span className="text-xs text-muted-foreground">
-          {[l.city, l.state].filter(Boolean).join(' / ') || '—'}
-        </span>
+        l.cidade_ibge
+          ? <span className="text-xs text-muted-foreground">{l.city} / {l.state}</span>
+          : <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20" title="Escolha a cidade na lista (feriados e SLA)">sem cidade</span>
       ),
     },
     {
@@ -301,7 +309,7 @@ export default function LocationsPage() {
         onOpenChange={setModalOpen}
         title={editing ? 'Editar local' : 'Nova unidade'}
         description={editing ? 'Atualize os dados da unidade' : 'Cadastre uma unidade vinculada a um cliente'}
-        className={form.horario_funcionamento ? 'max-w-xl' : undefined}
+        className={form.horario_funcionamento ? 'max-w-xl' : 'max-w-lg'}
         fecharAoClicarFora={false}
       >
         <form onSubmit={handleSave} className="space-y-4">
@@ -321,19 +329,8 @@ export default function LocationsPage() {
             <Label htmlFor="name">Nome da unidade *</Label>
             <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ex: Loja 01 - Centro" />
           </div>
-          <div>
-            <Label htmlFor="address">Endereço</Label>
-            <Input id="address" value={form.address ?? ''} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Rua, número, bairro" />
-          </div>
-          <div>
-            <CidadeSelect idPrefixo="unidade"
-              uf={ufDoIbge(form.cidade_ibge) ?? (form.state && /^[A-Za-z]{2}$/.test(form.state.trim()) ? form.state.trim().toUpperCase() : '')}
-              ibge={form.cidade_ibge ?? ''}
-              onChange={v => setForm({ ...form, state: v.uf, city: v.nome || null, cidade_ibge: v.ibge || null })} />
-            {!form.cidade_ibge && form.city && (
-              <p className="text-[11px] text-amber-300 mt-1">Cidade digitada antes: "{form.city}". Escolha na lista para os feriados municipais valerem nesta unidade.</p>
-            )}
-          </div>
+          <EnderecoForm idPrefixo="unidade" valor={endereco} onChange={setEndereco}
+            textoLegado={editing && !editing.logradouro ? [editing.address, editing.city].filter(Boolean).join(', ') || null : null} />
 
           <div className="rounded-md border border-border px-3 py-2.5">
             <div className="flex items-start justify-between gap-3">

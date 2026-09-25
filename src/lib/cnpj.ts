@@ -14,6 +14,14 @@ export interface DadosReceita {
   municipio: string | null
   uf: string | null
   telefone: string | null
+  email: string | null
+  // endereço do estabelecimento (reuso no cadastro de Cliente — 2026-09-25)
+  cep: string | null
+  logradouro: string | null
+  numero: string | null
+  complemento: string | null
+  bairro: string | null
+  cidadeIbge: string | null
 }
 
 export async function consultarCnpjReceita(cnpj: string): Promise<DadosReceita | { erro: string }> {
@@ -36,6 +44,13 @@ export async function consultarCnpjReceita(cnpj: string): Promise<DadosReceita |
       municipio: j.municipio ?? null,
       uf: j.uf ?? null,
       telefone: tel,
+      email: j.email ? String(j.email).toLowerCase() : null,
+      cep: j.cep ? String(j.cep).replace(/\D/g, '').padStart(8, '0') : null,
+      logradouro: j.logradouro ? [j.descricao_tipo_de_logradouro, j.logradouro].filter(Boolean).join(' ') : null,
+      numero: j.numero ? (/^0*$/.test(String(j.numero)) ? 'S/N' : String(j.numero).replace(/^0+(?=\d)/, '')) : null,
+      complemento: j.complemento || null,
+      bairro: j.bairro || null,
+      cidadeIbge: j.codigo_municipio_ibge ? String(j.codigo_municipio_ibge) : null,
     }
   } catch {
     return { erro: 'Consulta à Receita indisponível agora. Tente de novo ou preencha manualmente.' }

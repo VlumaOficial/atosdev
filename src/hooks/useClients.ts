@@ -12,6 +12,23 @@ export interface Client {
   active: boolean
   created_at: string
   locations_count?: number
+  unidades?: UnidadeResumo[]
+}
+
+// unidade embutida na listagem de clientes (endereço da principal)
+export interface UnidadeResumo {
+  id: string
+  name: string
+  is_primary: boolean
+  address: string | null
+  city: string | null
+  state: string | null
+  cidade_ibge: string | null
+  cep: string | null
+  logradouro: string | null
+  numero: string | null
+  complemento: string | null
+  bairro: string | null
 }
 
 export interface ClientInput {

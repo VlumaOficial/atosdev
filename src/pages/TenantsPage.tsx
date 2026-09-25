@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Search, Loader2, ShieldCheck, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { mascaraCnpj, cnpjValido } from '@/lib/empresa'
 import { consultarCnpjReceita, formatarRazaoSocial, type DadosReceita } from '@/lib/cnpj'
+import { nomeCidade, ufDoIbge } from '@/lib/calendario'
 
 // Super Admin — empresas (tenants). Por enquanto: identidade legal
 // (razão social + CNPJ), que só a VLUMA altera (decisão 2026-09-24,
 // opção B), com consulta à Receita (BrasilAPI) e histórico. O restante
 // da gestão de tenants (planos, status, limites) vem na F8.
 
-interface Tenant { id: string; name: string; trade_name: string | null; cnpj: string | null; status: string; plan: string | null; envio_nivel: string }
+interface Tenant { id: string; name: string; trade_name: string | null; cnpj: string | null; status: string; plan: string | null; envio_nivel: string; sede_cidade: string | null; sede_cidade_ibge: string | null }
 interface Hist { id: string; alterado_em: string; cnpj_anterior: string | null; razao_anterior: string | null; cnpj_novo: string | null; razao_nova: string | null; fonte: string }
 
 export default function TenantsPage() {
@@ -30,7 +31,7 @@ export default function TenantsPage() {
   const [historico, setHistorico] = useState<Hist[]>([])
 
   async function carregar() {
-    const { data } = await supabase.from('tenants').select('id, name, trade_name, cnpj, status, plan, envio_nivel').order('name')
+    const { data } = await supabase.from('tenants').select('id, name, trade_name, cnpj, status, plan, envio_nivel, sede_cidade, sede_cidade_ibge').order('name')
     setTenants((data as Tenant[]) ?? []); setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
@@ -59,6 +60,11 @@ export default function TenantsPage() {
     const { error } = await supabase.rpc('atualizar_identidade_tenant', { p_tenant: editando.id, p_cnpj: cnpj, p_razao: razao, p_fonte: fonte })
     setSalvando(false)
     if (error) { setErro(error.message); return }
+    // sede (cidade) pela Receita — base dos feriados sem Unidade (migration 036)
+    if (receita?.cidadeIbge) {
+      const r = await supabase.rpc('definir_sede_tenant', { p_tenant: editando.id, p_cidade_ibge: receita.cidadeIbge, p_cidade: receita.municipio ? nomeCidade(receita.municipio) : null })
+      if (r.error) { setErro('Identidade salva, mas a sede não: ' + r.error.message); carregar(); return }
+    }
     setEditando(null); carregar()
   }
 
@@ -73,7 +79,7 @@ export default function TenantsPage() {
           <div key={t.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground">{t.trade_name || t.name}</p>
-              <p className="text-xs text-muted-foreground">{t.trade_name ? t.name + ' · ' : ''}CNPJ {t.cnpj || '—'} · {t.status}{t.plan ? ' · ' + t.plan : ''}</p>
+              <p className="text-xs text-muted-foreground">{t.trade_name ? t.name + ' · ' : ''}CNPJ {t.cnpj || '—'} · {t.status}{t.plan ? ' · ' + t.plan : ''} · Sede: {t.sede_cidade ? `${t.sede_cidade} - ${ufDoIbge(t.sede_cidade_ibge)}` : 'não informada'}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <select aria-label={'Nível de envio ' + (t.trade_name || t.name)} value={t.envio_nivel}
@@ -106,6 +112,7 @@ export default function TenantsPage() {
               <p className="flex items-center gap-1.5 font-medium">{receita.ativa ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />} Situação na Receita: {receita.situacao}</p>
               <p className="mt-1 text-foreground/80">{receita.razaoSocial}{receita.nomeFantasia ? ` — fantasia: ${receita.nomeFantasia}` : ''}</p>
               <p className="text-foreground/70">{[receita.municipio, receita.uf].filter(Boolean).join(' - ')}{receita.telefone ? ` · ${receita.telefone}` : ''}</p>
+              {receita.cidadeIbge && <p className="text-foreground/70 mt-0.5">Ao salvar, a sede da empresa passa a ser {receita.municipio ? nomeCidade(receita.municipio) : ''} - {receita.uf} (feriados sem Unidade).</p>}
             </div>
           )}
           <div>

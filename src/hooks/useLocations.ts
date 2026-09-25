@@ -12,6 +12,11 @@ export interface Location {
   state: string | null
   cidade_ibge?: string | null
   horario_funcionamento?: Semana | null
+  cep?: string | null
+  logradouro?: string | null
+  numero?: string | null
+  complemento?: string | null
+  bairro?: string | null
   active: boolean
   created_at: string
   client?: { id: string; name: string } | null
@@ -25,6 +30,11 @@ export interface LocationInput {
   state?: string | null
   cidade_ibge?: string | null
   horario_funcionamento?: Semana | null
+  cep?: string | null
+  logradouro?: string | null
+  numero?: string | null
+  complemento?: string | null
+  bairro?: string | null
 }
 
 export function useLocations(clientId?: string) {
