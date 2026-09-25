@@ -113,6 +113,11 @@ Roteiros de verificação **configuráveis**, independentes de serviço específ
 
 Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um modelo na criação/edição da ordem) e checklist **avulso**, sem OS — vínculo opcional a Cliente/Unidade, atribuível a um ou mais técnicos, com recorrência como etiqueta informativa (ex: "mensal"), acessível numa aba própria no app de campo. Rastreabilidade completa das respostas (histórico versionado por trigger) e evidências fotográficas com compressão já implementadas; carimbo (logo/GPS/data na foto) fica para a F6.
 
+> **Em discussão (2026-09-25) — nome e recorrência do checklist avulso.** Usuário não gostou de "avulso" e esperava recorrência estilo Outlook. Hoje a recorrência é só texto livre (etiqueta), sem gerar ocorrências. Proposta levada ao usuário, aguardando decisão:
+> - **Nome:** "Inspeções" (menu e app do técnico), cobrindo única ou recorrente; alternativas "Rotinas", "Checklists programados", "Vistorias"
+> - **Recorrência estruturada:** padrão (não se repete / diária / semanal com dias da semana / mensal por dia ou "2ª terça" / anual) + "a cada N", início, término (sem término / após N / até data), prazo para concluir → situação "atrasada"; resumo em texto e prévia das próximas datas
+> - **Técnica:** regra guardada no padrão iCalendar (RRULE, o mesmo do Outlook/Google), "série" separada das ocorrências, geração pelo banco (pg_cron diário) só da próxima ocorrência dentro de uma janela; editar "só esta / esta e as seguintes"; pausar série
+
 ### F6 — Assinatura Digital, Evidências e Envio 🔄 (EM ANDAMENTO)
 **A fase mais rica do MVP.** Definições refinadas:
 

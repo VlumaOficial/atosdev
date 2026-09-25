@@ -1315,6 +1315,8 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
    usados nos testes não existem): e-mail "via ATOS" com PDF, WhatsApp
    pelo aparelho, "Nenhum técnico", e-mail próprio (nível Intermediário
    via Empresas). Nada foi confirmado como ENTREGUE ainda
+   → **Atualização 2026-09-25: testes realizados pelo usuário, sem
+   problema relatado.**
 2. **Nível Avançado (Evolution)**: aguardando os testes acima + URL,
    chave global e versão da Evolution da VPS do usuário. Desenho no
    VISAO_ATOS.md (F6)
@@ -1332,6 +1334,13 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
    build (F10)
 8. Dados de teste no DEV: OS-0018 a OS-0024 (e fotos de teste na
    OS-0010). DEV = HML, sem dados reais
+9. **(2026-09-25) Checklist avulso — nome e recorrência, aguardando
+   decisão.** Usuário não gostou do termo "avulso" e esperava
+   recorrência como a do Outlook (periodicidade). Estado real conferido
+   no código: `checklist_instances.recurrence` é **texto livre**
+   (placeholder "Ex: mensal, semanal"), exibido só como etiqueta — nenhuma
+   ocorrência é gerada, sem data prevista nem atraso. Proposta levada
+   (nome + recorrência estruturada) registrada no VISAO_ATOS.md, F5
 
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
