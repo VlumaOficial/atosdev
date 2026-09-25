@@ -44,8 +44,8 @@ export default function CidadeSelect({ uf, ibge, onChange, idPrefixo = 'cidade',
           placeholder="UF" searchPlaceholder="UF..." emptyText="UF inválida." />
       </div>
       <div>
-        <Label htmlFor={idPrefixo + '-nome'}>{rotuloCidade}</Label>
-        <Combobox id={idPrefixo + '-nome'} options={opcoesCidade} value={ibge}
+        <Label htmlFor={idPrefixo + '-cidade'}>{rotuloCidade}</Label>
+        <Combobox id={idPrefixo + '-cidade'} options={opcoesCidade} value={ibge}
           onChange={v => onChange({ uf, ibge: v, nome: cidades.find(c => c.ibge === v)?.nome ?? '' })}
           placeholder={!uf ? 'Escolha a UF primeiro' : carregando ? 'Carregando cidades…' : 'Selecione a cidade'}
           searchPlaceholder="Buscar cidade..." emptyText={carregando ? 'Carregando…' : 'Nenhuma cidade encontrada.'} />

@@ -326,7 +326,7 @@ export default function LocationsPage() {
             <Input id="address" value={form.address ?? ''} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Rua, número, bairro" />
           </div>
           <div>
-            <CidadeSelect idPrefixo="unidade-cidade"
+            <CidadeSelect idPrefixo="unidade"
               uf={ufDoIbge(form.cidade_ibge) ?? (form.state && /^[A-Za-z]{2}$/.test(form.state.trim()) ? form.state.trim().toUpperCase() : '')}
               ibge={form.cidade_ibge ?? ''}
               onChange={v => setForm({ ...form, state: v.uf, city: v.nome || null, cidade_ibge: v.ibge || null })} />
