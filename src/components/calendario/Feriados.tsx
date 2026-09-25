@@ -224,7 +224,7 @@ export default function Feriados() {
           <div className="flex-1" />
           {podeEditar && <Button variant="cta" size="sm" onClick={novo}><Plus size={14} /> {plataforma ? 'Novo feriado da plataforma' : 'Novo feriado'}</Button>}
         </div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <div className="flex flex-wrap gap-1.5">
           {FILTROS.filter(f => !plataforma || f.k !== 'empresa').map(f => (
             <button key={f.k} type="button" onClick={() => setFiltro(f.k)}
               className={cn('px-2.5 py-1 rounded-full text-xs border transition whitespace-nowrap',
