@@ -36,7 +36,7 @@ function LinhaData({ c, sit }: { c: MyChecklist; sit: Situacao }) {
 
 export default function MyChecklistsPage() {
   const navigate = useNavigate()
-  const { checklists, loading, error } = useMyChecklists()
+  const { checklists, loading, error, dias, temMaisAntigos, verMaisAntigos } = useMyChecklists()
   const { tenant } = useAuth()
   const hoje = hojeNoFuso(tenant?.fuso_horario)
   const [filter, setFilter] = useState<string>('hoje')
@@ -163,6 +163,16 @@ export default function MyChecklistsPage() {
       ) : (
         <div className="space-y-2">
           {visible.map(c => <ChecklistRow key={c.id} c={c} />)}
+        </div>
+      )}
+      {!loading && !error && ['all', 'concluido'].includes(filter) && (
+        <div className="text-center mt-4 space-y-2" data-testid="rodape-concluidos">
+          <p className="text-xs text-muted-foreground">Concluídos: últimos {dias} dias.</p>
+          {temMaisAntigos && (
+            <button onClick={verMaisAntigos} className="text-xs text-primary font-medium px-3 py-2 rounded-md border border-primary/30 active:bg-primary/10">
+              Ver mais antigos
+            </button>
+          )}
         </div>
       )}
     </div>

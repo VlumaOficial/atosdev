@@ -46,7 +46,7 @@ function primeiroNome(nome?: string | null): string {
 export default function MyOrdersPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { orders, loading, error } = useMyOrders()
+  const { orders, loading, error, dias, temMaisAntigas, verMaisAntigas } = useMyOrders()
   const [filter, setFilter] = useState<string>('all')
   const [view, setView] = useState<'list' | 'cards'>('cards')
 
@@ -177,6 +177,17 @@ export default function MyOrdersPage() {
       ) : (
         <div className="space-y-2">
           {visible.map(o => <OrderRow key={o.id} o={o} />)}
+        </div>
+      )}
+
+      {!loading && !error && ['all', 'concluida', 'cancelada'].includes(filter) && (
+        <div className="text-center mt-4 space-y-2" data-testid="rodape-finalizadas">
+          <p className="text-xs text-muted-foreground">Concluídas e canceladas: últimos {dias} dias.</p>
+          {temMaisAntigas && (
+            <button onClick={verMaisAntigas} className="text-xs text-primary font-medium px-3 py-2 rounded-md border border-primary/30 active:bg-primary/10">
+              Ver mais antigas
+            </button>
+          )}
         </div>
       )}
     </div>
