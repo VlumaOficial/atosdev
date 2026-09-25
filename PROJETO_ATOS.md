@@ -942,6 +942,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 032_f6_liberar_espaco | colunas arquivo_removido_em/removido_em (evidências, verificação, relatórios); liberacoes_espaco (histórico) + RLS; os_para_liberar, arquivos_para_liberar (nível 1 só OS com PDF guardado), previa_liberar_espaco, registrar_liberacao (admin, só pasta da empresa) | OK | Pendente | Sim |
 | 033_f6_identidade_empresa | atualizar_dados_empresa sem CNPJ (admin: nome de exibição e contato); tenant_identidade_historico; atualizar_identidade_tenant() (só Super Admin: razão social + CNPJ validado, com histórico e fonte receita/manual) | OK | Pendente | Sim |
 | 034_f6_envio_relatorio | tenants.envio_nivel (basico/intermediario/avancado); tenant_envio_config (canais, mensagem, permissão Bloco E, SMTP próprio sem senha) + gatilho de padrão; salvar_config_envio, definir_senha_smtp (Vault), tem_senha_smtp, ler_senha_smtp (só service role), definir_nivel_envio (Super Admin) | OK | Pendente | Sim |
+| 035_calendarios | módulo Calendários: tenants.fuso_horario/sede_cidade_ibge/sede_cidade; feriados (plataforma/estadual/municipal IBGE/empresa; feriado/facultativo/reduzido com janela; anual) + feriados_efeito_empresa; horarios_atendimento nomeados (um padrão; "Comercial" criado para todas); locations.cidade_ibge/horario_funcionamento; funções feriados_do_dia, periodos_do_dia, eh_dia_util, proximo_dia_util, horas_uteis_entre, somar_horas_uteis, situacao_do_dia, unidade_aberta; nacionais 2025–2036 | OK | Pendente | Sim |
 
 ---
 
@@ -1358,7 +1359,8 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
    dia) — a refinar, usuário tem desenvolvimento aproveitável; horário
    de atendimento por empresa x por equipe — a refinar
 
-### Módulo Calendários — Etapa 1 (2026-09-25) — EM ANDAMENTO
+### Módulo Calendários — Etapa 1 (2026-09-25) — CONCLUÍDA
+**Atualização 2026-09-25 (mesma data): migration aplicada, publicado e testado ponta a ponta na URL pública — ver "Aplicação e testes" ao fim desta seção. Título anterior: "EM ANDAMENTO"; o texto abaixo foi escrito antes da aplicação e é mantido como histórico.**
 - Decisões e desenho: VISAO_ATOS.md 9.8 (nome, conceitos, ordem)
 - **Migration 035** (arquivo pronto, NÃO aplicada ainda — aguardando
   token da Management API): fuso e sede da empresa; `feriados` em
@@ -1385,6 +1387,52 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   "Calendários da plataforma"), fuso em Configurações, Unidade com UF +
   cidade da lista do IBGE e horário de funcionamento opcional
 
+**Aplicação e testes (2026-09-25):**
+- Migration 035 aplicada no DEV via Management API: 168 feriados
+  nacionais (2025–2036) e "Comercial" padrão criado para as 3 empresas
+- Unidades antigas → código IBGE pelo script versionado
+  `supabase/scripts/ajustar_cidade_ibge.py` (só casa nome + UF exatos
+  com a lista oficial; sem adivinhar): 5 de 10 ajustadas (Salvador/BA);
+  as outras 5 não têm cidade nenhuma — a tela da Unidade avisa
+- Testado ponta a ponta (Playwright, URL pública, admin real; 0 erros de
+  console): menu Calendários; sede Salvador - BA; feriado municipal
+  (Salvador, 08/12), estadual (BA, 02/07) e da empresa com expediente
+  reduzido (24/12 até 12:00), todos "repete todo ano"; validação de
+  reduzido sem horário; Carnaval marcado como folga. "Conferir uma
+  data": 12/10 sem expediente; 13/10 08–18; 08/12 sem expediente na sede
+  e na unidade "Feira II" (Salvador) mas **dia útil numa unidade de Feira
+  de Santana** (municipal não vaza para outra cidade); 02/07 e 02/07/2027
+  sem expediente; 24/12 08–12; Carnaval folga; Cinzas normal (padrão).
+  Horários: validação fim antes do início; modelo "com almoço" salvo
+  (08–12 e 13–18); 24x7 "ignora feriados" → Natal com expediente 00–24;
+  tornar padrão (padrão sem botão excluir); nome duplicado bloqueado.
+  Unidade nova em Feira de Santana (IBGE 2910800) com horário seg–sex
+  10–22, sáb 08–18 gravado. Fuso salvo (Manaus) no banco
+- Segurança (impersonação SQL com rollback): técnico lê feriados mas não
+  cria/altera nada (RLS e "Sem permissão" nas funções); admin não cria
+  feriado nacional nem em outra empresa, não altera/exclui nacional (0
+  linhas), não vê horários de outra empresa, não exclui o padrão;
+  controle positivo: admin altera o próprio horário (1 linha)
+- Funções no banco real: horas úteis sex 17h → ter 10h com feriado na
+  segunda = 3 h; prazo de 4 h úteis a partir de sex 17h = ter 11h;
+  próximo dia útil após sáb 10/10 = ter 13/10; unidade aberta seg 11h
+  sim, seg 9h não, domingo não
+- Técnico em /calendarios → redirecionado para /campo. Super Admin:
+  "Calendários da plataforma", sem abas nem coluna de efeito, não vê os
+  feriados da Infoxtec, edita nacionais; 2035 já gerado (Carnaval 05/02)
+- **Achados no teste e corrigidos**: (1) id duplicado entre o campo
+  nome do feriado e o seletor de cidade (quebrava a escolha da cidade no
+  modal); (2) no celular os filtros empilhavam e depois criaram rolagem
+  horizontal (452 px) — agora quebram linha (393 px, sem rolagem);
+  (3) caixa de efeito com largura variável; (4) nome duplicado de
+  horário checado na tela antes de enviar (evita erro 409); (5) texto da
+  Unidade prometia aviso que ainda não existe — ajustado
+- **Dados que ficaram no DEV (reais, úteis para a Infoxtec)**: sede
+  Salvador - BA; feriados Nossa Senhora da Conceição da Praia (Salvador,
+  08/12), Independência da Bahia (02/07) e Véspera de Natal (24/12 até
+  12:00). Desfeitos: Carnaval como folga, horário 24x7, almoço no
+  Comercial, fuso Manaus, unidade de teste em Feira de Santana
+
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de
@@ -1392,7 +1440,11 @@ noreply@vluma.com.br (segredo `SMTP_PADRAO_SENHA`), chave do LocationIQ
 (cadastrada pela tela do Super Admin).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–034 em ordem. **Atenção migration 030**: o
+- Aplicar migrations 001–035 em ordem. Depois da 035, rodar
+  `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
+  IBGE das Unidades existentes) e conferir que os feriados nacionais do
+  ano estão gerados (a migration gera 2025–2036; depois disso, botão
+  "Gerar nacionais" do Super Admin em Calendários). **Atenção migration 030**: o
   gatilho `fn_orders_relatorio_ao_concluir` tem a URL do projeto DEV
   (`vgkiddqahubznlzkxfgb`) escrita — trocar pelo ref do PRD
 - Publicar as Edge Functions: `criar-tecnico` (verify_jwt true),

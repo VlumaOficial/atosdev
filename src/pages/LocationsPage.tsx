@@ -339,7 +339,7 @@ export default function LocationsPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-foreground flex items-center gap-1.5"><Clock size={13} /> Horário de funcionamento <span className="text-xs text-muted-foreground font-normal">(opcional)</span></p>
-                <p className="text-xs text-muted-foreground">Quando a unidade recebe o técnico (ex.: loja das 10h às 22h). O ATOS avisa ao agendar fora dele.</p>
+                <p className="text-xs text-muted-foreground">Quando a unidade recebe o técnico (ex.: loja das 10h às 22h). Será usado para avisar quando algo for agendado fora deste horário.</p>
                 {form.horario_funcionamento && <p className="text-xs text-foreground mt-1" data-testid="unidade-horario-resumo">{resumoSemana(ordenarSemana(form.horario_funcionamento))}</p>}
               </div>
               <button type="button" onClick={() => setForm({ ...form, horario_funcionamento: form.horario_funcionamento ? null : JSON.parse(JSON.stringify(MODELOS_SEMANA[0].semana)) })}
