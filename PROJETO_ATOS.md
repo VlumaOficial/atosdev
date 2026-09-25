@@ -945,6 +945,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 035_calendarios | módulo Calendários: tenants.fuso_horario/sede_cidade_ibge/sede_cidade; feriados (plataforma/estadual/municipal IBGE/empresa; feriado/facultativo/reduzido com janela; anual) + feriados_efeito_empresa; horarios_atendimento nomeados (um padrão; "Comercial" criado para todas); locations.cidade_ibge/horario_funcionamento; funções feriados_do_dia, periodos_do_dia, eh_dia_util, proximo_dia_util, horas_uteis_entre, somar_horas_uteis, situacao_do_dia, unidade_aberta; nacionais 2025–2036 | OK | Pendente | Sim |
 | 036_endereco_estruturado | locations.cep/logradouro/numero/complemento/bairro + gatilho que monta address e acerta UF pelo IBGE; cpf_valido, formatar_documento, gatilho de CPF/CNPJ do cliente (só quando muda); salvar_cliente (cliente + unidade principal numa transação, SECURITY INVOKER); definir_sede_tenant (Super Admin) | OK | Pendente | Sim |
 | 037_unidade_documento | locations.documento (CPF ou CNPJ, opcional); normalizar_documento() — regra única de CPF/CNPJ usada pelos gatilhos de clients e locations (valida só quando muda) | OK | Pendente | Sim |
+| 038_recorrencia_checklists | checklist_series + checklist_instances.serie_id/data_prevista/prazo; fn_regra_erro, datas_da_regra, datas_da_serie, previa_recorrencia, gerar_ocorrencias (só servidor), salvar_serie, definir_situacao_serie, alterar_ocorrencia, fn_hoje_empresa; pg_cron + job atos-gerar-ocorrencias (hora em hora) | OK | Pendente | Sim |
 
 ---
 
@@ -1524,6 +1525,66 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   unidades antes sem cidade foram completadas pelo usuário pela tela em
   2026-09-25 (12:16–12:17)
 
+### Recorrência dos checklists avulsos (2026-09-25) — CONCLUÍDA
+- Desenho aprovado antes (VISAO_ATOS.md F5): campo "Repetir" com
+  atalhos + "Personalizar..." em modal; fim de semana/feriado só com
+  aviso; dia 29–31 → último dia do mês; série separada das ocorrências;
+  geração pelo banco; "esta e as seguintes" / "só esta"; pausar. Nome
+  "Checklist avulso" mantido (decisão do usuário)
+- **Migration 038** (ver seção 6): `fn_regra_erro`, `datas_da_regra`
+  (pura — a MESMA usada na prévia e na geração), `datas_da_serie`
+  ("todo dia útil" pelo horário de atendimento padrão + feriados da
+  cidade da unidade; término nunca/após N/em data), tabela
+  `checklist_series` (sem escrita direta — só pelas funções),
+  `checklist_instances.serie_id/data_prevista/prazo` (único por série +
+  data), `previa_recorrencia`, `gerar_ocorrencias` (só servidor/cron;
+  janela de 7 dias; nunca gera datas anteriores à criação; marca
+  `gerado_ate` para não recalcular o passado; encerra a série quando a
+  última ocorrência passa), `salvar_serie` (criar / alterar "esta e as
+  seguintes" a partir de uma data: refaz só as futuras NÃO iniciadas),
+  `definir_situacao_serie` (pausar/retomar/encerrar — pausar remove as
+  futuras não iniciadas), `alterar_ocorrencia` ("só esta": data, prazo,
+  técnicos). **pg_cron** instalado; job `atos-gerar-ocorrencias` de hora
+  em hora (minuto 7)
+- Lógica validada no PGlite antes de aplicar (datas conferidas com os
+  exemplos combinados com o usuário: a cada 2 dias, seg/qua/sex,
+  quinzenal, dia 31, 1ª segunda, última sexta, 29/02, dia útil pulando
+  12/10)
+- Telas: **Checklists avulsos** com abas *Checklists* (ocorrências com
+  data, prazo, selo "Atrasado", chip da repetição, "Remarcar só este") e
+  *Recorrências* (resumo, próxima data, técnicos, Editar / Pausar /
+  Retomar / Encerrar); formulário com Data/"Começa em", **Prazo para
+  concluir** (mesmo dia, até o dia seguinte, 3…30 dias) e o campo
+  **Repetir** (`RecorrenciaCampo`: atalhos da data escolhida + modal
+  Personalizar com intervalo, dias da semana, modos do mês, término,
+  resumo e próximas 5 datas do banco, com aviso de fim de
+  semana/feriado). App do técnico: cartões **Hoje / Atrasados /
+  Próximos / Concluídos** (hoje no fuso da empresa), data e prazo em
+  cada cartão. Resumo e RRULE (padrão iCalendar) montados em
+  `src/lib/recorrencia.ts`
+- Testado ponta a ponta (URL pública, admin e técnico reais, 0 erros de
+  console): único com data passada → "Atrasado"; atalhos de sexta
+  25/09 ("Toda sexta", "Todo mês, no dia 25", "na 4ª sexta-feira", "na
+  última sexta-feira", "Todo ano, em 25 de setembro"); semanal → prévia
+  5 sextas e banco com 25/09 (prazo 26/09) e 02/10 (janela de 7 dias) +
+  técnico atribuído; Personalizar "Todo dia útil, 5 vezes" → 25/09,
+  28/09, 29/09, 30/09, 01/10 (pula o fim de semana), 5 no banco; aviso
+  com Sábado, Domingo e Nossa Senhora Aparecida; dia 31 → 31/10, 30/11,
+  31/12, 31/01, 28/02; editar "segunda e sexta" a partir de hoje → 25/09,
+  28/09, 02/10; remarcar só a de 02/10 → 03/10; pausar (fica só a de
+  hoje), retomar (5 de novo), encerrar; técnico no celular: Hoje 2,
+  Atrasados 1 ("prazo era 20/09"), Próximos 2 (28/09, 03/10), abriu e
+  concluiu uma ocorrência → Concluídos 1. Segurança (impersonação,
+  rollback): técnico não cria/pausa/remarca nem dispara a geração;
+  admin não grava série direto na tabela; regra inválida recusada
+- **Limites conhecidos (v1)**: "esta e as seguintes" reancora a série
+  na data escolhida (ex.: "a cada 2 dias" passa a contar dali);
+  "Remarcar só este" não avisa se a nova data cai em feriado; o aviso
+  de horário de funcionamento da unidade (migration 035) ainda não é
+  usado aqui — ocorrências são por dia, sem hora
+- Dados de teste: série "Teste Semanal" e "Teste Dia Util", checklist
+  "Teste Único Atrasado" — apagar depois da validação do usuário
+
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de
@@ -1535,7 +1596,8 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–037 em ordem. Depois da 036, rodar
+- Aplicar migrations 001–038 em ordem. **038 instala o pg_cron e agenda
+  `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
   IBGE das Unidades existentes) e conferir que os feriados nacionais do
   ano estão gerados (a migration gera 2025–2036; depois disso, botão
