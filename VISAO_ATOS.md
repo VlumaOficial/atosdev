@@ -346,6 +346,12 @@ Pedido do usuário: registrar feriados nacionais, escala de trabalho dos funcion
 - **Etapa 3 — SLA** (já no backlog): prazo em horas úteis = expediente − feriados da unidade, pausa fora do horário
 - **Etapa 4 — Ponto**: produto regulado (Portaria MTP 671/2021 — REP-P, arquivos AFD/AEJ, comprovante, registro do programa no INPI) + LGPD (GPS/foto na marcação muda o princípio "GPS só na evidência"). Decidir **construir x integrar** (Pontomais/Tangerino/Sólides etc.) antes, com contador/advogado trabalhista
 - Etapas 2–4 ficam **fora do MVP** (proposta); Etapa 1 entra agora por ser pré-requisito da recorrência
+- **Decisões do usuário (2026-09-25):**
+  - Etapa 1 (Calendário da empresa) **aprovada**, entra antes da recorrência
+  - Etapas 2–3 fora do MVP, fases novas depois da F7 — **aprovado**
+  - **Registro de ponto REMOVIDO do escopo** (inclusive a "jornada operacional") — descartado pela complexidade formal (Portaria 671/REP-P, LGPD). A Etapa 4 deixa de existir
+  - **No lugar do ponto: notificação diária ao funcionário** informando onde iniciar a escala do dia, com as OS e checklists em nome dele. A refinar com o usuário — ele tem um **desenvolvimento existente que pode ser aproveitado**
+  - Horário de atendimento (um para a empresa inteira x por equipe/região): **a refinar**
 
 ## 10. ECOSSISTEMA VLUMA — PRODUTO IRMÃO: CLAREZZA
 

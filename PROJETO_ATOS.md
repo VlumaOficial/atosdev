@@ -1352,6 +1352,11 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
    próprio "Calendário e Jornada" (feriados, escala, horário de
    atendimento → base de ponto, escala e SLA) — proposta em 4 etapas no
    VISAO_ATOS.md 9.8, aguardando decisão
+   → **Atualização 2026-09-25:** Etapa 1 aprovada; Etapas 2–3 fora do
+   MVP; **ponto descartado** (complexidade formal) e substituído por
+   notificação diária ao funcionário (onde iniciar + OS/checklists do
+   dia) — a refinar, usuário tem desenvolvimento aproveitável; horário
+   de atendimento por empresa x por equipe — a refinar
 
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
