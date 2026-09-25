@@ -966,7 +966,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - [ ] Aplicar todas as migrations no PRD ao replicar
 - [x] Campo "nome fantasia/exibição" no tenant (nome longo cortado na sidebar) — **feito em 2026-09-24** (migration 031, `trade_name`, editável pelo admin)
 - [ ] Ajuste de contraste do ícone ATOS na sidebar
-- [ ] **Responsividade do painel admin (acabamento pré-PRD, após F5-F7):** — *parcial em 2026-09-25: página não fica mais larga que a tela no celular (`min-w-0` no `<main>`); o resto segue pendente* — sidebar → menu hambúrguer; listagens no mobile com LISTA COMPACTA como padrão (não cards) + busca/filtros fortes, toggle para cards opcional; revisar modais. Aplicar em OS, Clientes, Unidades, Técnicos e Checklists
+- [ ] **Responsividade do painel admin (acabamento pré-PRD, após F5-F7):** — *parcial em 2026-09-25: página não fica mais larga que a tela no celular (`min-w-0` no `<main>`); o resto segue pendente. Esclarecido ao usuário: responsividade do painel NÃO está garantida — o foco mobile garantido é o app do técnico; painel admin é uso principal em desktop até este item ser feito* — sidebar → menu hambúrguer; listagens no mobile com LISTA COMPACTA como padrão (não cards) + busca/filtros fortes, toggle para cards opcional; revisar modais. Aplicar em OS, Clientes, Unidades, Técnicos e Checklists
 - [ ] Aba "auditoria/histórico completo" da OS (mostrar também os eventos 'edited' ocultos da linha do tempo)
 - [ ] Auto-atribuição: técnico pegar OS do backlog (Aberta sem técnico) — F4+
 - [ ] Mapa visual embutido na tela do técnico (hoje só botão "Abrir no mapa")
@@ -1517,6 +1517,7 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   CPF e salvou; no banco (rollback) CPF inválido recusado e alteração de
   outro campo numa unidade sem documento segue funcionando. Dados de
   teste apagados
+- **Atualização 2026-09-25: pendência abaixo RESOLVIDA pelo usuário pela tela** — Atakarejo ganhou a unidade principal "Atakarejo" (12:57, CNPJ 73.849.952/0010-49 pela Receita, Av. Santiago de Compostela, 425, Brotas) e "Clinte Teste" ganhou a sua (13:00). Nenhum cliente da Infoxtec está sem principal. Texto original mantido:
 - **Pendência de dados (usuário)**: Atakarejo sem unidade principal
   (escolher Feira II ou LOJA 53 no modal); "Clinte Teste" sem nenhuma
   unidade (completar o endereço no modal cria a principal). As 5
