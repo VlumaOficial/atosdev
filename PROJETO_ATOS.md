@@ -944,6 +944,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 034_f6_envio_relatorio | tenants.envio_nivel (basico/intermediario/avancado); tenant_envio_config (canais, mensagem, permissão Bloco E, SMTP próprio sem senha) + gatilho de padrão; salvar_config_envio, definir_senha_smtp (Vault), tem_senha_smtp, ler_senha_smtp (só service role), definir_nivel_envio (Super Admin) | OK | Pendente | Sim |
 | 035_calendarios | módulo Calendários: tenants.fuso_horario/sede_cidade_ibge/sede_cidade; feriados (plataforma/estadual/municipal IBGE/empresa; feriado/facultativo/reduzido com janela; anual) + feriados_efeito_empresa; horarios_atendimento nomeados (um padrão; "Comercial" criado para todas); locations.cidade_ibge/horario_funcionamento; funções feriados_do_dia, periodos_do_dia, eh_dia_util, proximo_dia_util, horas_uteis_entre, somar_horas_uteis, situacao_do_dia, unidade_aberta; nacionais 2025–2036 | OK | Pendente | Sim |
 | 036_endereco_estruturado | locations.cep/logradouro/numero/complemento/bairro + gatilho que monta address e acerta UF pelo IBGE; cpf_valido, formatar_documento, gatilho de CPF/CNPJ do cliente (só quando muda); salvar_cliente (cliente + unidade principal numa transação, SECURITY INVOKER); definir_sede_tenant (Super Admin) | OK | Pendente | Sim |
+| 037_unidade_documento | locations.documento (CPF ou CNPJ, opcional); normalizar_documento() — regra única de CPF/CNPJ usada pelos gatilhos de clients e locations (valida só quando muda) | OK | Pendente | Sim |
 
 ---
 
@@ -1500,6 +1501,22 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   Unidades, OS, Técnicos, Calendários, Configurações, Checklists: 393 px
   no celular, desktop inalterado). O restante da responsividade do
   painel continua no backlog
+- **CPF ou CNPJ na Unidade (pedido do usuário, 2026-09-25, migration
+  037)**: campo opcional com a mesma validação do Cliente (regra única
+  `normalizar_documento()` no banco, usada por Cliente e Unidade; valida
+  só quando o documento muda), botão **Receita** (preenche nome vazio e
+  endereço) e **aviso sem bloquear** quando a raiz do CNPJ (8 primeiros
+  dígitos) difere da do cliente — filial legítima tem a mesma raiz da
+  matriz. Campo + botão viraram o componente `DocumentoReceita`,
+  compartilhado por Cliente e Unidade. Lista de Unidades mostra o
+  documento sob o nome. Testado ponta a ponta (URL pública, admin real, 0
+  erros): regressão do Cliente pela Receita (CNPJ da Infoxtec → nome
+  "Infoxtec", Rua Silveira Martins, 27, Salvador); unidade com CNPJ de
+  outra raiz → aviso + Receita preencheu nome/Brasília; CNPJ inválido
+  barrado; mesma raiz → aviso some, salvo formatado; edição trocou para
+  CPF e salvou; no banco (rollback) CPF inválido recusado e alteração de
+  outro campo numa unidade sem documento segue funcionando. Dados de
+  teste apagados
 - **Pendência de dados (usuário)**: Atakarejo sem unidade principal
   (escolher Feira II ou LOJA 53 no modal); "Clinte Teste" sem nenhuma
   unidade (completar o endereço no modal cria a principal). As 5
@@ -1517,7 +1534,7 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–036 em ordem. Depois da 036, rodar
+- Aplicar migrations 001–037 em ordem. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
   IBGE das Unidades existentes) e conferir que os feriados nacionais do
   ano estão gerados (a migration gera 2025–2036; depois disso, botão
