@@ -261,11 +261,11 @@ export default function Feriados() {
                 {!plataforma && (
                   podeEditar ? (
                     <select aria-label={'Efeito ' + f.nome} value={efeito} onChange={e => mudarEfeito(f, e.target.value as Efeito)}
-                      className={cn('px-2 py-1.5 rounded-md bg-input border text-xs',
+                      className={cn('w-48 flex-shrink-0 px-2 py-1.5 rounded-md bg-input border text-xs',
                         efeito === 'folga' ? 'border-amber-500/40 text-amber-300' : efeito === 'reduzido' ? 'border-sky-500/40 text-sky-300' : 'border-border text-foreground')}>
                       <option value="folga">{ROTULO_EFEITO.folga}</option>
                       <option value="normal">{ROTULO_EFEITO.normal}</option>
-                      {f.janela_inicio && <option value="reduzido">{ROTULO_EFEITO.reduzido} ({textoJanela(f)})</option>}
+                      {f.janela_inicio && <option value="reduzido">Reduzido ({textoJanela(f)})</option>}
                     </select>
                   ) : <span className="text-xs text-muted-foreground">{ROTULO_EFEITO[efeito]}</span>
                 )}

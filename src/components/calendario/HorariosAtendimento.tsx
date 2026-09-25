@@ -66,6 +66,10 @@ export default function HorariosAtendimento({ podeEditar }: { podeEditar: boolea
     e.preventDefault()
     setErroForm('')
     if (form.nome.trim().length < 2) { setErroForm('Dê um nome ao horário (ex.: Comercial, 24x7).'); return }
+    const nomeNorm = form.nome.trim().toLowerCase()
+    if (itens.some(h => h.id !== editando?.id && h.nome.trim().toLowerCase() === nomeNorm)) {
+      setErroForm('Já existe um horário com esse nome.'); return
+    }
     const problema = validarSemana(form.semana)
     if (problema) { setErroForm(problema); return }
     const semana = ordenarSemana(form.semana)
