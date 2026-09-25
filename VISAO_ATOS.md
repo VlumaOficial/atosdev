@@ -217,6 +217,8 @@ Pedido do usuário: refinamento completo (painel de configuração de criticidad
 7. SLA por cliente/contrato: **construir**, com possibilidade de bloqueio por plano quando falarmos de venda/planos (F8)
 8. KPIs e tela do painel: **aprovados** — construir e validar
 - Cuidado pedido pelo usuário: a OS atual muda — **não quebrar o que já funciona e foi testado**
+- **Respostas finais (2026-09-25):** (3) metas por nível = horas para **iniciar** (atendimento) e para **concluir** (solução), **resposta opcional** — e **a própria empresa configura** (admin/gestor); (5) **alerta "em risco"** sim (padrão 75%, ajustável); **sem justificativa obrigatória** ao estourar; OS antigas: não se preocupar (ambiente de desenvolvimento); (4) níveis por tipo: **Incidente → Crítico/Alto/Baixo** (matriz Impacto × Urgência ou modo simples), **Preventiva → nível "Preventiva"**, **Requisição → nível "Requisição"**, **Visita → sem SLA**
+- Entrega: (A) banco + tela "Catálogo e SLA" → (B) OS (formulário, lista, detalhe, app do técnico, pausa, agendamento, PDF) com regressão completa → (C) alertas de em risco/vencido → F7
 
 **Modelo ITSM (ITIL, simplificado para PME de campo):**
 - **Tipo de OS**: Corretiva (incidente) · Preventiva (planejada — liga com checklists recorrentes) · Instalação/Requisição · Visita técnica/Orçamento
