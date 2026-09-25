@@ -1,6 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useOrders, type Order, type OrderInput, type OrderPriority } from '@/hooks/useOrders'
+import { useOrders, useListaOS, type Order, type OrderInput, type OrderPriority } from '@/hooks/useOrders'
+import { useAuth } from '@/hooks/useAuth'
+import { useLocations } from '@/hooks/useLocations'
+import { useFiltrosUrl } from '@/hooks/useFiltrosUrl'
+import { DataListView, type Column } from '@/components/ui/data-list-view'
+import FiltrosLista from '@/components/FiltrosLista'
+import { intervaloDoPeriodo, type ChavePeriodo } from '@/lib/periodo'
+import { hojeNoFuso } from '@/lib/recorrencia'
 import { useClients } from '@/hooks/useClients'
 import { useTechnicians } from '@/hooks/useTechnicians'
 import { useChecklistTemplates } from '@/hooks/useChecklistTemplates'
@@ -13,7 +20,7 @@ import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Combobox } from '@/components/ui/combobox'
-import { ClipboardList, Plus, Pencil, Building2, MapPin, Wrench, LayoutGrid, List } from 'lucide-react'
+import { ClipboardList, Plus, Pencil, Building2, MapPin, Wrench } from 'lucide-react'
 
 const emptyForm: OrderInput = { client_id: '', location_id: '', technician_id: '', title: '', description: '', priority: 'normal', require_signature: null }
 
@@ -66,7 +73,27 @@ function strParaRequireSignature(v: string): boolean | null {
 
 export default function OrdersPage() {
   const navigate = useNavigate()
-  const { orders, loading, error, createOrder, updateOrder } = useOrders()
+  const { createOrder, updateOrder } = useOrders()
+  const { tenant } = useAuth()
+  const hoje = hojeNoFuso(tenant?.fuso_horario)
+  // filtros + página na URL (voltar da OS mantém a lista como estava)
+  const { valores: f, definir, limpar } = useFiltrosUrl({
+    sit: 'todas', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', pri: '', pag: '1', tam: '25',
+  })
+  const periodo = intervaloDoPeriodo(f.per as ChavePeriodo, hoje, f.de, f.ate)
+  const pagina = Math.max(1, parseInt(f.pag) || 1)
+  const tamanho = parseInt(f.tam) || 25
+  const { itens, total, contagens, loading, error, recarregar } = useListaOS({
+    situacao: f.sit, q: f.q, de: periodo.de, ate: periodo.ate, cliente: f.cli, unidade: f.uni, tecnico: f.tec, prioridade: f.pri,
+  }, pagina, tamanho)
+  const { locations: todasUnidades } = useLocations()
+  const [busca, setBusca] = useState(f.q)
+  useEffect(() => { setBusca(f.q) }, [f.q])
+  useEffect(() => {
+    if (busca === f.q) return
+    const t = setTimeout(() => definir({ q: busca.trim() }), 350)
+    return () => clearTimeout(t)
+  }, [busca]) // eslint-disable-line react-hooks/exhaustive-deps
   const { templates: checklistTemplates } = useChecklistTemplates()
   const { clients } = useClients()
   const { technicians } = useTechnicians()
@@ -78,9 +105,6 @@ export default function OrdersPage() {
   const [checklistInstancia, setChecklistInstancia] = useState<{ id: string; template_id: string } | null>(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
-  const [chip, setChip] = useState('all')
-  const [query, setQuery] = useState('')
-  const [view, setView] = useState<'list' | 'cards'>('list')
 
   const [formLocations, setFormLocations] = useState<{ value: string; label: string }[]>([])
 
@@ -108,17 +132,20 @@ export default function OrdersPage() {
     return () => { active = false }
   }, [form.client_id])
 
-  const visible = useMemo(() => {
-    let list = orders
-    if (chip !== 'all') list = list.filter(o => o.status === chip)
-    if (query.trim()) {
-      const q = query.toLowerCase()
-      list = list.filter(o =>
-        `${o.number} ${o.title} ${o.client?.name ?? ''} ${o.technician?.name ?? ''}`.toLowerCase().includes(q)
-      )
-    }
-    return list
-  }, [orders, chip, query])
+  const cont = (k: string) => contagens ? ` (${(contagens as any)[k] ?? 0})` : ''
+  const chips = [
+    { key: 'todas', label: 'Todas' + cont('todas') },
+    { key: 'em_aberto', label: 'Em aberto' + cont('em_aberto') },
+    ...statusChips.filter(c => c.key !== 'all').map(c => ({ key: c.key, label: c.label + cont(c.key) })),
+  ]
+  const unidadesFiltro = useMemo(() => todasUnidades.filter(l => !f.cli || l.client_id === f.cli)
+    .map(l => ({ value: l.id, label: f.cli ? l.name : `${l.name} — ${l.client?.name ?? ''}` })), [todasUnidades, f.cli])
+  const camposFiltro = [
+    { chave: 'cli', rotulo: 'Cliente', opcoes: clientOptions, vazio: 'Todos os clientes' },
+    { chave: 'uni', rotulo: 'Unidade', opcoes: unidadesFiltro, vazio: 'Todas as unidades' },
+    { chave: 'tec', rotulo: 'Técnico', opcoes: [{ value: 'sem', label: 'Sem técnico (backlog)' }, ...technicians.map(t => ({ value: t.id, label: t.name }))], vazio: 'Todos os técnicos' },
+    { chave: 'pri', rotulo: 'Prioridade', opcoes: Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label })), vazio: 'Todas as prioridades' },
+  ]
 
   function openNew() {
     setEditing(null)
@@ -203,6 +230,7 @@ export default function OrdersPage() {
         }
       }
       closeModal()
+      recarregar()
     } catch (err: any) {
       setFormError(err?.message ?? 'Não foi possível salvar a OS.')
     } finally {
@@ -218,6 +246,39 @@ export default function OrdersPage() {
     )
   }
 
+  const colunas: Column<Order>[] = [
+    { key: 'numero', header: 'OS', render: o => <span className="font-mono text-xs text-primary whitespace-nowrap" data-os={o.number}>{o.number}</span> },
+    { key: 'titulo', header: 'Título', render: o => <span className="text-foreground">{o.title}</span> },
+    { key: 'cliente', header: 'Cliente', render: o => <span className="text-muted-foreground">{o.client?.name ?? '—'}</span> },
+    { key: 'tecnico', header: 'Técnico', render: o => <span className="text-muted-foreground">{o.technician?.name ?? 'Sem técnico'}</span> },
+    { key: 'prioridade', header: 'Prioridade', render: o => <span className={'text-xs font-medium ' + PRIORITY_STYLES[o.priority]}>{PRIORITY_LABELS[o.priority]}</span> },
+    { key: 'status', header: 'Status', render: o => <StatusBadge status={o.status} /> },
+  ]
+  function cartao(o: Order) {
+    return (
+      <Card className="p-4 cursor-pointer hover:border-primary/30 transition" onClick={() => navigate(`/os/${o.id}`)}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-primary" data-os={o.number}>{o.number}</span>
+              <span className={'text-xs font-medium ' + PRIORITY_STYLES[o.priority]}>{PRIORITY_LABELS[o.priority]}</span>
+            </div>
+            <p className="font-medium text-foreground truncate mt-0.5">{o.title}</p>
+          </div>
+          <button onClick={(e) => openEdit(e, o)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition flex-shrink-0">
+            <Pencil size={14} />
+          </button>
+        </div>
+        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+          <p className="flex items-center gap-1.5"><Building2 size={12} /> {o.client?.name ?? '—'}</p>
+          {o.location?.name && <p className="flex items-center gap-1.5"><MapPin size={12} /> {o.location.name}</p>}
+          <p className="flex items-center gap-1.5"><Wrench size={12} /> {o.technician?.name ?? 'Sem técnico'}</p>
+        </div>
+        <div className="mt-3 pt-3 border-t border-border"><StatusBadge status={o.status} /></div>
+      </Card>
+    )
+  }
+
   return (
     <div>
       <PageHeader
@@ -230,116 +291,47 @@ export default function OrdersPage() {
         }
       />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <input
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Buscar por número, título, cliente ou técnico..."
-          className="flex-1 px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
-        />
-        <div className="flex items-center gap-1 bg-secondary rounded-md p-1">
-          <button onClick={() => setView('list')} title="Lista" className={'w-8 h-8 rounded flex items-center justify-center transition ' + (view === 'list' ? 'bg-card text-foreground' : 'text-muted-foreground hover:text-foreground')}>
-            <List size={16} />
-          </button>
-          <button onClick={() => setView('cards')} title="Cards" className={'w-8 h-8 rounded flex items-center justify-center transition ' + (view === 'cards' ? 'bg-card text-foreground' : 'text-muted-foreground hover:text-foreground')}>
-            <LayoutGrid size={16} />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        {statusChips.map(c => (
-          <button
-            key={c.key}
-            onClick={() => setChip(c.key)}
-            className={'px-3 py-1.5 rounded-full text-xs font-medium border transition ' + (chip === c.key ? 'bg-primary/10 text-primary border-primary/30' : 'bg-transparent text-muted-foreground border-border hover:text-foreground')}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-
-      <p className="text-xs text-muted-foreground mb-3">
-        {loading ? 'Carregando...' : `${visible.length} ${visible.length === 1 ? 'ordem' : 'ordens'}`}
-      </p>
-
+      <FiltrosLista campos={camposFiltro}
+        valores={{ cli: f.cli, uni: f.uni, tec: f.tec, pri: f.pri }}
+        onChange={(k, v) => definir(k === 'cli' ? { cli: v, uni: '' } : { [k]: v })}
+        periodo={{ rotulo: 'Aberta em', valor: f.per as ChavePeriodo, de: f.de, ate: f.ate, onChange: (per, de, ate) => definir({ per, de: per === 'personalizado' ? (de ?? '') : '', ate: per === 'personalizado' ? (ate ?? '') : '' }) }}
+        onLimpar={() => limpar()} />
       {error ? (
         <Card className="p-6 text-center text-red-400 text-sm">{error}</Card>
-      ) : loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : visible.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={ClipboardList}
-            title="Nenhuma ordem de serviço"
-            description="Crie a primeira OS para começar a organizar os atendimentos de campo."
-            action={<Button onClick={openNew} variant="cta"><Plus size={16} /> Nova OS</Button>}
-          />
-        </Card>
-      ) : view === 'list' ? (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs uppercase tracking-wider">OS</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs uppercase tracking-wider">Título</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs uppercase tracking-wider">Cliente</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs uppercase tracking-wider">Técnico</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs uppercase tracking-wider">Prioridade</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 text-xs uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 w-12" />
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map(o => (
-                  <tr key={o.id} onClick={() => navigate(`/os/${o.id}`)} className="border-b border-border last:border-0 hover:bg-secondary/40 transition cursor-pointer">
-                    <td className="px-4 py-3 font-mono text-xs text-primary whitespace-nowrap">{o.number}</td>
-                    <td className="px-4 py-3 text-foreground">{o.title}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{o.client?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{o.technician?.name ?? 'Sem técnico'}</td>
-                    <td className={'px-4 py-3 text-xs font-medium ' + PRIORITY_STYLES[o.priority]}>{PRIORITY_LABELS[o.priority]}</td>
-                    <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
-                    <td className="px-4 py-3">
-                      <button onClick={(e) => openEdit(e, o)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition">
-                        <Pencil size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visible.map(o => (
-            <Card key={o.id} className="p-4 cursor-pointer hover:border-primary/30 transition" onClick={() => navigate(`/os/${o.id}`)}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-primary">{o.number}</span>
-                    <span className={'text-xs font-medium ' + PRIORITY_STYLES[o.priority]}>{PRIORITY_LABELS[o.priority]}</span>
-                  </div>
-                  <p className="font-medium text-foreground truncate mt-0.5">{o.title}</p>
-                </div>
-                <button onClick={(e) => openEdit(e, o)} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition flex-shrink-0">
-                  <Pencil size={14} />
-                </button>
-              </div>
-              <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-                <p className="flex items-center gap-1.5 truncate"><Building2 size={12} /> {o.client?.name ?? '—'}</p>
-                {o.location?.name && <p className="flex items-center gap-1.5 truncate"><MapPin size={12} /> {o.location.name}</p>}
-                <p className="flex items-center gap-1.5 truncate"><Wrench size={12} /> {o.technician?.name ?? 'Sem técnico'}</p>
-              </div>
-              <div className="mt-3 pt-3 border-t border-border">
-                <StatusBadge status={o.status} />
-              </div>
+        <DataListView<Order>
+          items={itens}
+          loading={loading}
+          viewKey="orders"
+          search={busca}
+          onSearchChange={setBusca}
+          searchPlaceholder="Buscar por número, título, cliente ou técnico..."
+          page={pagina}
+          pageSize={tamanho}
+          total={total}
+          totalPages={Math.max(1, Math.ceil(total / tamanho))}
+          onPageChange={pg => definir({ pag: String(pg) })}
+          onPageSizeChange={t => definir({ tam: String(t) })}
+          chips={chips}
+          activeChip={f.sit}
+          onChipChange={k => definir({ sit: k })}
+          columns={colunas}
+          renderCard={cartao}
+          rowActions={o => (
+            <button onClick={(e) => openEdit(e, o)} title="Editar" className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition">
+              <Pencil size={14} />
+            </button>
+          )}
+          onRowClick={o => navigate(`/os/${o.id}`)}
+          getKey={o => o.id}
+          emptyState={
+            <Card>
+              <EmptyState icon={ClipboardList} title="Nenhuma ordem de serviço encontrada"
+                description="Nenhuma OS com estes filtros. Crie uma nova ou ajuste os filtros."
+                action={<Button onClick={openNew} variant="cta"><Plus size={16} /> Nova OS</Button>} />
             </Card>
-          ))}
-        </div>
+          }
+        />
       )}
 
       <Modal

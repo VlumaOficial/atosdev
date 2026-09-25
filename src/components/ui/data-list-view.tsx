@@ -41,6 +41,7 @@ interface DataListViewProps<T> {
   rowActions?: (item: T) => ReactNode
   getKey: (item: T) => string
   emptyState?: ReactNode
+  onRowClick?: (item: T) => void   // linha inteira clicável (ex.: abrir a OS)
 }
 
 export function DataListView<T>({
@@ -65,6 +66,7 @@ export function DataListView<T>({
   rowActions,
   getKey,
   emptyState,
+  onRowClick,
 }: DataListViewProps<T>) {
   const { mode, setMode } = useViewPreference(viewKey, 'table')
 
@@ -154,14 +156,15 @@ export function DataListView<T>({
                   </thead>
                   <tbody>
                     {items.map(item => (
-                      <tr key={getKey(item)} className="border-b border-border last:border-0 hover:bg-secondary/40 transition">
+                      <tr key={getKey(item)} onClick={onRowClick ? () => onRowClick(item) : undefined}
+                        className={cn('border-b border-border last:border-0 hover:bg-secondary/40 transition', onRowClick && 'cursor-pointer')}>
                         {columns.map(col => (
                           <td key={col.key} className={cn('px-4 py-3 text-foreground', col.className)}>
                             {col.render(item)}
                           </td>
                         ))}
                         {rowActions && (
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1">{rowActions(item)}</div>
                           </td>
                         )}

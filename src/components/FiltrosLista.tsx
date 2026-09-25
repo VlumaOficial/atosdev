@@ -21,7 +21,7 @@ interface Props {
   campos: CampoFiltro[]
   valores: Record<string, string>
   onChange: (chave: string, valor: string) => void
-  periodo?: { valor: ChavePeriodo; de: string; ate: string; onChange: (p: ChavePeriodo, de?: string, ate?: string) => void }
+  periodo?: { valor: ChavePeriodo; de: string; ate: string; onChange: (p: ChavePeriodo, de?: string, ate?: string) => void; rotulo?: string }
   onLimpar: () => void
 }
 
@@ -34,7 +34,7 @@ export default function FiltrosLista({ campos, valores, onChange, periodo, onLim
     const txt = periodo.valor === 'personalizado'
       ? `${periodo.de ? dataBR(periodo.de) : '…'} a ${periodo.ate ? dataBR(periodo.ate) : '…'}`
       : rot
-    ativos.push({ chave: 'periodo', texto: 'Período: ' + txt, limpar: () => periodo.onChange('') })
+    ativos.push({ chave: 'periodo', texto: (periodo.rotulo ?? 'Período') + ': ' + txt, limpar: () => periodo.onChange('') })
   }
   for (const c of campos) {
     const v = valores[c.chave]
@@ -69,7 +69,7 @@ export default function FiltrosLista({ campos, valores, onChange, periodo, onLim
           {periodo && (
             <div className={periodo.valor === 'personalizado' ? 'sm:col-span-2 lg:col-span-3 grid gap-3 sm:grid-cols-3' : ''}>
               <div>
-                <Label htmlFor="filtro-periodo">Período</Label>
+                <Label htmlFor="filtro-periodo">{periodo.rotulo ?? 'Período'}</Label>
                 <select id="filtro-periodo" value={periodo.valor} onChange={e => periodo.onChange(e.target.value as ChavePeriodo, periodo.de, periodo.ate)}
                   className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground">
                   {PERIODOS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}

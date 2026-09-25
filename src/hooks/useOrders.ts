@@ -48,33 +48,39 @@ export interface OrderInput {
   require_signature?: boolean | null
 }
 
-const SELECT = '*, client:clients(id, name), location:locations(id, name), technician:users!orders_technician_id_fkey(id, name)'
 
-export function useOrders() {
-  const [orders, setOrders] = useState<Order[]>([])
+// Página de OS filtrada no servidor (migration 041) — nunca a lista inteira
+export interface FiltrosOS {
+  situacao?: string; q?: string; de?: string | null; ate?: string | null
+  cliente?: string; unidade?: string; tecnico?: string; prioridade?: string
+}
+export type ContagensOS = Record<'todas' | 'em_aberto' | OrderStatus, number>
+
+export function useListaOS(filtros: FiltrosOS, pagina: number, tamanho: number) {
+  const [itens, setItens] = useState<Order[]>([])
+  const [total, setTotal] = useState(0)
+  const [contagens, setContagens] = useState<ContagensOS | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  const fetchOrders = useCallback(async () => {
+  const chave = JSON.stringify([filtros, pagina, tamanho])
+  const buscar = useCallback(async () => {
     setLoading(true)
-    setError(null)
-    const { data, error } = await supabase
-      .from('orders')
-      .select(SELECT)
-      .order('created_at', { ascending: false })
-    if (error) {
-      setError(error.message)
-      setOrders([])
-    } else {
-      setOrders(data as Order[])
+    const p: Record<string, string> = {}
+    for (const [k, v] of Object.entries(filtros)) if (v) p[k] = v
+    const { data, error } = await supabase.rpc('listar_os', { p, p_pagina: pagina, p_tamanho: tamanho })
+    if (error) { setError(error.message); setItens([]); setTotal(0) }
+    else {
+      const r = data as { total: number; itens: Order[]; contagens: ContagensOS }
+      setError(null); setItens(r.itens); setTotal(r.total); setContagens(r.contagens)
     }
     setLoading(false)
-  }, [])
+  }, [chave]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { buscar() }, [buscar])
+  return { itens, total, contagens, loading, error, recarregar: buscar }
+}
 
-  useEffect(() => {
-    fetchOrders()
-  }, [fetchOrders])
-
+// Ações de OS (criar, editar, status, excluir) — a lista é recarregada por quem chama
+export function useOrders() {
   async function createOrder(input: OrderInput) {
     const { data: { user } } = await supabase.auth.getUser()
     const payload: any = {
@@ -92,13 +98,14 @@ export function useOrders() {
     if (created?.id) {
       await registrarEvento(created.id, 'created', { technician_id: payload.technician_id ?? null })
     }
-    await fetchOrders()
     return created?.id as string | undefined
   }
 
   async function updateOrder(id: string, input: Partial<OrderInput>) {
     // estado anterior para detectar transferência de técnico
-    const anterior = orders.find(o => o.id === id)
+    const { data: anteriorRow } = await supabase.from('orders')
+      .select('technician_id, technician:users!orders_technician_id_fkey(id, name)').eq('id', id).single()
+    const anterior = anteriorRow as unknown as Pick<Order, 'technician_id' | 'technician'> | null
     // normaliza campos UUID: string vazia -> null (Postgres rejeita "" em uuid)
     const clean: any = { ...input }
     if (clean.location_id !== undefined) clean.location_id = clean.location_id || null
@@ -119,7 +126,6 @@ export function useOrders() {
       await registrarEvento(id, 'edited', {})
     }
 
-    await fetchOrders()
   }
 
   async function changeStatus(
@@ -146,7 +152,6 @@ export function useOrders() {
     }
     const { error } = await supabase.from('orders').update(patch).eq('id', id)
     if (error) throw error
-    await fetchOrders()
   }
 
   async function deleteOrder(id: string) {
@@ -156,8 +161,7 @@ export function useOrders() {
     const { error } = await supabase.from('orders').delete().eq('id', id)
     if (error) throw error
     await removerArquivosDaOS(id, (checklists ?? []).map(c => c.id)).catch(() => {})
-    await fetchOrders()
   }
 
-  return { orders, loading, error, fetchOrders, createOrder, updateOrder, changeStatus, deleteOrder }
+  return { createOrder, updateOrder, changeStatus, deleteOrder }
 }
