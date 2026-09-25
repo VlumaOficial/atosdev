@@ -359,6 +359,8 @@ Pedido do usuário: registrar feriados nacionais, escala de trabalho dos funcion
   - **Achado técnico:** Unidade guarda cidade/UF como texto livre — feriado municipal exige código IBGE da cidade (preenchido pelo CEP/lista, BrasilAPI)
   - **Alerta trabalhista (PO):** mensagem ao funcionário fora do horário de trabalho pode caracterizar sobreaviso (Súmula 428 TST) → notificação diária deve respeitar a escala (ex.: no início do turno ou X min antes), nunca à noite por padrão
   - **Entrega proposta:** desenhar tudo agora; construir já fuso + feriados + horários de atendimento + funções (destrava recorrência e prepara SLA); escalas junto com a notificação diária (após refinamento)
+  - **APROVADO pelo usuário (2026-09-25):** nome "Calendários"; distinção atendimento x escala com horários de atendimento nomeados + padrão; horário de funcionamento da Unidade **entra agora**; código IBGE na Unidade (existentes ajustadas automaticamente); ordem de construção (1. base de tempo → 2. recorrência → 3. F7 → 4. escalas + notificação diária → 5. SLA)
+  - **Notificação diária fora da escala (decisão do usuário):** por padrão respeita a escala, **mas o gestor pode enviar fora do horário**, com aviso claro de que o funcionário está fora da escala (registrar quem enviou e quando)
 
 ## 10. ECOSSISTEMA VLUMA — PRODUTO IRMÃO: CLAREZZA
 

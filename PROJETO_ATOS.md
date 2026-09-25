@@ -1358,6 +1358,33 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
    dia) — a refinar, usuário tem desenvolvimento aproveitável; horário
    de atendimento por empresa x por equipe — a refinar
 
+### Módulo Calendários — Etapa 1 (2026-09-25) — EM ANDAMENTO
+- Decisões e desenho: VISAO_ATOS.md 9.8 (nome, conceitos, ordem)
+- **Migration 035** (arquivo pronto, NÃO aplicada ainda — aguardando
+  token da Management API): fuso e sede da empresa; `feriados` em
+  camadas (plataforma/estadual/municipal por IBGE/empresa; feriado /
+  ponto facultativo / expediente reduzido com janela; "repete todo ano")
+  + `feriados_efeito_empresa` (a empresa decide folga/normal/reduzido);
+  `horarios_atendimento` nomeados com um padrão ("Comercial" seg–sex
+  08–18 criado para toda empresa); `locations.cidade_ibge` e
+  `horario_funcionamento`; funções `feriados_do_dia`, `periodos_do_dia`,
+  `eh_dia_util`, `proximo_dia_util`, `horas_uteis_entre`,
+  `somar_horas_uteis` (base do SLA), `situacao_do_dia`,
+  `unidade_aberta`; feriados nacionais 2025–2036 gerados (Páscoa
+  calculada; Carnaval/Cinzas/Corpus Christi como ponto facultativo;
+  Consciência Negra nacional desde 2024)
+- Lógica SQL validada localmente (PGlite) antes de aplicar: Páscoa
+  2024–2030 igual à BrasilAPI; 12/10 sem expediente; municipal de
+  Salvador não vale em Feira de Santana; 24/12 reduzido → 08–12; Cinzas
+  reduzido → 14–18; horas úteis sex 17h → ter 10h com feriado na segunda
+  = 3 h; 24x7 ignora feriado; padrão não pode ser excluído/desativado;
+  técnico sem permissão. **Não substitui o teste na URL pública**
+- Telas (código pronto, build ok, não publicado — publicar só depois da
+  migration, senão Unidades quebra): menu **Calendários** (abas Feriados
+  e Horários de atendimento + "Conferir uma data"; Super Admin vê
+  "Calendários da plataforma"), fuso em Configurações, Unidade com UF +
+  cidade da lista do IBGE e horário de funcionamento opcional
+
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de
