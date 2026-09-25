@@ -207,6 +207,17 @@ Indicadores da operação: OS abertas / em andamento / concluídas, **produtivid
 ### SLA no padrão ITSM + KPIs do painel — proposta para refinamento (2026-09-25)
 Pedido do usuário: refinamento completo (painel de configuração de criticidade/categoria × SLA, padrões ITSM) e KPIs pensados para **N empresas de vários segmentos**, com a melhor experiência. Ordem sugerida: **SLA antes da F7** (aguardando decisão).
 
+**Decisões do usuário (2026-09-25) sobre a proposta abaixo:**
+1. Tipos de OS: **Incidente, Requisição, Preventiva, Visita** (sem "Instalação")
+2. Prioridade pela matriz Impacto × Urgência, com nomes **Crítico, Alto, Baixo**; **"Requisição"** é um nível próprio, usado só nos tipos Requisição e Visita
+3. Metas de SLA — usuário não entendeu; reexplicado com exemplo, aguardando
+4. Pausas com motivos configuráveis e agendamento a pedido do cliente como novo prazo — **aprovado, construir e testar**
+5. "Em risco" a 75% e justificativa obrigatória — usuário não entendeu; reexplicado, aguardando
+6. **Sem modelos por segmento**: é produto; cada empresa cria o próprio catálogo de serviços
+7. SLA por cliente/contrato: **construir**, com possibilidade de bloqueio por plano quando falarmos de venda/planos (F8)
+8. KPIs e tela do painel: **aprovados** — construir e validar
+- Cuidado pedido pelo usuário: a OS atual muda — **não quebrar o que já funciona e foi testado**
+
 **Modelo ITSM (ITIL, simplificado para PME de campo):**
 - **Tipo de OS**: Corretiva (incidente) · Preventiva (planejada — liga com checklists recorrentes) · Instalação/Requisição · Visita técnica/Orçamento
 - **Catálogo por empresa**: Categoria → Subcategoria (ex.: CFTV › Câmera sem imagem), com **modelos prontos por segmento** (CFTV/segurança, redes/TI, manutenção predial, climatização, elétrica) escolhidos na configuração inicial e editáveis
