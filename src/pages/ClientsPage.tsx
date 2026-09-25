@@ -9,12 +9,13 @@ import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { DataListView, type Column } from '@/components/ui/data-list-view'
-import { Building2, Plus, Pencil, Trash2, MapPin, Power, Search, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Building2, Plus, Pencil, Trash2, MapPin, Power } from 'lucide-react'
+import DocumentoReceita from '@/components/DocumentoReceita'
 import { Combobox } from '@/components/ui/combobox'
 import EnderecoForm from '@/components/EnderecoForm'
 import { ENDERECO_VAZIO, enderecoDaUnidade, enderecoDaReceita, type Endereco } from '@/lib/endereco'
-import { erroDocumento, mascaraDocumento, cnpjValido } from '@/lib/empresa'
-import { consultarCnpjReceita, formatarRazaoSocial, type DadosReceita } from '@/lib/cnpj'
+import { erroDocumento } from '@/lib/empresa'
+import { formatarRazaoSocial, type DadosReceita } from '@/lib/cnpj'
 
 // Cliente = quem a empresa atende (pessoa jurídica ou física). O endereço
 // mora na Unidade principal (migration 036): este modal edita a própria
@@ -64,9 +65,6 @@ export default function ClientsPage() {
   const [chip, setChip] = useState('all')
   const [endereco, setEndereco] = useState<Endereco>({ ...ENDERECO_VAZIO })
   const [principal, setPrincipal] = useState<string>(NOVA_UNIDADE)
-  const [receita, setReceita] = useState<DadosReceita | null>(null)
-  const [consultando, setConsultando] = useState(false)
-  const [erroReceita, setErroReceita] = useState('')
 
   const visible = useMemo(() => {
     if (chip === 'active') return items.filter(c => c.active)
@@ -75,7 +73,7 @@ export default function ClientsPage() {
   }, [items, chip])
 
   function limparAuxiliares() {
-    setFormError(''); setReceita(null); setErroReceita('')
+    setFormError('')
   }
 
   function openNew() {
@@ -106,15 +104,7 @@ export default function ClientsPage() {
     setEndereco(u ? enderecoDaUnidade(u) : { ...ENDERECO_VAZIO })
   }
 
-  async function consultarReceita() {
-    setErroReceita(''); setReceita(null)
-    const doc = form.cnpj ?? ''
-    if (!cnpjValido(doc)) { setErroReceita('A consulta à Receita é só para CNPJ válido (14 dígitos).'); return }
-    setConsultando(true)
-    const r = await consultarCnpjReceita(doc)
-    setConsultando(false)
-    if ('erro' in r) { setErroReceita(r.erro); return }
-    setReceita(r)
+  async function aplicarReceita(r: DadosReceita) {
     setForm(f => ({
       ...f,
       name: f.name.trim() ? f.name : (r.nomeFantasia ? formatarRazaoSocial(r.nomeFantasia) : formatarRazaoSocial(r.razaoSocial)),
@@ -340,24 +330,7 @@ export default function ClientsPage() {
             <Label htmlFor="name">Nome *</Label>
             <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nome da empresa ou da pessoa" />
           </div>
-          <div>
-            <Label htmlFor="cnpj">CPF ou CNPJ</Label>
-            <div className="flex gap-2">
-              <Input id="cnpj" value={form.cnpj ?? ''} inputMode="numeric" placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                onChange={e => { setForm({ ...form, cnpj: mascaraDocumento(e.target.value) }); setReceita(null); setErroReceita('') }} />
-              <Button type="button" variant="outline" onClick={consultarReceita} disabled={consultando || (form.cnpj ?? '').replace(/\D/g, '').length !== 14}
-                title="Preenche nome, contato e endereço com os dados da Receita Federal (só CNPJ)">
-                {consultando ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />} Receita
-              </Button>
-            </div>
-            {erroReceita && <p className="text-xs text-red-400 mt-1">{erroReceita}</p>}
-            {receita && (
-              <div className={'mt-2 rounded-md border px-3 py-2 text-xs ' + (receita.ativa ? 'border-green-500/30 bg-green-500/5 text-green-300' : 'border-amber-500/30 bg-amber-500/5 text-amber-300')} data-testid="cliente-receita">
-                <p className="flex items-center gap-1.5 font-medium">{receita.ativa ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />} {formatarRazaoSocial(receita.razaoSocial)} — {receita.situacao}</p>
-                <p className="text-muted-foreground mt-0.5">Endereço e contatos vazios foram preenchidos com os dados da Receita. Confira antes de salvar.</p>
-              </div>
-            )}
-          </div>
+          <DocumentoReceita id="cnpj" valor={form.cnpj ?? ''} onChange={v => setForm({ ...form, cnpj: v })} onReceita={aplicarReceita} />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="email">E-mail</Label>

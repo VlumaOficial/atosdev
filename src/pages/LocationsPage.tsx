@@ -12,11 +12,14 @@ import { Combobox } from '@/components/ui/combobox'
 import { DataListView, type Column } from '@/components/ui/data-list-view'
 import { MapPin, Plus, Pencil, Trash2, Building2, Power, Clock } from 'lucide-react'
 import EnderecoForm from '@/components/EnderecoForm'
-import { ENDERECO_VAZIO, enderecoDaUnidade, colunasEndereco, type Endereco } from '@/lib/endereco'
+import DocumentoReceita, { raizCnpj } from '@/components/DocumentoReceita'
+import { erroDocumento } from '@/lib/empresa'
+import { formatarRazaoSocial, type DadosReceita } from '@/lib/cnpj'
+import { ENDERECO_VAZIO, enderecoDaUnidade, enderecoDaReceita, colunasEndereco, type Endereco } from '@/lib/endereco'
 import SemanaEditor from '@/components/calendario/SemanaEditor'
 import { resumoSemana, validarSemana, ordenarSemana, MODELOS_SEMANA } from '@/lib/calendario'
 
-const emptyForm: LocationInput = { client_id: '', name: '', address: '', city: '', state: '', cidade_ibge: null, horario_funcionamento: null }
+const emptyForm: LocationInput = { client_id: '', name: '', address: '', city: '', state: '', cidade_ibge: null, horario_funcionamento: null, documento: '' }
 
 const mapLocation = (row: any): Location => ({ ...row })
 
@@ -60,6 +63,19 @@ export default function LocationsPage() {
     return items
   }, [items, chip])
 
+  // filial com CNPJ de outra raiz = provável CNPJ trocado (só avisa)
+  const avisoDocumento = useMemo(() => {
+    const doCliente = raizCnpj(clients.find(c => c.id === form.client_id)?.cnpj)
+    const daUnidade = raizCnpj(form.documento)
+    if (!doCliente || !daUnidade || doCliente === daUnidade) return null
+    return 'Este CNPJ não é da mesma empresa do cliente (raiz diferente). Confira se é mesmo uma unidade dele.'
+  }, [clients, form.client_id, form.documento])
+
+  async function aplicarReceita(r: DadosReceita) {
+    setForm(f => ({ ...f, name: f.name.trim() ? f.name : formatarRazaoSocial(r.nomeFantasia || r.razaoSocial) }))
+    setEndereco(await enderecoDaReceita(r))
+  }
+
   const clientOptions = useMemo(
     () => clients.map(c => ({ value: c.id, label: c.name })),
     [clients]
@@ -78,7 +94,7 @@ export default function LocationsPage() {
     setEditing(l)
     setFormActive(l.active)
     setForm({ client_id: l.client_id, name: l.name, address: l.address, city: l.city, state: l.state,
-      cidade_ibge: l.cidade_ibge ?? null, horario_funcionamento: l.horario_funcionamento ?? null })
+      cidade_ibge: l.cidade_ibge ?? null, horario_funcionamento: l.horario_funcionamento ?? null, documento: l.documento ?? '' })
     setEndereco(enderecoDaUnidade(l))
     setFormError('')
     setModalOpen(true)
@@ -95,6 +111,9 @@ export default function LocationsPage() {
       setFormError('O nome do local é obrigatório.')
       return
     }
+    const docMudou = (form.documento ?? '').replace(/\D/g, '') !== (editing?.documento ?? '').replace(/\D/g, '')
+    const erroDoc = docMudou ? erroDocumento(form.documento ?? '') : null
+    if (erroDoc) { setFormError(erroDoc); return }
     if (!endereco.cidade_ibge) {
       setFormError('Informe a UF e a cidade da unidade (usadas nos feriados e no SLA).')
       return
@@ -106,7 +125,7 @@ export default function LocationsPage() {
       horario = ordenarSemana(horario)
       if (!Object.keys(horario).length) horario = null
     }
-    const dados = { client_id: form.client_id, name: form.name, horario_funcionamento: horario, ...colunasEndereco(endereco) }
+    const dados = { client_id: form.client_id, name: form.name, documento: form.documento || null, horario_funcionamento: horario, ...colunasEndereco(endereco) }
     setSaving(true)
     try {
       if (editing) {
@@ -176,7 +195,10 @@ export default function LocationsPage() {
           <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
             <MapPin size={15} className="text-primary" />
           </div>
-          <p className="font-medium text-foreground truncate">{l.name}</p>
+          <div className="min-w-0">
+            <p className="font-medium text-foreground truncate">{l.name}</p>
+            {l.documento && <p className="text-xs text-muted-foreground">{l.documento}</p>}
+          </div>
         </div>
       ),
     },
@@ -325,6 +347,8 @@ export default function LocationsPage() {
               emptyText="Nenhum cliente encontrado."
             />
           </div>
+          <DocumentoReceita id="unidade-documento" valor={form.documento ?? ''} aviso={avisoDocumento}
+            onChange={v => setForm({ ...form, documento: v })} onReceita={aplicarReceita} />
           <div>
             <Label htmlFor="name">Nome da unidade *</Label>
             <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ex: Loja 01 - Centro" />

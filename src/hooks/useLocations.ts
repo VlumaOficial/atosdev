@@ -17,6 +17,7 @@ export interface Location {
   numero?: string | null
   complemento?: string | null
   bairro?: string | null
+  documento?: string | null
   active: boolean
   created_at: string
   client?: { id: string; name: string } | null
@@ -35,6 +36,7 @@ export interface LocationInput {
   numero?: string | null
   complemento?: string | null
   bairro?: string | null
+  documento?: string | null
 }
 
 export function useLocations(clientId?: string) {
