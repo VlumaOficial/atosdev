@@ -93,16 +93,22 @@ export async function consultarCep(cep: string): Promise<Partial<Endereco> | { e
   }
 }
 
-export function enderecoDaReceita(r: DadosReceita): Endereco {
+export async function enderecoDaReceita(r: DadosReceita): Promise<Endereco> {
+  const uf = r.uf ?? ufDoIbge(r.cidadeIbge) ?? ''
+  // a Receita grava sem acento ("BRASILIA") — nome oficial vem da lista do IBGE
+  let cidade = r.municipio ? titulo(r.municipio) : ''
+  if (uf && r.cidadeIbge) {
+    try { cidade = (await cidadesDaUf(uf)).find(c => c.ibge === r.cidadeIbge)?.nome ?? cidade } catch { /* mantém o da Receita */ }
+  }
   return {
     cep: r.cep ? mascaraCep(r.cep) : '',
     logradouro: r.logradouro ? titulo(r.logradouro) : '',
-    numero: r.numero ?? '',
+    numero: r.numero ? (/^S\/?N$/i.test(r.numero.trim()) ? 'S/N' : r.numero) : '',
     complemento: r.complemento ? titulo(r.complemento) : '',
     bairro: r.bairro ? titulo(r.bairro) : '',
-    uf: r.uf ?? ufDoIbge(r.cidadeIbge) ?? '',
+    uf,
     cidade_ibge: r.cidadeIbge ?? '',
-    cidade: r.municipio ? titulo(r.municipio) : '',
+    cidade,
   }
 }
 
