@@ -947,6 +947,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 037_unidade_documento | locations.documento (CPF ou CNPJ, opcional); normalizar_documento() — regra única de CPF/CNPJ usada pelos gatilhos de clients e locations (valida só quando muda) | OK | Pendente | Sim |
 | 038_recorrencia_checklists | checklist_series + checklist_instances.serie_id/data_prevista/prazo; fn_regra_erro, datas_da_regra, datas_da_serie, previa_recorrencia, gerar_ocorrencias (só servidor), salvar_serie, definir_situacao_serie, alterar_ocorrencia, fn_hoje_empresa; pg_cron + job atos-gerar-ocorrencias (hora em hora) | OK | Pendente | Sim |
 | 039_recorrencia_ajustes | fn_regra_norm; aviso_da_data (feriado/fim de semana + unidade fechada); previa_recorrencia usa o aviso; salvar_serie mantém o início (ritmo) quando a regra não muda | OK | Pendente | Sim |
+| 040_lista_checklists_avulsos | listar_checklists_avulsos (página + total + contagens, filtros, situação no banco), proximas_das_series | OK | Pendente | Sim |
+| 041_lista_os | listar_os (página + total + contagens; situação, aberta em, cliente, unidade, técnico/sem técnico, prioridade, busca) | OK | Pendente | Sim |
 
 ---
 
@@ -969,6 +971,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - [x] Campo "nome fantasia/exibição" no tenant (nome longo cortado na sidebar) — **feito em 2026-09-24** (migration 031, `trade_name`, editável pelo admin)
 - [ ] Ajuste de contraste do ícone ATOS na sidebar
 - [ ] **Responsividade do painel admin (acabamento pré-PRD, após F5-F7):** — *parcial em 2026-09-25: página não fica mais larga que a tela no celular (`min-w-0` no `<main>`); o resto segue pendente. Esclarecido ao usuário: responsividade do painel NÃO está garantida — o foco mobile garantido é o app do técnico; painel admin é uso principal em desktop até este item ser feito* — sidebar → menu hambúrguer; listagens no mobile com LISTA COMPACTA como padrão (não cards) + busca/filtros fortes, toggle para cards opcional; revisar modais. Aplicar em OS, Clientes, Unidades, Técnicos e Checklists
+- [ ] **(F10) Policy de `orders`: técnico lê todas as OS da empresa pela API** — restringir às dele (achado 2026-09-25)
 - [ ] Aba "auditoria/histórico completo" da OS (mostrar também os eventos 'edited' ocultos da linha do tempo)
 - [ ] Auto-atribuição: técnico pegar OS do backlog (Aberta sem técnico) — F4+
 - [ ] Mapa visual embutido na tela do técnico (hoje só botão "Abrir no mapa")
@@ -1588,7 +1591,8 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
 - Dados de teste: série "Teste Semanal" e "Teste Dia Util", checklist
   "Teste Único Atrasado" — apagar depois da validação do usuário
 
-### Listas sem paginação/filtros — levantado pelo usuário em 2026-09-25, aguardando decisão
+### Listas com paginação e filtros no servidor (2026-09-25) — CONCLUÍDO
+**Atualização 2026-09-25 (mesma data): proposta aprovada pelo usuário ("ok") e entregue nas 3 etapas (avulsos → OS → app do técnico), testada na URL pública — ver "Entrega e testes" abaixo. Título anterior: "levantado pelo usuário em 2026-09-25, aguardando decisão".**
 - **Pergunta do usuário**: a tela de checklists avulsos foi pensada para
   paginação/filtro? Resposta honesta: **não**. Ela carrega TODAS as
   ocorrências de uma vez, filtra só por situação (chips) e não tem busca.
@@ -1605,6 +1609,57 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   para OS/avulsos/app do técnico) levada ao usuário — ver resposta da
   sessão; aguardando decisão
 
+**Entrega e testes (2026-09-25):**
+- Componentes reutilizáveis: `FiltrosLista` (botão "Filtros (n)",
+  painel, etiquetas com "x", "Limpar filtros"; período opcional com
+  rótulo próprio), `useFiltrosUrl` (filtros e página no endereço —
+  voltar/recarregar/compartilhar mantêm a lista), `src/lib/periodo.ts`
+  (Hoje, Esta semana seg–dom, Este mês, Mês passado, Personalizado, no
+  fuso da empresa); `DataListView` ganhou clique na linha (opcional)
+- **Checklists avulsos** (migration 040, `listar_checklists_avulsos`):
+  página + total + contagens numa chamada, regra de situação no banco;
+  abre em **"Em aberto"** (atrasados + hoje + próximos 7 dias, atrasados
+  primeiro); chips com contagem (Em aberto, Atrasados, Hoje, Próximos,
+  Em andamento, Concluídos, Todos); filtros Período, Cliente, Unidade
+  (acompanha o cliente), Técnico, Modelo, Recorrência; busca no título;
+  25 por página; aba Recorrências com **"Ver checklists"** (lista já
+  filtrada pela série) e "Próxima" por `proximas_das_series()`
+- **Ordens de Serviço** (migration 041, `listar_os`): chips com contagem
+  (Todas, Em aberto, Aberta, Agendada, Em andamento, Pausada, Concluída,
+  Cancelada); filtros "Aberta em" (período da abertura), Cliente,
+  Unidade, Técnico (inclui "Sem técnico"), Prioridade; busca em número,
+  título, cliente e técnico; mais recentes primeiro; clique na linha
+  abre a OS. Mantido o padrão atual de abrir em **"Todas"** (mudar para
+  "Em aberto" não estava no aprovado — perguntado ao usuário).
+  `useOrders` virou só ações (criar/editar/status/excluir); a edição
+  passa a ler o técnico anterior do banco para registrar a transferência
+- **App do técnico**: em aberto vêm completos; **concluídos (e
+  canceladas, em Atendimentos) só dos últimos 30 dias**, com aviso e
+  "Ver mais antigos/antigas" (+30 dias por toque; o botão some quando
+  não há mais)
+- Testado ponta a ponta (URL pública, 0 erros de console), com massa de
+  60 checklists "Teste Volume" no DEV: chips Em aberto (30), Atrasados
+  (19), Hoje (3), Próximos (37), Em andamento (8), Concluídos (6), Todos
+  (65); página 2 "Mostrando 26–30 de 30" com `?pag=2`; busca "Volume 5"
+  = 11; técnico = só os dele; cliente Atakarejo = 20; + período Hoje = 1;
+  recarregar e voltar mantêm filtros; limpar volta ao padrão; "Ver
+  checklists" da série. OS: 17 (Em aberto 7, Concluídas 9, conferidas
+  no banco), 10 por página → página 2 começa na OS-0008 (conferido no
+  banco), busca "0018", Concluída + Urgente = 0, "Aberta em: Este mês" =
+  7 (conferido), clique na linha abre a OS e voltar mantém filtros,
+  edição de técnico registra "transferred" com o técnico anterior e a
+  lista recarrega (OS-0024 de teste restaurada). Técnico: OS-0003 (98
+  dias) e OS-0006 (70 dias) fora dos 30 dias; 60 dias → OS-0006 ainda
+  fora; 90 → entra; 120 → OS-0003 entra e o botão some; checklist
+  concluído há 45 dias só aparece depois de "Ver mais antigos". Celular
+  sem rolagem horizontal nas duas listas (393 px)
+- **Achado de segurança (para a F10, não alterado agora)**: a policy de
+  `orders` deixa o **técnico ler todas as OS da empresa** pelo banco
+  (não só as dele) — conferido por impersonação (17 de 17). A tela do
+  técnico filtra, mas a API não. Vem da F3
+- Dados de teste no DEV: 60 checklists "Teste Volume N" e "Teste
+  Concluído Antigo" (além dos da recorrência) — apagar após a validação
+
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de
@@ -1616,7 +1671,7 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–039 em ordem. **038 instala o pg_cron e agenda
+- Aplicar migrations 001–041 em ordem. **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
   IBGE das Unidades existentes) e conferir que os feriados nacionais do
