@@ -943,6 +943,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 033_f6_identidade_empresa | atualizar_dados_empresa sem CNPJ (admin: nome de exibição e contato); tenant_identidade_historico; atualizar_identidade_tenant() (só Super Admin: razão social + CNPJ validado, com histórico e fonte receita/manual) | OK | Pendente | Sim |
 | 034_f6_envio_relatorio | tenants.envio_nivel (basico/intermediario/avancado); tenant_envio_config (canais, mensagem, permissão Bloco E, SMTP próprio sem senha) + gatilho de padrão; salvar_config_envio, definir_senha_smtp (Vault), tem_senha_smtp, ler_senha_smtp (só service role), definir_nivel_envio (Super Admin) | OK | Pendente | Sim |
 | 035_calendarios | módulo Calendários: tenants.fuso_horario/sede_cidade_ibge/sede_cidade; feriados (plataforma/estadual/municipal IBGE/empresa; feriado/facultativo/reduzido com janela; anual) + feriados_efeito_empresa; horarios_atendimento nomeados (um padrão; "Comercial" criado para todas); locations.cidade_ibge/horario_funcionamento; funções feriados_do_dia, periodos_do_dia, eh_dia_util, proximo_dia_util, horas_uteis_entre, somar_horas_uteis, situacao_do_dia, unidade_aberta; nacionais 2025–2036 | OK | Pendente | Sim |
+| 036_endereco_estruturado | locations.cep/logradouro/numero/complemento/bairro + gatilho que monta address e acerta UF pelo IBGE; cpf_valido, formatar_documento, gatilho de CPF/CNPJ do cliente (só quando muda); salvar_cliente (cliente + unidade principal numa transação, SECURITY INVOKER); definir_sede_tenant (Super Admin) | OK | Pendente | Sim |
 
 ---
 
@@ -964,7 +965,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - [ ] Aplicar todas as migrations no PRD ao replicar
 - [x] Campo "nome fantasia/exibição" no tenant (nome longo cortado na sidebar) — **feito em 2026-09-24** (migration 031, `trade_name`, editável pelo admin)
 - [ ] Ajuste de contraste do ícone ATOS na sidebar
-- [ ] **Responsividade do painel admin (acabamento pré-PRD, após F5-F7):** sidebar → menu hambúrguer; listagens no mobile com LISTA COMPACTA como padrão (não cards) + busca/filtros fortes, toggle para cards opcional; revisar modais. Aplicar em OS, Clientes, Unidades, Técnicos e Checklists
+- [ ] **Responsividade do painel admin (acabamento pré-PRD, após F5-F7):** — *parcial em 2026-09-25: página não fica mais larga que a tela no celular (`min-w-0` no `<main>`); o resto segue pendente* — sidebar → menu hambúrguer; listagens no mobile com LISTA COMPACTA como padrão (não cards) + busca/filtros fortes, toggle para cards opcional; revisar modais. Aplicar em OS, Clientes, Unidades, Técnicos e Checklists
 - [ ] Aba "auditoria/histórico completo" da OS (mostrar também os eventos 'edited' ocultos da linha do tempo)
 - [ ] Auto-atribuição: técnico pegar OS do backlog (Aberta sem técnico) — F4+
 - [ ] Mapa visual embutido na tela do técnico (hoje só botão "Abrir no mapa")
@@ -1433,7 +1434,8 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   12:00). Desfeitos: Carnaval como folga, horário 24x7, almoço no
   Comercial, fuso Manaus, unidade de teste em Feira de Santana
 
-### Endereço de Clientes/Unidades — levantado em 2026-09-25, aguardando decisão
+### Endereço de Clientes/Unidades (2026-09-25) — CONCLUÍDO
+**Atualização 2026-09-25 (mesma data): proposta aprovada pelo usuário (glossário, endereço só na Unidade, CPF ou CNPJ, UF + cidade obrigatórias), construída (migration 036) e testada na URL pública — ver "Entrega e testes" abaixo. Título anterior: "levantado em 2026-09-25, aguardando decisão".**
 - **Pedido do usuário**: os clientes da Infoxtec não têm UF/cidade;
   definir a terminologia (clientes da plataforma x clientes das
   empresas) e ajustar ANTES da recorrência
@@ -1452,6 +1454,58 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
 - **Dúvida respondida**: "repete todo ano" = mesmo dia e mês todo ano,
   qualquer dia da semana; feriado de data móvel é cadastrado por ano
 
+**Entrega e testes (2026-09-25):**
+- Migration 036 (ver seção 6): `locations.cep/logradouro/numero/
+  complemento/bairro`; gatilho monta `address` ("Rua X, 27 - Sala 102 -
+  Bairro", compatível com PDF, OS e "Abrir no mapa") e acerta a UF pelo
+  código IBGE; `cpf_valido`, `formatar_documento` e gatilho que valida
+  CPF/CNPJ do cliente **só quando o documento muda** (cadastro antigo
+  inválido não trava outras edições); `salvar_cliente()` grava cliente +
+  unidade principal numa transação (SECURITY INVOKER — RLS vale), cria a
+  principal se não houver e permite escolher uma unidade existente como
+  principal; `definir_sede_tenant()` (Super Admin). Lógica validada no
+  PGlite antes de aplicar
+- Tela **Clientes**: "CPF ou CNPJ" com máscara e validação, botão
+  **Receita** (só CNPJ) preenche nome/telefone/e-mail vazios e o
+  endereço completo com código IBGE; bloco "Endereço principal" (CEP
+  preenche rua, bairro, UF e cidade); sem unidade principal → escolher
+  uma existente ou criar; colunas **Cidade** e **Unidades** (antes
+  "Locais"), avisos "sem cidade" / "sem unidade principal"
+- Tela **Unidades**: mesmo formulário de endereço; cidade obrigatória;
+  aviso "sem cidade" na lista. **Empresas** (Super Admin): consulta à
+  Receita também grava a **sede** (cidade); lista mostra a sede
+- Script `ajustar_cidade_ibge.py` ganhou a 2ª passada (nome oficial da
+  cidade): "Feira II" SALVADOR → Salvador
+- Testado ponta a ponta (URL pública, admin e Super Admin reais, 0 erros
+  de console): CNPJ público do Banco do Brasil → nome, telefone,
+  endereço e Brasília/DF (IBGE 5300108) gravados na unidade principal;
+  CPF inválido barrado; sem cidade barrado; CEP 41150-000 → Rua Silveira
+  Martins/Cabula/Salvador; edição do endereço do cliente atualiza a
+  unidade principal **sem duplicar** e o texto do cliente acompanha;
+  cliente sem principal com 2 unidades → escolheu "Filial Antiga", que
+  virou principal; Atakarejo (real, só aberto, sem salvar) oferece Feira
+  II / LOJA 53 / nova; unidade nova por CEP ("Praça da Sé, S/N -
+  Centro"); Super Admin com sede apagada → Receita → "Salvador - BA"
+  gravada. Segurança (impersonação, rollback): técnico não salva
+  cliente; admin não usa unidade de outra empresa como principal; CNPJ
+  inválido recusado pelo banco; só Super Admin define sede de empresa.
+  Clientes/unidades de teste apagados ao final
+- **Achados no teste e corrigidos**: (1) Receita grava cidade sem acento
+  ("Brasilia") → nome vem da lista oficial do IBGE; (2) "SN" → "S/N";
+  (3) Atakarejo aparecia "sem cidade" quando o problema real é não ter
+  unidade principal → aviso próprio; (4) **no celular, a tabela deixava
+  a página mais larga que a tela (867 px), empurrando o botão "Novo
+  cliente" e descentralizando os modais** — causa: `<main>` do painel
+  sem `min-w-0`; corrigido de uma vez para todo o painel (Clientes,
+  Unidades, OS, Técnicos, Calendários, Configurações, Checklists: 393 px
+  no celular, desktop inalterado). O restante da responsividade do
+  painel continua no backlog
+- **Pendência de dados (usuário)**: Atakarejo sem unidade principal
+  (escolher Feira II ou LOJA 53 no modal); "Clinte Teste" sem nenhuma
+  unidade (completar o endereço no modal cria a principal). As 5
+  unidades antes sem cidade foram completadas pelo usuário pela tela em
+  2026-09-25 (12:16–12:17)
+
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de
@@ -1463,7 +1517,7 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–035 em ordem. Depois da 035, rodar
+- Aplicar migrations 001–036 em ordem. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
   IBGE das Unidades existentes) e conferir que os feriados nacionais do
   ano estão gerados (a migration gera 2025–2036; depois disso, botão
