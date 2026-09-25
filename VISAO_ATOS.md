@@ -117,6 +117,7 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 > - **Nome:** "Inspeções" (menu e app do técnico), cobrindo única ou recorrente; alternativas "Rotinas", "Checklists programados", "Vistorias"
 > - **Recorrência estruturada:** padrão (não se repete / diária / semanal com dias da semana / mensal por dia ou "2ª terça" / anual) + "a cada N", início, término (sem término / após N / até data), prazo para concluir → situação "atrasada"; resumo em texto e prévia das próximas datas
 > - **Técnica:** regra guardada no padrão iCalendar (RRULE, o mesmo do Outlook/Google), "série" separada das ocorrências, geração pelo banco (pg_cron diário) só da próxima ocorrência dentro de uma janela; editar "só esta / esta e as seguintes"; pausar série
+> - **Decisões 2026-09-25:** nome "avulso" mantido por enquanto; recorrência entra antes da F7; UX detalhada (lista de atalhos + "Personalizar..." em modal) e exemplos levados ao usuário, aguardando aprovação
 
 ### F6 — Assinatura Digital, Evidências e Envio 🔄 (EM ANDAMENTO)
 **A fase mais rica do MVP.** Definições refinadas:

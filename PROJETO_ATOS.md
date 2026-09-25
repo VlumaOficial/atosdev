@@ -1341,6 +1341,11 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
    (placeholder "Ex: mensal, semanal"), exibido só como etiqueta — nenhuma
    ocorrência é gerada, sem data prevista nem atraso. Proposta levada
    (nome + recorrência estruturada) registrada no VISAO_ATOS.md, F5
+   → **Atualização 2026-09-25 (decisões do usuário):** (a) nome: manter
+   "Checklist avulso" por enquanto (proposta "Inspeções" não adotada
+   agora); (b) recorrência será feita ANTES da F7; (c) desenho da tela
+   ainda não aprovado — usuário pediu detalhe da UX (modal?) e exemplos
+   de combinações (diário conta sábado/domingo?)
 
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
