@@ -1,7 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { useChecklistAvulsos, useChecklistSeries, type ChecklistAvulso, type ChecklistSerie } from '@/hooks/useChecklistAvulsos'
+import { useListaAvulsos, useChecklistSeries, createChecklistAvulso, deleteChecklistAvulso, type ChecklistAvulso, type ChecklistSerie } from '@/hooks/useChecklistAvulsos'
+import { useFiltrosUrl } from '@/hooks/useFiltrosUrl'
+import { DataListView, type Column } from '@/components/ui/data-list-view'
+import FiltrosLista from '@/components/FiltrosLista'
+import { intervaloDoPeriodo, type ChavePeriodo } from '@/lib/periodo'
 import { useChecklistTemplates } from '@/hooks/useChecklistTemplates'
 import { useClients } from '@/hooks/useClients'
 import { useLocations } from '@/hooks/useLocations'
@@ -20,7 +24,7 @@ import {
   type Recorrencia,
 } from '@/lib/recorrencia'
 import { cn } from '@/lib/utils'
-import { ClipboardCheck, Plus, Trash2, Building2, MapPin, Users, Repeat, CalendarDays, Pencil, Pause, Play, Square, CalendarClock } from 'lucide-react'
+import { ClipboardCheck, Plus, Trash2, Building2, MapPin, Users, Repeat, CalendarDays, Pencil, Pause, Play, Square, CalendarClock, ListFilter } from 'lucide-react'
 
 // Checklists avulsos (sem OS) + recorrência (migration 038, desenho
 // aprovado 2026-09-25). Aba "Checklists" = ocorrências (o que o técnico
@@ -39,14 +43,6 @@ const SITUACAO_SERIE: Record<string, [string, string]> = {
   encerrada: ['Encerrada', 'text-muted-foreground bg-secondary border-border'],
 }
 
-const chipsOcorrencias = [
-  { key: 'all', label: 'Todos' },
-  { key: 'pendente', label: 'Pendentes' },
-  { key: 'em_andamento', label: 'Em andamento' },
-  { key: 'atrasado', label: 'Atrasados' },
-  { key: 'concluido', label: 'Concluídos' },
-]
-
 interface Form {
   template_id: string
   title: string
@@ -62,21 +58,39 @@ interface Form {
 export default function ChecklistAvulsosPage() {
   const { tenant } = useAuth()
   const hoje = hojeNoFuso(tenant?.fuso_horario)
-  const { checklists, loading, error, createChecklistAvulso, deleteChecklistAvulso, fetchChecklists } = useChecklistAvulsos()
+  // filtros + página guardados na URL (voltar/compartilhar mantém a lista)
+  const { valores: f, definir, limpar } = useFiltrosUrl({
+    aba: 'checklists', sit: 'aberto', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', mod: '', serie: '', pag: '1', tam: '25',
+  })
+  const periodo = intervaloDoPeriodo(f.per as ChavePeriodo, hoje, f.de, f.ate)
+  const pagina = Math.max(1, parseInt(f.pag) || 1)
+  const tamanho = parseInt(f.tam) || 25
+  const { itens, total, contagens, loading, error, recarregar: recarregarLista } = useListaAvulsos({
+    situacao: f.sit, q: f.q, de: periodo.de, ate: periodo.ate, cliente: f.cli, unidade: f.uni, tecnico: f.tec, modelo: f.mod, serie: f.serie,
+  }, pagina, tamanho)
   const { series, fetchSeries } = useChecklistSeries()
+  const { locations: todasUnidades } = useLocations()
+  // busca com atraso (não consulta a cada tecla)
+  const [busca, setBusca] = useState(f.q)
+  useEffect(() => { setBusca(f.q) }, [f.q])
+  useEffect(() => {
+    if (busca === f.q) return
+    const t = setTimeout(() => definir({ q: busca.trim() }), 350)
+    return () => clearTimeout(t)
+  }, [busca]) // eslint-disable-line react-hooks/exhaustive-deps
   const { templates } = useChecklistTemplates()
   const { clients } = useClients()
   const { technicians } = useTechnicians()
 
   const vazio = (): Form => ({ template_id: '', title: '', client_id: '', location_id: '', technician_ids: [], inicio: hoje, prazo_dias: '1', recorrencia: null, a_partir: hoje })
-  const [aba, setAba] = useState<'checklists' | 'recorrencias'>('checklists')
+  const aba = f.aba as 'checklists' | 'recorrencias'
+  const setAba = (a: 'checklists' | 'recorrencias') => definir({ aba: a })
   const [modalOpen, setModalOpen] = useState(false)
   const [editSerie, setEditSerie] = useState<ChecklistSerie | null>(null)
   const [form, setForm] = useState<Form>(vazio)
   const { locations: formLocations } = useLocations(form.client_id || undefined)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
-  const [chip, setChip] = useState('all')
   const [toDelete, setToDelete] = useState<{ id: string; title: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [erroAcao, setErroAcao] = useState('')
@@ -87,19 +101,28 @@ export default function ChecklistAvulsosPage() {
   const technicianOptions = useMemo(() => technicians.filter(t => t.active).map(t => ({ value: t.id, label: t.name })), [technicians])
   const nomeTecnico = (id: string) => technicians.find(t => t.id === id)?.name ?? '—'
 
-  const situacao = (c: ChecklistAvulso) => situacaoOcorrencia(c, hoje)
-  const visible = useMemo(() => {
-    if (chip === 'all') return checklists
-    if (chip === 'atrasado') return checklists.filter(c => situacao(c) === 'atrasado')
-    if (chip === 'pendente') return checklists.filter(c => c.status === 'pendente' && situacao(c) !== 'atrasado')
-    return checklists.filter(c => c.status === chip)
-  }, [checklists, chip, hoje]) // eslint-disable-line react-hooks/exhaustive-deps
+  const situacao = (c: ChecklistAvulso) => c.situacao ?? situacaoOcorrencia(c, hoje)
+  const cont = (k: keyof NonNullable<typeof contagens>) => contagens ? ` (${contagens[k]})` : ''
+  const chips = [
+    { key: 'aberto', label: 'Em aberto' + cont('aberto') },
+    { key: 'atrasado', label: 'Atrasados' + cont('atrasado') },
+    { key: 'hoje', label: 'Hoje' + cont('hoje') },
+    { key: 'proximo', label: 'Próximos' + cont('proximo') },
+    { key: 'em_andamento', label: 'Em andamento' + cont('em_andamento') },
+    { key: 'concluido', label: 'Concluídos' + cont('concluido') },
+    { key: 'todos', label: 'Todos' + cont('todos') },
+  ]
+  const unidadesFiltro = useMemo(() => todasUnidades.filter(l => !f.cli || l.client_id === f.cli)
+    .map(l => ({ value: l.id, label: f.cli ? l.name : `${l.name} — ${l.client?.name ?? ''}` })), [todasUnidades, f.cli])
+  const camposFiltro = [
+    { chave: 'cli', rotulo: 'Cliente', opcoes: clientOptions, vazio: 'Todos os clientes' },
+    { chave: 'uni', rotulo: 'Unidade', opcoes: unidadesFiltro, vazio: 'Todas as unidades' },
+    { chave: 'tec', rotulo: 'Técnico', opcoes: technicians.map(t => ({ value: t.id, label: t.name })), vazio: 'Todos os técnicos' },
+    { chave: 'mod', rotulo: 'Modelo', opcoes: templates.map(t => ({ value: t.id, label: t.name })), vazio: 'Todos os modelos' },
+    { chave: 'serie', rotulo: 'Recorrência', opcoes: series.map(x => ({ value: x.id, label: `${x.titulo} — ${x.resumo}` })), vazio: 'Todas' },
+  ]
 
-  const proximaDa = (serieId: string) => checklists
-    .filter(c => c.serie_id === serieId && c.status !== 'concluido' && (c.data_prevista ?? '') >= hoje)
-    .map(c => c.data_prevista!).sort()[0]
-
-  function recarregar() { fetchChecklists(); fetchSeries() }
+  function recarregar() { recarregarLista(); fetchSeries() }
 
   function openNew() {
     setEditSerie(null)
@@ -196,11 +219,70 @@ export default function ChecklistAvulsosPage() {
     try {
       await deleteChecklistAvulso(toDelete.id)
       setToDelete(null)
+      recarregar()
     } catch {
       alert('Não foi possível excluir o checklist.')
     } finally {
       setDeleting(false)
     }
+  }
+
+  function Selo({ c }: { c: ChecklistAvulso }) {
+    const sit = situacao(c)
+    return (
+      <span className={'inline-block px-2 py-0.5 rounded-md text-xs font-medium border whitespace-nowrap ' + STATUS_STYLES[sit === 'atrasado' ? 'atrasado' : c.status]}>
+        {sit === 'atrasado' ? 'Atrasado' : STATUS_LABELS[c.status]}
+      </span>
+    )
+  }
+  function Data({ c }: { c: ChecklistAvulso }) {
+    if (!c.data_prevista) return <span className="text-xs text-muted-foreground">Sem data</span>
+    return (
+      <span className={cn('text-xs whitespace-nowrap', situacao(c) === 'atrasado' ? 'text-red-400' : 'text-muted-foreground')}>
+        {dataCurtaDia(c.data_prevista)}{c.prazo && c.prazo !== c.data_prevista ? ` · prazo ${dataCurtaDia(c.prazo)}` : ''}
+      </span>
+    )
+  }
+  const tecnicosDe = (c: ChecklistAvulso) => c.targets && c.targets.length > 0 ? c.targets.map(t => t.technician.name).join(', ') : 'Sem técnico'
+  const colunas: Column<ChecklistAvulso>[] = [
+    { key: 'titulo', header: 'Checklist', render: c => (
+      <div className="min-w-0" data-ocorrencia={c.title_snapshot + (c.data_prevista ? ' ' + c.data_prevista : '')}>
+        <p className="font-medium text-foreground truncate">{c.title_snapshot}</p>
+        {c.recurrence && <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1"><Repeat size={10} /> {c.recurrence}</p>}
+      </div>
+    ) },
+    { key: 'data', header: 'Data', render: c => <Data c={c} /> },
+    { key: 'situacao', header: 'Situação', render: c => <Selo c={c} /> },
+    { key: 'onde', header: 'Cliente / Unidade', render: c => (
+      <span className="text-xs text-muted-foreground">{c.client?.name ?? 'Geral'}{c.location?.name ? ' · ' + c.location.name : ''}</span>
+    ) },
+    { key: 'tecnicos', header: 'Técnicos', render: c => <span className="text-xs text-muted-foreground">{tecnicosDe(c)}</span> },
+  ]
+  function acoes(c: ChecklistAvulso) {
+    return (<>
+      {c.status !== 'concluido' && (
+        <button onClick={() => abrirOcorrencia(c)} title="Remarcar só este" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition"><CalendarClock size={15} /></button>
+      )}
+      <button onClick={() => setToDelete({ id: c.id, title: c.title_snapshot })} title="Excluir" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-secondary transition"><Trash2 size={15} /></button>
+    </>)
+  }
+  function cartao(c: ChecklistAvulso) {
+    return (
+      <Card className="p-4" data-ocorrencia={c.title_snapshot + (c.data_prevista ? ' ' + c.data_prevista : '')}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap"><Selo c={c} />{c.recurrence && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground inline-flex items-center gap-1"><Repeat size={10} /> {c.recurrence}</span>}</div>
+            <p className="font-medium text-foreground mt-1">{c.title_snapshot}</p>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">{acoes(c)}</div>
+        </div>
+        <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+          <p className="flex items-center gap-1.5"><CalendarDays size={11} /> <Data c={c} /></p>
+          <p className="flex items-center gap-1.5">{c.client?.name ? <><Building2 size={11} /> {c.client.name}</> : 'Geral'}{c.location?.name && <><MapPin size={11} className="ml-1" /> {c.location.name}</>}</p>
+          <p className="flex items-center gap-1.5"><Users size={11} /> {tecnicosDe(c)}</p>
+        </div>
+      </Card>
+    )
   }
 
   return (
@@ -222,63 +304,42 @@ export default function ChecklistAvulsosPage() {
       {erroAcao && <p className="text-sm text-red-400 mb-3">{erroAcao}</p>}
 
       {aba === 'checklists' ? (<>
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {chipsOcorrencias.map(c => (
-            <button key={c.key} onClick={() => setChip(c.key)}
-              className={'px-3 py-1.5 rounded-full text-xs font-medium border transition ' + (chip === c.key ? 'bg-primary/10 text-primary border-primary/30' : 'bg-transparent text-muted-foreground border-border hover:text-foreground')}>
-              {c.label}
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground mb-3">
-          {loading ? 'Carregando...' : `${visible.length} ${visible.length === 1 ? 'checklist' : 'checklists'}`}
-        </p>
-
+        <FiltrosLista campos={camposFiltro}
+          valores={{ cli: f.cli, uni: f.uni, tec: f.tec, mod: f.mod, serie: f.serie }}
+          onChange={(k, v) => definir(k === 'cli' ? { cli: v, uni: '' } : { [k]: v })}
+          periodo={{ valor: f.per as ChavePeriodo, de: f.de, ate: f.ate, onChange: (per, de, ate) => definir({ per, de: per === 'personalizado' ? (de ?? '') : '', ate: per === 'personalizado' ? (ate ?? '') : '' }) }}
+          onLimpar={() => limpar(['aba'])} />
         {error ? (
           <Card className="p-6 text-center text-red-400 text-sm">{error}</Card>
-        ) : loading ? (
-          <div className="flex items-center justify-center py-16"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
-        ) : visible.length === 0 ? (
-          <Card>
-            <EmptyState icon={ClipboardCheck} title="Nenhum checklist avulso"
-              description="Crie o primeiro checklist independente de uma OS — vistoria, inspeção ou levantamento, único ou recorrente."
-              action={<Button onClick={openNew} variant="cta"><Plus size={16} /> Novo checklist</Button>} />
-          </Card>
         ) : (
-          <Card className="divide-y divide-border">
-            {visible.map(c => {
-              const sit = situacao(c)
-              return (
-                <div key={c.id} className="flex items-center gap-3 px-4 py-3" data-ocorrencia={c.title_snapshot + (c.data_prevista ? ' ' + c.data_prevista : '')}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-foreground">{c.title_snapshot}</span>
-                      <span className={'inline-block px-2 py-0.5 rounded-md text-xs font-medium border ' + STATUS_STYLES[sit === 'atrasado' ? 'atrasado' : c.status]}>
-                        {sit === 'atrasado' ? 'Atrasado' : STATUS_LABELS[c.status]}
-                      </span>
-                      {c.recurrence && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground inline-flex items-center gap-1"><Repeat size={10} /> {c.recurrence}</span>}
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-                      {c.data_prevista && (
-                        <span className={cn('flex items-center gap-1', sit === 'atrasado' && 'text-red-400')}>
-                          <CalendarDays size={11} /> {dataCurtaDia(c.data_prevista)}{c.prazo && c.prazo !== c.data_prevista ? ` · prazo ${dataCurtaDia(c.prazo)}` : ''}
-                        </span>
-                      )}
-                      {c.client?.name ? <span className="flex items-center gap-1"><Building2 size={11} /> {c.client.name}</span> : <span>Geral</span>}
-                      {c.location?.name && <span className="flex items-center gap-1"><MapPin size={11} /> {c.location.name}</span>}
-                      <span className="flex items-center gap-1">
-                        <Users size={11} /> {c.targets && c.targets.length > 0 ? c.targets.map(t => t.technician.name).join(', ') : 'Sem técnico'}
-                      </span>
-                    </div>
-                  </div>
-                  {c.status !== 'concluido' && (
-                    <button onClick={() => abrirOcorrencia(c)} title="Remarcar só este" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition flex-shrink-0"><CalendarClock size={15} /></button>
-                  )}
-                  <button onClick={() => setToDelete({ id: c.id, title: c.title_snapshot })} title="Excluir" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-secondary transition flex-shrink-0"><Trash2 size={15} /></button>
-                </div>
-              )
-            })}
-          </Card>
+          <DataListView<ChecklistAvulso>
+            items={itens}
+            loading={loading}
+            viewKey="checklists-avulsos"
+            search={busca}
+            onSearchChange={setBusca}
+            searchPlaceholder="Buscar pelo título..."
+            page={pagina}
+            pageSize={tamanho}
+            total={total}
+            totalPages={Math.max(1, Math.ceil(total / tamanho))}
+            onPageChange={pg => definir({ pag: String(pg) })}
+            onPageSizeChange={t => definir({ tam: String(t) })}
+            chips={chips}
+            activeChip={f.sit}
+            onChipChange={k => definir({ sit: k })}
+            columns={colunas}
+            renderCard={cartao}
+            rowActions={acoes}
+            getKey={c => c.id}
+            emptyState={
+              <Card>
+                <EmptyState icon={ClipboardCheck} title="Nenhum checklist encontrado"
+                  description={f.sit === 'aberto' ? 'Nada em aberto até os próximos 7 dias com estes filtros.' : 'Nenhum checklist com estes filtros.'}
+                  action={<Button onClick={openNew} variant="cta"><Plus size={16} /> Novo checklist</Button>} />
+              </Card>
+            }
+          />
         )}
       </>) : (
         series.length === 0 ? (
@@ -291,7 +352,7 @@ export default function ChecklistAvulsosPage() {
           <Card className="divide-y divide-border">
             {series.map(s => {
               const [rot, est] = SITUACAO_SERIE[s.situacao]
-              const prox = proximaDa(s.id)
+              const prox = s.proxima
               return (
                 <div key={s.id} className="flex items-center gap-3 px-4 py-3" data-serie={s.titulo}>
                   <div className="flex-1 min-w-0">
@@ -308,6 +369,7 @@ export default function ChecklistAvulsosPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => definir({ aba: 'checklists', serie: s.id, sit: 'todos' })} title="Ver checklists desta recorrência" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary"><ListFilter size={15} /></button>
                     <button onClick={() => openEditSerie(s)} title="Editar (esta e as seguintes)" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary"><Pencil size={15} /></button>
                     {s.situacao === 'ativa' && <button onClick={() => mudarSituacao(s, 'pausada')} title="Pausar" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-amber-400 hover:bg-secondary"><Pause size={15} /></button>}
                     {s.situacao === 'pausada' && <button onClick={() => mudarSituacao(s, 'ativa')} title="Retomar" className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-green-400 hover:bg-secondary"><Play size={15} /></button>}
