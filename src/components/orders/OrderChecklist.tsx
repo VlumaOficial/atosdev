@@ -10,6 +10,7 @@ import { ListChecks, Trash2 } from 'lucide-react'
 export default function OrderChecklist({ orderId }: { orderId: string }) {
   const { checklist, loading, desassociar, salvarResposta, obrigatoriosPendentes, concluir, reabrir } = useOrderChecklist(orderId)
   const { user } = useAuth()
+  // reabrir e remover o checklist: só admin/gestor (migration 043 — técnico não exclui checklist)
   const podeReabrir = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'super_admin'
   const [preencherAberto, setPreencherAberto] = useState(false)
   const [respLocal, setRespLocal] = useState<Record<string, any>>({})
@@ -95,7 +96,7 @@ export default function OrderChecklist({ orderId }: { orderId: string }) {
         <div className="flex items-center gap-2">
           <Button variant="outline" className="flex-1" onClick={abrirPreencher}>{concluido ? 'Ver checklist' : 'Preencher'}</Button>
           {concluido && podeReabrir && <Button variant="ghost" onClick={handleReabrir}>Reabrir</Button>}
-          {!concluido && <button onClick={async () => { if (confirm('Remover o checklist desta OS?')) await desassociar() }} title="Remover" className="w-9 h-9 rounded-md flex items-center justify-center border border-border text-muted-foreground hover:text-red-400 transition"><Trash2 size={15} /></button>}
+          {!concluido && podeReabrir && <button onClick={async () => { if (confirm('Remover o checklist desta OS?')) await desassociar() }} title="Remover" className="w-9 h-9 rounded-md flex items-center justify-center border border-border text-muted-foreground hover:text-red-400 transition"><Trash2 size={15} /></button>}
         </div>
       </div>
 
