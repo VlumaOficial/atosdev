@@ -1546,7 +1546,8 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   `definir_situacao_serie` (pausar/retomar/encerrar — pausar remove as
   futuras não iniciadas), `alterar_ocorrencia` ("só esta": data, prazo,
   técnicos). **pg_cron** instalado; job `atos-gerar-ocorrencias` de hora
-  em hora (minuto 7)
+  em hora (minuto 7) — **confirmado em produção DEV: 1ª execução automática às 14:07 de
+  2026-09-25, `succeeded`, idempotente (nenhuma ocorrência duplicada)**
 - Lógica validada no PGlite antes de aplicar (datas conferidas com os
   exemplos combinados com o usuário: a cada 2 dias, seg/qua/sex,
   quinzenal, dia 31, 1ª segunda, última sexta, 29/02, dia útil pulando
