@@ -78,7 +78,7 @@ export function PreviaDatas({ previa, carregando, erro }: { previa: Previa[]; ca
       {foraExpediente.length > 0 && (
         <p className="text-[11px] text-amber-300 mt-1.5 flex items-start gap-1" data-testid="previa-aviso">
           <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
-          Algumas datas caem fora do expediente ({[...new Set(foraExpediente.map(p => p.motivo))].join(', ')}). Elas são mantidas — ajuste a regra se não quiser.
+          Algumas datas caem fora do expediente ou do funcionamento da unidade ({[...new Set(foraExpediente.flatMap(p => (p.motivo ?? '').split(' · ')))].join(', ')}). Elas são mantidas — ajuste a regra se não quiser.
         </p>
       )}
     </div>
@@ -270,5 +270,26 @@ function Personalizar({ inicio, inicial, locationId, onCancelar, onConcluir }: {
         </div>
       </div>
     </Modal>
+  )
+}
+
+// Aviso de uma data avulsa (checklist que não se repete, "Remarcar só este"):
+// mesmo critério da prévia (aviso_da_data no banco) — informa, não bloqueia
+export function AvisoData({ data, locationId, testId }: { data: string; locationId?: string | null; testId?: string }) {
+  const [aviso, setAviso] = useState<string | null>(null)
+  useEffect(() => {
+    if (!data) { setAviso(null); return }
+    let vivo = true
+    const t = setTimeout(async () => {
+      const { data: a } = await supabase.rpc('aviso_da_data', { p_data: data, p_location: locationId || null })
+      if (vivo) setAviso((a as string | null) ?? null)
+    }, 200)
+    return () => { vivo = false; clearTimeout(t) }
+  }, [data, locationId])
+  if (!aviso) return null
+  return (
+    <p className="text-[11px] text-amber-300 mt-1 flex items-start gap-1" data-testid={testId ?? 'aviso-data'}>
+      <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" /> {dataCurtaDia(data)}: {aviso}. A data é mantida — altere se não quiser.
+    </p>
   )
 }

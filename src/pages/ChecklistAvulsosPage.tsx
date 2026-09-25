@@ -14,7 +14,7 @@ import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Combobox } from '@/components/ui/combobox'
 import { MultiCombobox } from '@/components/ui/multi-combobox'
-import RecorrenciaCampo from '@/components/RecorrenciaCampo'
+import RecorrenciaCampo, { AvisoData } from '@/components/RecorrenciaCampo'
 import {
   hojeNoFuso, somarDias, dataCurtaDia, dataBR, situacaoOcorrencia, resumoRecorrencia, regraParaRRule, textoPrazo,
   type Recorrencia,
@@ -362,6 +362,7 @@ export default function ChecklistAvulsosPage() {
                 </select>
               </div>
             </div>
+            {!form.recorrencia && <AvisoData data={form.inicio} locationId={form.location_id || null} testId="aviso-data-unica" />}
             <RecorrenciaCampo key={editSerie?.id ?? 'novo'} inicio={form.inicio} valor={form.recorrencia} locationId={form.location_id || null}
               onChange={v => setForm(f => ({ ...f, recorrencia: v }))} />
             {editSerie && (
@@ -394,6 +395,7 @@ export default function ChecklistAvulsosPage() {
               <Input id="oc-prazo" type="date" value={ocPrazo} min={ocData} onChange={e => setOcPrazo(e.target.value)} />
             </div>
           </div>
+          <AvisoData data={ocData} locationId={ocorrencia?.location_id} testId="aviso-remarcar" />
           <div>
             <Label htmlFor="oc-tecnicos">Técnicos</Label>
             <MultiCombobox id="oc-tecnicos" options={technicianOptions} value={ocTecnicos} onChange={setOcTecnicos} placeholder="Nenhum técnico" searchPlaceholder="Buscar técnico..." emptyText="Nenhum técnico." />
