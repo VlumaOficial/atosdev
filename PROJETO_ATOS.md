@@ -1588,6 +1588,23 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
 - Dados de teste: série "Teste Semanal" e "Teste Dia Util", checklist
   "Teste Único Atrasado" — apagar depois da validação do usuário
 
+### Listas sem paginação/filtros — levantado pelo usuário em 2026-09-25, aguardando decisão
+- **Pergunta do usuário**: a tela de checklists avulsos foi pensada para
+  paginação/filtro? Resposta honesta: **não**. Ela carrega TODAS as
+  ocorrências de uma vez, filtra só por situação (chips) e não tem busca.
+  Com a recorrência o volume cresce rápido (uma série diária = ~365
+  ocorrências/ano). Falha minha não ter tratado junto com a recorrência
+- **Achado ao conferir o resto**: é o mesmo em **Ordens de Serviço**
+  (lista inteira + busca/chips no navegador), no app do técnico
+  (**Meus atendimentos** e **Checklists**, inclusive concluídos de
+  sempre) e em Técnicos/Checklists (modelos, volume baixo). Só Clientes
+  e Unidades paginam no servidor (`usePaginatedQuery`). **Risco
+  concreto**: o Supabase devolve no máximo 1.000 linhas por consulta —
+  passando disso, a lista corta **em silêncio** (itens somem sem aviso)
+- Proposta (filtros, paginação no servidor, estado na URL, padrão único
+  para OS/avulsos/app do técnico) levada ao usuário — ver resposta da
+  sessão; aguardando decisão
+
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
 Token de acesso do Supabase (Management API), PAT do GitHub embutido no
 remote de `C:\vluma\atosdev`, senha de app do Zoho de
