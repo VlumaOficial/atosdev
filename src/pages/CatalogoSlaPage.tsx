@@ -338,7 +338,7 @@ function AbaSla({ podeEditar }: { podeEditar: boolean }) {
           <p className="text-sm font-medium text-foreground">Exceções por cliente ou categoria</p>
           <p className="text-xs text-muted-foreground">Prazos diferentes para um contrato ou tipo de serviço. A mais específica vence: cliente + categoria → cliente → categoria → nível.</p>
         </div>
-        {podeEditar && <Button size="sm" variant="outline" onClick={() => abrir(null, 'critico', true)}><Plus size={14} /> Nova exceção</Button>}
+        {podeEditar && <Button size="sm" variant="outline" className="whitespace-nowrap flex-shrink-0" onClick={() => abrir(null, 'critico', true)}><Plus size={14} /> Nova exceção</Button>}
       </div>
       {!porCliente && <p className="text-xs text-amber-300 flex items-center gap-1"><Lock size={12} /> Exceções por cliente não estão liberadas no seu plano.</p>}
       {excecoes.length > 0 && (

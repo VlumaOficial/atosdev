@@ -465,7 +465,7 @@ function ClassificacaoOS({ form, setForm, categoriasOp, categorias, editando }: 
       </div>
       <div className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="classificacao-resumo">
         <span className="text-muted-foreground">Prioridade: <b className={ESTILO_NIVEL[nivel]}>{ROTULO_NIVEL[nivel]}</b>
-          {tipo === 'incidente' && modo === 'matriz' && (!form.impacto || !form.urgencia) && <span className="text-amber-300"> (informe impacto e urgência — sem eles fica Baixo)</span>}</span>
+          {tipo === 'incidente' && modo === 'matriz' && (!form.impacto || !form.urgencia) && <span className="text-amber-300"> (informe impacto e urgência para calcular — sem eles fica {ROTULO_NIVEL[nivel]})</span>}</span>
         {previa && (previa.sla
           ? <span className="text-foreground flex items-center gap-1"><Timer size={12} className="text-primary" />{editando ? 'Prazos contam desde a abertura' : <>Atendimento até <b>{dataHora(previa.atendimento)}</b> · Solução até <b>{dataHora(previa.solucao)}</b></>}{previa.excecao ? ' (exceção de cliente/categoria)' : ''}</span>
           : <span className="text-muted-foreground">{nivel === 'visita' ? 'Visita não tem SLA' : 'Sem meta de SLA para este nível (Catálogo e SLA)'}</span>)}
