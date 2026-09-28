@@ -7,6 +7,7 @@ import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 import CalendariosPage from '@/pages/CalendariosPage'
+import CatalogoSlaPage from '@/pages/CatalogoSlaPage'
 import ClientsPage from '@/pages/ClientsPage'
 import LocationsPage from '@/pages/LocationsPage'
 import TechniciansPage from '@/pages/TechniciansPage'
@@ -115,6 +116,15 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['super_admin']}>
                   <TenantsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="sla"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'gestor']}>
+                  <CatalogoSlaPage />
                 </ProtectedRoute>
               }
             />

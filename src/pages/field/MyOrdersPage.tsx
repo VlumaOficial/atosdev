@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMyOrders } from '@/hooks/useMyOrders'
+import { ROTULO_NIVEL, proximoPrazo, situacaoSla } from '@/lib/sla'
+import { SeloSla } from '@/components/SlaOS'
 import { useAuth } from '@/hooks/useAuth'
 import type { Order } from '@/hooks/useOrders'
 import { Card } from '@/components/ui/card'
@@ -19,8 +21,9 @@ const STATUS_STYLES: Record<string, string> = {
   concluida: 'text-green-400 bg-green-500/10 border-green-500/30',
   cancelada: 'text-muted-foreground bg-secondary border-border',
 }
-const PRIORITY_RANK: Record<string, number> = { urgente: 0, alta: 1, normal: 2 }
-const PRIORITY_LABELS: Record<string, string> = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' }
+// SLA (migration 044): o que vence primeiro vem no topo; sem prazo, pela prioridade
+const PRIORITY_RANK: Record<string, number> = { critico: 0, alto: 1, preventiva: 2, requisicao: 3, baixo: 4, visita: 5 }
+const PRIORITY_LABELS = ROTULO_NIVEL
 
 const STATUS_CARDS: { key: string; label: string; dot: string }[] = [
   { key: 'aberta', label: 'Abertas', dot: 'bg-blue-400' },
@@ -58,7 +61,8 @@ export default function MyOrdersPage() {
 
   const visible = useMemo(() => {
     let list = filter === 'all' ? orders : orders.filter(o => o.status === filter)
-    return [...list].sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9))
+    const prazo = (o: Order) => { const p = proximoPrazo(o); return p ? new Date(p).getTime() : Infinity }
+    return [...list].sort((a, b) => (prazo(a) - prazo(b)) || ((PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9)))
   }, [orders, filter])
 
   function OrderCard({ o }: { o: Order }) {
@@ -70,8 +74,8 @@ export default function MyOrdersPage() {
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono text-primary">{o.number}</span>
-            {o.priority !== 'normal' && (
-              <span className={'inline-flex items-center gap-1 text-xs font-medium ' + (o.priority === 'urgente' ? 'text-red-400' : 'text-amber-400')}>
+            {(o.priority === 'critico' || o.priority === 'alto') && (
+              <span className={'inline-flex items-center gap-1 text-xs font-medium ' + (o.priority === 'critico' ? 'text-red-400' : 'text-amber-400')}>
                 <AlertTriangle size={11} /> {PRIORITY_LABELS[o.priority]}
               </span>
             )}
@@ -81,6 +85,7 @@ export default function MyOrdersPage() {
           </span>
         </div>
         <p className="font-medium text-foreground mb-2">{o.title}</p>
+        {situacaoSla(o) !== 'sem_sla' && o.status !== 'concluida' && o.status !== 'cancelada' && <div className="mb-2"><SeloSla o={o} comTexto /></div>}
         <div className="space-y-1 text-xs text-muted-foreground">
           <p className="flex items-center gap-1.5"><Building2 size={12} /> {o.client?.name ?? '—'}</p>
           {o.location?.name && <p className="flex items-center gap-1.5"><MapPin size={12} /> {o.location.name}</p>}

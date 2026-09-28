@@ -27,7 +27,9 @@ const COR = {
 }
 const ALFABETO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 const STATUS: Record<string, string> = { aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento', pausada: 'Pausada', concluida: 'Concluída', cancelada: 'Cancelada' }
-const PRIORIDADE: Record<string, string> = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' }
+// níveis e tipos da migration 044 (SLA ITSM); valores antigos mantidos por segurança
+const PRIORIDADE: Record<string, string> = { critico: 'Crítico', alto: 'Alto', baixo: 'Baixo', preventiva: 'Preventiva', requisicao: 'Requisição', visita: 'Visita', normal: 'Normal', alta: 'Alta', urgente: 'Urgente' }
+const TIPO: Record<string, string> = { incidente: 'Incidente', requisicao: 'Requisição', preventiva: 'Preventiva', visita: 'Visita' }
 const EVENTO: Record<string, string> = {
   created: 'Aberta', scheduled: 'Agendada', started: 'Iniciada', paused: 'Pausada', resumed: 'Retomada',
   completed: 'Concluída', cancelled: 'Cancelada', reopened: 'Reaberta', transferred: 'Transferida',
@@ -129,6 +131,18 @@ Deno.serve(async (req) => {
     .select('*, clients(name), locations(name, address, city, state), technician:users!orders_technician_id_fkey(name), tenants(name, trade_name, cnpj, phone, email, website)')
     .eq('id', order_id).single()
   if (!os) return json({ erro: 'OS não encontrada' }, 404)
+  // categoria "Pai › Filha" (catálogo da empresa)
+  let categoria = ''
+  if (os.categoria_id) {
+    const { data: c } = await admin.from('os_categorias').select('nome, pai_id').eq('id', os.categoria_id).maybeSingle()
+    if (c) {
+      const { data: pai } = c.pai_id ? await admin.from('os_categorias').select('nome').eq('id', c.pai_id).maybeSingle() : { data: null }
+      categoria = (pai?.nome ? pai.nome + ' › ' : '') + c.nome
+    }
+  }
+  const sla = !os.prazo_solucao ? 'Sem SLA'
+    : os.status === 'concluida' ? ((os.sla_solucao_ok ?? true) && (os.sla_atendimento_ok ?? true) && (os.sla_resposta_ok ?? true) ? 'Cumprido' : 'Violado')
+    : 'Em andamento'
 
   // quem chama: o banco (service role) ou usuário da MESMA empresa
   // verify_jwt=true: a plataforma já validou a assinatura do token antes
@@ -236,7 +250,8 @@ Deno.serve(async (req) => {
     const linhasDados: [string, string][][] = [
       [['Cliente', os.clients?.name ?? ''], ['Unidade', os.locations?.name ?? ''], ['Situação', STATUS[os.status] ?? os.status]],
       [['Endereço', endereco], ['Técnico', os.technician?.name ?? ''], ['Prioridade', PRIORIDADE[os.priority] ?? os.priority]],
-      [['Abertura', fmt(os.created_at)], ['Início', fmt(os.started_at)], ['Conclusão', fmt(os.completed_at) + (duracao(os.started_at, os.completed_at) ? ` (${duracao(os.started_at, os.completed_at)})` : '')]],
+      [['Tipo', TIPO[os.tipo] ?? ''], ['Categoria', categoria || '—'], ['SLA', sla]],
+      [['Abertura', fmt(os.created_at)], ['Início', fmt(os.atendido_em ?? os.started_at)], ['Conclusão', fmt(os.completed_at) + (duracao(os.atendido_em ?? os.started_at, os.completed_at) ? ` (${duracao(os.atendido_em ?? os.started_at, os.completed_at)})` : '')]],
     ]
     for (const linha of linhasDados) {
       d.garantir(50)

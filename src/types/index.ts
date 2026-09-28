@@ -36,6 +36,10 @@ export interface Tenant {
   fuso_horario?: string
   sede_cidade_ibge?: string | null
   sede_cidade?: string | null
+  sla_risco_pct?: number
+  prioridade_modo?: 'matriz' | 'simples'
+  prioridade_matriz?: Record<string, Record<string, string>>
+  sla_por_cliente?: boolean
   created_at: string
   updated_at: string
 }

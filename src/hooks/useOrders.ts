@@ -4,7 +4,9 @@ import { removerArquivosDaOS } from '@/lib/armazenamento'
 import { registrarEvento } from '@/lib/orderEvents'
 
 export type OrderStatus = 'aberta' | 'agendada' | 'em_andamento' | 'pausada' | 'concluida' | 'cancelada'
-export type OrderPriority = 'normal' | 'alta' | 'urgente'
+// níveis da migration 044 (SLA ITSM): Incidente usa crítico/alto/baixo; demais tipos têm nível próprio
+export type OrderPriority = 'critico' | 'alto' | 'baixo' | 'preventiva' | 'requisicao' | 'visita'
+export type OrderTipo = 'incidente' | 'requisicao' | 'preventiva' | 'visita'
 
 export interface Order {
   id: string
@@ -36,6 +38,28 @@ export interface Order {
   technician_signature_path?: string | null
   technician_signer_name?: string | null
   technician_signed_at?: string | null
+  // SLA (migration 044)
+  tipo: OrderTipo
+  categoria_id?: string | null
+  impacto?: string | null
+  urgencia?: string | null
+  pause_motivo_id?: string | null
+  agendado_pelo_cliente?: boolean
+  prazo_resposta?: string | null
+  prazo_atendimento?: string | null
+  prazo_solucao?: string | null
+  risco_atendimento?: string | null
+  risco_solucao?: string | null
+  respondido_em?: string | null
+  atendido_em?: string | null
+  sla_pausado_desde?: string | null
+  sla_pausa_min?: number
+  sla_atendimento_ok?: boolean | null
+  sla_solucao_ok?: boolean | null
+  sla_resposta_ok?: boolean | null
+  sla_politica_id?: string | null
+  sla_sit?: string
+  categoria?: { id: string; nome: string; pai: string | null } | null
 }
 
 export interface OrderInput {
@@ -46,6 +70,10 @@ export interface OrderInput {
   description?: string | null
   priority: OrderPriority
   require_signature?: boolean | null
+  tipo?: OrderTipo
+  categoria_id?: string | null
+  impacto?: string | null
+  urgencia?: string | null
 }
 
 
@@ -53,8 +81,9 @@ export interface OrderInput {
 export interface FiltrosOS {
   situacao?: string; q?: string; de?: string | null; ate?: string | null
   cliente?: string; unidade?: string; tecnico?: string; prioridade?: string
+  tipo?: string; categoria?: string; sla?: string
 }
-export type ContagensOS = Record<'todas' | 'em_aberto' | OrderStatus, number>
+export type ContagensOS = Record<'todas' | 'em_aberto' | OrderStatus | 'sla_vencido' | 'sla_em_risco', number>
 
 export function useListaOS(filtros: FiltrosOS, pagina: number, tamanho: number) {
   const [itens, setItens] = useState<Order[]>([])
@@ -92,6 +121,10 @@ export function useOrders() {
       priority: input.priority,
       require_signature: input.require_signature ?? null,
       created_by: user?.id ?? null,
+      tipo: input.tipo ?? 'incidente',
+      categoria_id: input.categoria_id || null,
+      impacto: input.impacto || null,
+      urgencia: input.urgencia || null,
     }
     const { data: created, error } = await supabase.from('orders').insert(payload).select('id').single()
     if (error) throw error
@@ -111,6 +144,9 @@ export function useOrders() {
     if (clean.location_id !== undefined) clean.location_id = clean.location_id || null
     if (clean.technician_id !== undefined) clean.technician_id = clean.technician_id || null
     if (clean.description !== undefined) clean.description = clean.description || null
+    if (clean.categoria_id !== undefined) clean.categoria_id = clean.categoria_id || null
+    if (clean.impacto !== undefined) clean.impacto = clean.impacto || null
+    if (clean.urgencia !== undefined) clean.urgencia = clean.urgencia || null
     const { error } = await supabase.from('orders').update(clean).eq('id', id)
     if (error) throw error
 

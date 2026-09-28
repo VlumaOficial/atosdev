@@ -5,6 +5,9 @@ import { useAuth } from '@/hooks/useAuth'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
+import CartaoSla, { TipoNivel } from '@/components/SlaOS'
+import { MotivoPausaCampo, AgendadoClienteCampo } from '@/components/orders/CamposStatusSla'
+import { useCategorias } from '@/hooks/useCatalogoSla'
 import ConcluirOSModal from '@/components/assinatura/ConcluirOSModal'
 import AssinaturasDaOS from '@/components/assinatura/AssinaturasDaOS'
 import RelatorioOSButton from '@/components/orders/RelatorioOSButton'
@@ -27,8 +30,7 @@ const STATUS_STYLES: Record<string, string> = {
   concluida: 'text-green-400 bg-green-500/10 border-green-500/30',
   cancelada: 'text-muted-foreground bg-secondary border-border',
 }
-const PRIORITY_LABELS: Record<string, string> = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' }
-const PRIORITY_STYLES: Record<string, string> = { normal: 'text-muted-foreground', alta: 'text-amber-400', urgente: 'text-red-400' }
+
 
 // ações do técnico em campo (subconjunto do fluxo do gestor)
 const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean; danger?: boolean }[]> = {
@@ -66,6 +68,10 @@ export default function FieldOrderPage() {
 
   const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean; date: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })
   const [reasonInput, setReasonInput] = useState('')
+  // SLA (migration 044): motivo de pausa da lista e agendamento a pedido do cliente
+  const [motivoPausa, setMotivoPausa] = useState<{ id: string; nome: string }>({ id: '', nome: '' })
+  const [pedidoCliente, setPedidoCliente] = useState(false)
+  const { opcoes: categoriasOp } = useCategorias()
   const [notesInput, setNotesInput] = useState('')
   const [completeDateInput, setCompleteDateInput] = useState('')
   const [scheduleDateInput, setScheduleDateInput] = useState('')
@@ -76,7 +82,7 @@ export default function FieldOrderPage() {
   function requestAction(action: { target: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean }) {
     if (action.target === 'concluida') { setConcluirAberto(true); return }
     if (action.reason || action.notes || action.completeDate || action.date) {
-      setReasonInput(''); setNotesInput(''); setCompleteDateInput(''); setScheduleDateInput(''); setModalError('')
+      setReasonInput(''); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(false); setNotesInput(''); setCompleteDateInput(''); setScheduleDateInput(''); setModalError('')
       setModal({ open: true, target: action.target, reason: !!action.reason, notes: !!action.notes, completeDate: !!action.completeDate, date: !!action.date })
     } else {
       apply(action.target)
@@ -103,13 +109,14 @@ export default function FieldOrderPage() {
         setModalError('O agendamento deve ser para uma data e hora futura.'); return
       }
     }
-    if (modal.reason && !reasonInput.trim()) { setModalError('Informe o motivo.'); return }
+    if (modal.target === 'pausada' && !motivoPausa.id) { setModalError('Escolha o motivo da pausa.'); return }
+    if (modal.reason && modal.target !== 'pausada' && !reasonInput.trim()) { setModalError('Informe o motivo.'); return }
     if (modal.completeDate && completeDateInput && new Date(completeDateInput).getTime() > new Date().getTime()) {
       setModalError('A data de conclusão não pode ser no futuro.'); return
     }
     const extra: any = {}
-    if (modal.target === 'agendada') { extra.scheduled_at = scheduleDateInput || null; extra.schedule_reason = reasonInput || null }
-    if (modal.target === 'pausada') extra.pause_reason = reasonInput || null
+    if (modal.target === 'agendada') { extra.scheduled_at = scheduleDateInput || null; extra.schedule_reason = reasonInput || null; extra.agendado_pelo_cliente = pedidoCliente }
+    if (modal.target === 'pausada') { extra.pause_motivo_id = motivoPausa.id; extra.pause_reason = motivoPausa.nome + (reasonInput.trim() ? ' — ' + reasonInput.trim() : '') }
     if (modal.target === 'cancelada') extra.cancel_reason = reasonInput || null
     await apply(modal.target, extra)
   }
@@ -143,7 +150,8 @@ export default function FieldOrderPage() {
         <span className={'inline-block px-2.5 py-1 rounded-md text-xs font-medium border ' + STATUS_STYLES[order.status]}>{STATUS_LABELS[order.status]}</span>
       </div>
       <h1 className="text-xl font-semibold text-foreground mb-1">{order.title}</h1>
-      <p className={'text-xs font-medium mb-4 ' + PRIORITY_STYLES[order.priority]}>Prioridade: {PRIORITY_LABELS[order.priority]}</p>
+      <p className="mb-4"><TipoNivel tipo={order.tipo} nivel={order.priority} categoria={categoriasOp.find(c => c.value === order.categoria_id)?.label} /></p>
+      <CartaoSla o={order} />
 
       <Card className="p-4 mb-4">
         <div className="space-y-2.5 text-sm">
@@ -239,9 +247,11 @@ export default function FieldOrderPage() {
               <textarea id="notes" value={notesInput} onChange={e => setNotesInput(e.target.value)} placeholder="Descreva o que foi realizado" rows={4} className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition resize-none" />
             </div>
           )}
+          {modal.target === 'agendada' && <AgendadoClienteCampo valor={pedidoCliente} onChange={setPedidoCliente} />}
+          {modal.target === 'pausada' && <MotivoPausaCampo valor={motivoPausa.id} onChange={(id, nome) => setMotivoPausa({ id, nome })} />}
           {modal.reason && (
             <div>
-              <Label htmlFor="reason">Motivo *</Label>
+              <Label htmlFor="reason">{modal.target === 'pausada' ? 'Observação (opcional)' : 'Motivo *'}</Label>
               <textarea id="reason" value={reasonInput} onChange={e => setReasonInput(e.target.value)} placeholder="Descreva o motivo" rows={3} className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition resize-none" />
             </div>
           )}

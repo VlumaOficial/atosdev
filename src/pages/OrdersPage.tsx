@@ -20,9 +20,12 @@ import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Combobox } from '@/components/ui/combobox'
-import { ClipboardList, Plus, Pencil, Building2, MapPin, Wrench } from 'lucide-react'
+import { ClipboardList, Plus, Pencil, Building2, MapPin, Wrench, Timer } from 'lucide-react'
+import { useCategorias } from '@/hooks/useCatalogoSla'
+import { SeloSla, TipoNivel } from '@/components/SlaOS'
+import { TIPOS, IMPACTOS, URGENCIAS, NIVEIS, NIVEIS_INCIDENTE, ROTULO_NIVEL, ESTILO_NIVEL, nivelDaOS, dataHora, type Matriz, type TipoOS } from '@/lib/sla'
 
-const emptyForm: OrderInput = { client_id: '', location_id: '', technician_id: '', title: '', description: '', priority: 'normal', require_signature: null }
+const emptyForm: OrderInput = { client_id: '', location_id: '', technician_id: '', title: '', description: '', priority: 'baixo', require_signature: null, tipo: 'incidente', categoria_id: '', impacto: '', urgencia: '' }
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
@@ -36,8 +39,9 @@ const STATUS_STYLES: Record<string, string> = {
   concluida: 'text-green-400 bg-green-500/10 border-green-500/30',
   cancelada: 'text-muted-foreground bg-secondary border-border',
 }
-const PRIORITY_LABELS: Record<string, string> = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' }
-const PRIORITY_STYLES: Record<string, string> = { normal: 'text-muted-foreground', alta: 'text-amber-400', urgente: 'text-red-400' }
+// níveis da migration 044 (SLA ITSM)
+const PRIORITY_LABELS = ROTULO_NIVEL
+const PRIORITY_STYLES = ESTILO_NIVEL
 
 const statusChips = [
   { key: 'all', label: 'Todas' },
@@ -49,11 +53,7 @@ const statusChips = [
   { key: 'cancelada', label: 'Canceladas' },
 ]
 
-const priorityOptions = [
-  { value: 'normal', label: 'Normal' },
-  { value: 'alta', label: 'Alta' },
-  { value: 'urgente', label: 'Urgente' },
-]
+const priorityOptions = NIVEIS_INCIDENTE.map(n => ({ value: n.value, label: n.label }))
 
 const signatureOptions = [
   { value: '', label: 'Padrão do tenant' },
@@ -78,14 +78,16 @@ export default function OrdersPage() {
   const hoje = hojeNoFuso(tenant?.fuso_horario)
   // filtros + página na URL (voltar da OS mantém a lista como estava)
   const { valores: f, definir, limpar } = useFiltrosUrl({
-    sit: 'todas', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', pri: '', pag: '1', tam: '25',
+    sit: 'em_aberto', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', pri: '', tipo: '', cat: '', sla: '', pag: '1', tam: '25',
   })
   const periodo = intervaloDoPeriodo(f.per as ChavePeriodo, hoje, f.de, f.ate)
   const pagina = Math.max(1, parseInt(f.pag) || 1)
   const tamanho = parseInt(f.tam) || 25
   const { itens, total, contagens, loading, error, recarregar } = useListaOS({
     situacao: f.sit, q: f.q, de: periodo.de, ate: periodo.ate, cliente: f.cli, unidade: f.uni, tecnico: f.tec, prioridade: f.pri,
+    tipo: f.tipo, categoria: f.cat, sla: f.sla,
   }, pagina, tamanho)
+  const { opcoes: categoriasOp, categorias } = useCategorias()
   const { locations: todasUnidades } = useLocations()
   const [busca, setBusca] = useState(f.q)
   useEffect(() => { setBusca(f.q) }, [f.q])
@@ -144,7 +146,10 @@ export default function OrdersPage() {
     { chave: 'cli', rotulo: 'Cliente', opcoes: clientOptions, vazio: 'Todos os clientes' },
     { chave: 'uni', rotulo: 'Unidade', opcoes: unidadesFiltro, vazio: 'Todas as unidades' },
     { chave: 'tec', rotulo: 'Técnico', opcoes: [{ value: 'sem', label: 'Sem técnico (backlog)' }, ...technicians.map(t => ({ value: t.id, label: t.name }))], vazio: 'Todos os técnicos' },
-    { chave: 'pri', rotulo: 'Prioridade', opcoes: Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label })), vazio: 'Todas as prioridades' },
+    { chave: 'tipo', rotulo: 'Tipo', opcoes: TIPOS.map(t => ({ value: t.value, label: t.label })), vazio: 'Todos os tipos' },
+    { chave: 'pri', rotulo: 'Prioridade', opcoes: NIVEIS.map(n => ({ value: n.value, label: n.label })), vazio: 'Todas as prioridades' },
+    { chave: 'cat', rotulo: 'Categoria', opcoes: categoriasOp, vazio: 'Todas as categorias' },
+    { chave: 'sla', rotulo: 'SLA', opcoes: [{ value: 'vencido', label: 'Vencido' + (contagens ? ` (${(contagens as any).sla_vencido ?? 0})` : '') }, { value: 'em_risco', label: 'Em risco' + (contagens ? ` (${(contagens as any).sla_em_risco ?? 0})` : '') }, { value: 'no_prazo', label: 'No prazo' }, { value: 'pausado', label: 'Pausado' }, { value: 'cumprido', label: 'Cumprido' }, { value: 'violado', label: 'Violado' }, { value: 'sem_sla', label: 'Sem SLA' }], vazio: 'Qualquer situação' },
   ]
 
   function openNew() {
@@ -166,6 +171,10 @@ export default function OrdersPage() {
       description: o.description ?? '',
       priority: o.priority,
       require_signature: o.require_signature,
+      tipo: o.tipo ?? 'incidente',
+      categoria_id: o.categoria_id ?? '',
+      impacto: o.impacto ?? '',
+      urgencia: o.urgencia ?? '',
     })
     // carrega o checklist atual da OS (um por OS) e pre-seleciona no campo
     const { data: inst } = await supabase
@@ -251,7 +260,8 @@ export default function OrdersPage() {
     { key: 'titulo', header: 'Título', render: o => <span className="text-foreground">{o.title}</span> },
     { key: 'cliente', header: 'Cliente', render: o => <span className="text-muted-foreground">{o.client?.name ?? '—'}</span> },
     { key: 'tecnico', header: 'Técnico', render: o => <span className="text-muted-foreground">{o.technician?.name ?? 'Sem técnico'}</span> },
-    { key: 'prioridade', header: 'Prioridade', render: o => <span className={'text-xs font-medium ' + PRIORITY_STYLES[o.priority]}>{PRIORITY_LABELS[o.priority]}</span> },
+    { key: 'prioridade', header: 'Tipo / prioridade', render: o => <TipoNivel tipo={o.tipo} nivel={o.priority} /> },
+    { key: 'sla', header: 'SLA', render: o => <SeloSla o={o} comTexto /> },
     { key: 'status', header: 'Status', render: o => <StatusBadge status={o.status} /> },
   ]
   function cartao(o: Order) {
@@ -274,7 +284,7 @@ export default function OrdersPage() {
           {o.location?.name && <p className="flex items-center gap-1.5"><MapPin size={12} /> {o.location.name}</p>}
           <p className="flex items-center gap-1.5"><Wrench size={12} /> {o.technician?.name ?? 'Sem técnico'}</p>
         </div>
-        <div className="mt-3 pt-3 border-t border-border"><StatusBadge status={o.status} /></div>
+        <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center gap-2"><StatusBadge status={o.status} /><SeloSla o={o} comTexto /></div>
       </Card>
     )
   }
@@ -292,7 +302,7 @@ export default function OrdersPage() {
       />
 
       <FiltrosLista campos={camposFiltro}
-        valores={{ cli: f.cli, uni: f.uni, tec: f.tec, pri: f.pri }}
+        valores={{ cli: f.cli, uni: f.uni, tec: f.tec, pri: f.pri, tipo: f.tipo, cat: f.cat, sla: f.sla }}
         onChange={(k, v) => definir(k === 'cli' ? { cli: v, uni: '' } : { [k]: v })}
         periodo={{ rotulo: 'Aberta em', valor: f.per as ChavePeriodo, de: f.de, ate: f.ate, onChange: (per, de, ate) => definir({ per, de: per === 'personalizado' ? (de ?? '') : '', ate: per === 'personalizado' ? (ate ?? '') : '' }) }}
         onLimpar={() => limpar()} />
@@ -355,14 +365,11 @@ export default function OrdersPage() {
               <Combobox id="technician" options={technicianOptions} value={form.technician_id ?? ''} onChange={v => setForm({ ...form, technician_id: v })} placeholder="Sem técnico (backlog)" searchPlaceholder="Buscar técnico..." emptyText="Nenhum técnico encontrado." />
             </div>
             <div>
-              <Label htmlFor="priority">Prioridade</Label>
-              <Combobox id="priority" options={priorityOptions} value={form.priority} onChange={v => setForm({ ...form, priority: v as OrderPriority })} placeholder="Prioridade" searchPlaceholder="Buscar..." emptyText="—" />
-            </div>
-            <div>
               <Label htmlFor="require-signature">Assinatura obrigatória</Label>
               <Combobox id="require-signature" options={signatureOptions} value={requireSignatureParaStr(form.require_signature)} onChange={v => setForm({ ...form, require_signature: strParaRequireSignature(v) })} placeholder="Padrão do tenant" searchPlaceholder="Buscar..." emptyText="—" />
             </div>
           </div>
+          <ClassificacaoOS form={form} setForm={setForm} categoriasOp={categoriasOp} categorias={categorias} editando={!!editing} />
           <div>
             <Label htmlFor="checklist">Checklist (opcional)</Label>
             <Combobox id="checklist" options={[{ value: '', label: 'Sem checklist' }, ...checklistTemplates.filter(t => t.is_active).map(t => ({ value: t.id, label: t.name }))]} value={checklistTemplateId} onChange={v => setChecklistTemplateId(v)} placeholder="Sem checklist" searchPlaceholder="Buscar modelo..." emptyText="Nenhum modelo ativo." />
@@ -389,6 +396,80 @@ export default function OrdersPage() {
           </div>
         </form>
       </Modal>
+    </div>
+  )
+}
+
+// Tipo + categoria + prioridade (matriz Impacto × Urgência ou escolha direta) e prévia do SLA
+function ClassificacaoOS({ form, setForm, categoriasOp, categorias, editando }: {
+  form: OrderInput; setForm: (f: OrderInput) => void; categoriasOp: { value: string; label: string }[]
+  categorias: { id: string; impacto: string | null; urgencia: string | null; pai_id: string | null }[]; editando: boolean
+}) {
+  const { tenant } = useAuth()
+  const modo = tenant?.prioridade_modo ?? 'matriz'
+  const tipo = (form.tipo ?? 'incidente') as TipoOS
+  const nivel = nivelDaOS(tipo, modo, tenant?.prioridade_matriz as Matriz | undefined, form.impacto, form.urgencia, form.priority)
+  const [previa, setPrevia] = useState<any>(null)
+  const chave = JSON.stringify([tipo, form.impacto, form.urgencia, form.priority, form.client_id, form.categoria_id, form.location_id])
+  useEffect(() => {
+    let vivo = true
+    const t = setTimeout(async () => {
+      const { data } = await supabase.rpc('previa_sla', { p_tipo: tipo, p_impacto: form.impacto || null, p_urgencia: form.urgencia || null,
+        p_prioridade: form.priority, p_client: form.client_id || null, p_categoria: form.categoria_id || null, p_location: form.location_id || null })
+      if (vivo) setPrevia(data)
+    }, 250)
+    return () => { vivo = false; clearTimeout(t) }
+  }, [chave]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function escolherCategoria(id: string) {
+    const c = categorias.find(x => x.id === id)
+    const pai = c?.pai_id ? categorias.find(x => x.id === c.pai_id) : null
+    const imp = c?.impacto ?? pai?.impacto, urg = c?.urgencia ?? pai?.urgencia
+    setForm({ ...form, categoria_id: id, ...(tipo === 'incidente' && imp && urg ? { impacto: imp, urgencia: urg } : {}) })
+  }
+  const campo = 'w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground'
+  return (
+    <div className="rounded-md border border-border p-3 space-y-3" data-testid="classificacao-os">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <Label htmlFor="tipo">Tipo *</Label>
+          <select id="tipo" value={tipo} onChange={e => setForm({ ...form, tipo: e.target.value as TipoOS })} className={campo}>
+            {TIPOS.map(t => <option key={t.value} value={t.value}>{t.label} — {t.descricao}</option>)}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="categoria">Categoria</Label>
+          <Combobox id="categoria" options={[{ value: '', label: 'Sem categoria' }, ...categoriasOp]} value={form.categoria_id ?? ''} onChange={escolherCategoria}
+            placeholder="Sem categoria" searchPlaceholder="Buscar categoria..." emptyText="Nenhuma categoria — crie em Catálogo e SLA." />
+        </div>
+        {tipo === 'incidente' && modo === 'matriz' && (<>
+          <div>
+            <Label htmlFor="impacto">Impacto</Label>
+            <select id="impacto" value={form.impacto ?? ''} onChange={e => setForm({ ...form, impacto: e.target.value })} className={campo}>
+              <option value="">Selecione</option>{IMPACTOS.map(i => <option key={i.value} value={i.value}>{i.label} — {i.descricao}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="urgencia">Urgência</Label>
+            <select id="urgencia" value={form.urgencia ?? ''} onChange={e => setForm({ ...form, urgencia: e.target.value })} className={campo}>
+              <option value="">Selecione</option>{URGENCIAS.map(u => <option key={u.value} value={u.value}>{u.label} — {u.descricao}</option>)}
+            </select>
+          </div>
+        </>)}
+        {tipo === 'incidente' && modo === 'simples' && (
+          <div>
+            <Label htmlFor="priority">Prioridade</Label>
+            <Combobox id="priority" options={priorityOptions} value={form.priority} onChange={v => setForm({ ...form, priority: v as OrderPriority })} placeholder="Prioridade" searchPlaceholder="Buscar..." emptyText="—" />
+          </div>
+        )}
+      </div>
+      <div className="text-xs flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="classificacao-resumo">
+        <span className="text-muted-foreground">Prioridade: <b className={ESTILO_NIVEL[nivel]}>{ROTULO_NIVEL[nivel]}</b>
+          {tipo === 'incidente' && modo === 'matriz' && (!form.impacto || !form.urgencia) && <span className="text-amber-300"> (informe impacto e urgência — sem eles fica Baixo)</span>}</span>
+        {previa && (previa.sla
+          ? <span className="text-foreground flex items-center gap-1"><Timer size={12} className="text-primary" />{editando ? 'Prazos contam desde a abertura' : <>Atendimento até <b>{dataHora(previa.atendimento)}</b> · Solução até <b>{dataHora(previa.solucao)}</b></>}{previa.excecao ? ' (exceção de cliente/categoria)' : ''}</span>
+          : <span className="text-muted-foreground">{nivel === 'visita' ? 'Visita não tem SLA' : 'Sem meta de SLA para este nível (Catálogo e SLA)'}</span>)}
+      </div>
     </div>
   )
 }

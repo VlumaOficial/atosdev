@@ -5,6 +5,9 @@ import { useAuth } from '@/hooks/useAuth'
 import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
+import CartaoSla, { TipoNivel } from '@/components/SlaOS'
+import { MotivoPausaCampo, AgendadoClienteCampo } from '@/components/orders/CamposStatusSla'
+import { useCategorias } from '@/hooks/useCatalogoSla'
 import ConcluirOSModal from '@/components/assinatura/ConcluirOSModal'
 import AssinaturasDaOS from '@/components/assinatura/AssinaturasDaOS'
 import RelatorioOSButton from '@/components/orders/RelatorioOSButton'
@@ -29,8 +32,7 @@ const STATUS_STYLES: Record<string, string> = {
   concluida: 'text-green-400 bg-green-500/10 border-green-500/30',
   cancelada: 'text-muted-foreground bg-secondary border-border',
 }
-const PRIORITY_LABELS: Record<string, string> = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' }
-const PRIORITY_STYLES: Record<string, string> = { normal: 'text-muted-foreground', alta: 'text-amber-400', urgente: 'text-red-400' }
+
 
 const TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; date?: boolean; notes?: boolean; completeDate?: boolean }[]> = {
   aberta: [
@@ -70,6 +72,10 @@ export default function OrderDetailPage() {
   const [notesInput, setNotesInput] = useState('')
   const [completeDateInput, setCompleteDateInput] = useState('')
   const [reasonInput, setReasonInput] = useState('')
+  // SLA (migration 044): motivo de pausa da lista e agendamento a pedido do cliente
+  const [motivoPausa, setMotivoPausa] = useState<{ id: string; nome: string }>({ id: '', nome: '' })
+  const [pedidoCliente, setPedidoCliente] = useState(false)
+  const { opcoes: categoriasOp } = useCategorias()
   const [dateInput, setDateInput] = useState('')
   const [statusError, setStatusError] = useState('')
   const [statusSaving, setStatusSaving] = useState(false)
@@ -78,7 +84,7 @@ export default function OrderDetailPage() {
   function requestStatusChange(action: { target: string; reason?: boolean; date?: boolean; notes?: boolean; completeDate?: boolean }) {
     if (action.target === 'concluida') { setConcluirAberto(true); return }
     if (action.reason || action.date || action.notes || action.completeDate) {
-      setReasonInput('')
+      setReasonInput(''); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(false)
       setDateInput('')
       setNotesInput('')
       setCompleteDateInput('')
@@ -110,7 +116,8 @@ export default function OrderDetailPage() {
         return
       }
     }
-    if (statusModal.needsReason && !reasonInput.trim()) {
+    if (statusModal.target === 'pausada' && !motivoPausa.id) { setStatusError('Escolha o motivo da pausa.'); return }
+    if (statusModal.needsReason && statusModal.target !== 'pausada' && !reasonInput.trim()) {
       setStatusError('Informe o motivo.')
       return
     }
@@ -119,8 +126,8 @@ export default function OrderDetailPage() {
       return
     }
     const extra: any = {}
-    if (statusModal.target === 'agendada') { extra.scheduled_at = dateInput || null; extra.schedule_reason = reasonInput || null }
-    if (statusModal.target === 'pausada') extra.pause_reason = reasonInput || null
+    if (statusModal.target === 'agendada') { extra.scheduled_at = dateInput || null; extra.schedule_reason = reasonInput || null; extra.agendado_pelo_cliente = pedidoCliente }
+    if (statusModal.target === 'pausada') { extra.pause_motivo_id = motivoPausa.id; extra.pause_reason = motivoPausa.nome + (reasonInput.trim() ? ' — ' + reasonInput.trim() : '') }
     if (statusModal.target === 'cancelada') extra.cancel_reason = reasonInput || null
     await applyStatusChange(statusModal.target, extra)
   }
@@ -164,7 +171,7 @@ export default function OrderDetailPage() {
               <span className={'inline-block px-2.5 py-1 rounded-md text-xs font-medium border ' + STATUS_STYLES[order.status]}>
                 {STATUS_LABELS[order.status]}
               </span>
-              <span className={'text-xs font-medium ' + PRIORITY_STYLES[order.priority]}>Prioridade: {PRIORITY_LABELS[order.priority]}</span>
+              <TipoNivel tipo={order.tipo} nivel={order.priority} categoria={categoriasOp.find(c => c.value === order.categoria_id)?.label} />
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-2 text-foreground"><Building2 size={15} className="text-muted-foreground" /> {order.client?.name ?? '—'}</div>
@@ -179,6 +186,7 @@ export default function OrderDetailPage() {
             )}
           </Card>
 
+          <CartaoSla o={order} />
           <Card className="p-5">
             <p className="text-sm font-medium text-foreground mb-3">Linha do tempo</p>
             <OrderTimeline orderId={order.id} />
@@ -257,9 +265,11 @@ export default function OrderDetailPage() {
               />
             </div>
           )}
+          {statusModal.target === 'agendada' && <AgendadoClienteCampo valor={pedidoCliente} onChange={setPedidoCliente} />}
+          {statusModal.target === 'pausada' && <MotivoPausaCampo valor={motivoPausa.id} onChange={(id, nome) => setMotivoPausa({ id, nome })} />}
           {statusModal.needsReason && (
             <div>
-              <Label htmlFor="reason">Motivo *</Label>
+              <Label htmlFor="reason">{statusModal.target === 'pausada' ? 'Observação (opcional)' : 'Motivo *'}</Label>
               <textarea
                 id="reason"
                 value={reasonInput}
