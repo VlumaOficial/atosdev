@@ -1776,7 +1776,7 @@ de em risco/vencido) é a próxima; depois F7.
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
-  Único Atrasado", OS-0018 a OS-0025 e fotos de teste na OS-0010. Não
+  Único Atrasado", OS-0018 a OS-0029 e fotos de teste na OS-0010. Não
   apagar antes — servem de massa para testes e validação
 
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)

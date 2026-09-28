@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import AtribuicaoMapas from '@/components/AtribuicaoMapas'
 import { nomeEmpresa } from '@/lib/empresa'
+import SinoNotificacoes, { useNotificacoes } from '@/components/SinoNotificacoes'
 
 interface NavItem {
   label: string
@@ -45,6 +46,7 @@ export default function Sidebar() {
   const { user, tenant, signOut } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { naoLidas } = useNotificacoes()
 
   if (!user) return null
 
@@ -57,8 +59,9 @@ export default function Sidebar() {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-5 border-b border-border">
+      <div className="px-4 py-5 border-b border-border flex items-center justify-between gap-2">
         <AtosLogo size={32} />
+        <SinoNotificacoes onNavegar={() => setMobileOpen(false)} />
       </div>
 
       {user.role !== 'super_admin' && tenant && (
@@ -118,6 +121,7 @@ export default function Sidebar() {
       <button onClick={() => setMobileOpen(true)}
         className="md:hidden fixed top-4 left-4 z-50 w-9 h-9 rounded-lg bg-card border border-border flex items-center justify-center text-foreground">
         <Menu size={18} />
+        {naoLidas > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border-2 border-background" aria-label="Há avisos de SLA" />}
       </button>
 
       {mobileOpen && (
