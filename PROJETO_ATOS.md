@@ -951,6 +951,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 041_lista_os | listar_os (página + total + contagens; situação, aberta em, cliente, unidade, técnico/sem técnico, prioridade, busca) | OK | Pendente | Sim |
 | 042_orders_leitura_tecnico | orders_select: técnico lê só as OS atribuídas a ele | OK | Pendente | Sim |
 | 043_seguranca_tecnico_dados_os | pode_ver_os, pode_ver_checklist, pode_acessar_arquivo; policies de checklist_instances/answers/targets/answer_history (histórico só leitura), order_comments/events/evidences/reports, fotos_verificacao e storage evidencias restritas ao que o técnico pode ver | OK | Pendente | Sim |
+| 044_sla_itsm | catálogo (os_categorias), motivos_pausa, sla_politicas, config de prioridade/risco no tenant, campos de tipo/classificação/SLA na OS, gatilho fn_orders_sla, sla_situacao, previa_sla, salvar_config_prioridade, listar_os com SLA; prioridades convertidas | OK | Pendente | Sim |
 
 ---
 
@@ -1711,6 +1712,67 @@ pendente** (esperado — só na promoção do MVP; ver tabela da seção 6).
   Configurações. 0 erros de console
 - Dados de teste: OS-0025 "Teste Segurança 043" (concluída, com PDF)
 
+### SLA no padrão ITSM — etapas A e B (2026-09-28) — CONCLUÍDAS
+Desenho e decisões: VISAO_ATOS.md "SLA no padrão ITSM". Etapa C (alertas
+de em risco/vencido) é a próxima; depois F7.
+- **Migration 044**: `tenants.sla_risco_pct/prioridade_modo/
+  prioridade_matriz/sla_por_cliente`; `os_categorias` (2 níveis, catálogo
+  da própria empresa, impacto/urgência sugeridos); `motivos_pausa` (4
+  iniciais editáveis; "para o relógio" sim/não); `sla_politicas` (nível ×
+  cliente × categoria, horário de atendimento, resposta opcional,
+  atendimento, solução em minutos úteis); `orders.tipo/categoria_id/
+  impacto/urgencia/pause_motivo_id/agendado_pelo_cliente` + prazos
+  gravados (`prazo_*`, `risco_*`, `respondido_em`, `atendido_em` = 1º
+  início — `started_at` é sobrescrito ao retomar, `sla_pausa_min`,
+  `sla_*_ok`). Gatilho `fn_orders_sla` calcula nível (matriz/escolha
+  direta; Preventiva/Requisição/Visita pelo tipo), política (cliente +
+  categoria → cliente → categoria → nível; categoria-mãe vale para
+  subcategoria), prazos em horas úteis (Calendários, feriados da cidade
+  da unidade), pausas que param o relógio (soma minutos úteis ao
+  retomar), agendamento a pedido do cliente (data vira o prazo de
+  atendimento; solução mantém a folga) e resultado ao concluir.
+  Compatibilidade: urgente/alta/normal → crítico/alto/baixo (dados e
+  telas antigas). `sla_situacao()`, `previa_sla()`,
+  `salvar_config_prioridade()`; `listar_os` com tipo, categoria, filtro e
+  contagens de SLA e "Em aberto" ordenada pelo vencimento
+- Telas: menu **Catálogo e SLA** (admin/gestor) — Categorias ·
+  Prioridades (matriz editável, modo, % de risco) · SLA (metas por nível,
+  "Começar com valores sugeridos", exceções por cliente/categoria,
+  prévia "se abrisse agora") · Motivos de pausa. OS: bloco
+  **Classificação** (tipo, categoria que sugere impacto/urgência,
+  prioridade calculada e prazos previstos); lista abre em **"Em aberto"
+  por vencimento**, coluna/filtro de SLA, filtros tipo/categoria;
+  detalhe (admin e técnico) com **cartão de SLA**; pausar exige motivo
+  da lista (+ observação); agendar tem "a pedido do cliente"; app do
+  técnico ordena pelo vencimento com "vence em…"; **relatório PDF** com
+  Tipo, Categoria e SLA (função `gerar-relatorio-os` v10 publicada pela
+  CLI, verify_jwt mantido)
+- Lógica validada no PGlite (matriz, níveis por tipo, exceções,
+  pausas, agendamento combinado, conclusão, modo simples) antes de
+  aplicar
+- Testado ponta a ponta (URL pública, admin e técnico reais, 0 erros):
+  categorias CFTV › Câmera sem imagem e Rede, duplicado barrado; metas
+  sugeridas (Crítico 1/4/8 h …); exceção Atakarejo Alto 2/4 h; prévias
+  conferidas à mão (Baixo às 08:29 de seg → atendimento ter 14:29,
+  solução sex 08:29). OS pela tela: Crítico pela categoria (4 h/8 h e
+  resposta), Visita sem SLA, exceção do cliente (2 h/4 h), Requisição
+  (24 h/48 h úteis); lista com "No prazo · vence em 3 h 59 min" e
+  ordenada por vencimento; agendado a pedido do cliente → prazo =
+  data combinada. Técnico: lista ordenada pelo vencimento, iniciar
+  registra atendimento, pausar sem motivo barrado, "Aguardando o
+  cliente" para o relógio ("SLA pausado"), retomar somou os minutos
+  ÚTEIS da pausa (pausa desde 07:35 → 35 min, expediente começa 08:00)
+  e empurrou a solução; linha do tempo com motivo + observação;
+  conclusão com assinaturas → "SLA cumprido"; PDF com "Prioridade
+  Crítico · Tipo Incidente · Categoria CFTV › Câmera sem imagem · SLA
+  Cumprido". Segurança: técnico lê catálogo/metas/motivos mas não
+  altera; empresas isoladas. Regressão: edição de OS com transferência
+- Achados no teste e corrigidos: prévia da tela de SLA não atualizava
+  depois de criar metas; dica "sem impacto/urgência fica Baixo"
+  enganosa em OS antigas; botão "Nova exceção" quebrando linha
+- Dados de teste: OS-0026 a OS-0029 ("Teste SLA …"); categorias CFTV,
+  Câmera sem imagem, Rede; metas sugeridas e exceção Atakarejo
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -1728,7 +1790,8 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–043 em ordem. **038 instala o pg_cron e agenda
+- Aplicar migrations 001–044 em ordem. Publicar de novo a função
+  `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
   IBGE das Unidades existentes) e conferir que os feriados nacionais do
