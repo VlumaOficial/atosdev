@@ -355,7 +355,7 @@ function AbaSla({ podeEditar }: { podeEditar: boolean }) {
         </Card>
       )}
 
-      <PreviaSla />
+      <PreviaSla versao={JSON.stringify(politicas)} />
 
       <Modal open={!!form} onOpenChange={o => { if (!o) setForm(null) }} className="max-w-lg"
         title={excecaoAberta ? (form?.id ? 'Editar exceção' : 'Nova exceção de SLA') : `Meta de SLA — ${ROTULO_NIVEL[form?.nivel ?? ''] ?? ''}`}>
@@ -402,14 +402,14 @@ function AbaSla({ podeEditar }: { podeEditar: boolean }) {
 }
 
 // "Se abrir agora, vence em…" — mesma função que a OS usa
-function PreviaSla() {
+function PreviaSla({ versao }: { versao: string }) {   // versao: recalcula quando as metas mudam
   const [nivel, setNivel] = useState('critico')
   const [r, setR] = useState<any>(null)
   useEffect(() => {
     const tipo = ['critico', 'alto', 'baixo'].includes(nivel) ? 'incidente' : nivel
     supabase.rpc('previa_sla', { p_tipo: tipo, p_impacto: null, p_urgencia: null, p_prioridade: nivel, p_client: null, p_categoria: null, p_location: null })
       .then(({ data }) => setR(data))
-  }, [nivel])
+  }, [nivel, versao])
   return (
     <Card className="p-4 space-y-2" data-testid="previa-sla">
       <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
