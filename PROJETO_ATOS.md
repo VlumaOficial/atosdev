@@ -952,6 +952,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 042_orders_leitura_tecnico | orders_select: técnico lê só as OS atribuídas a ele | OK | Pendente | Sim |
 | 043_seguranca_tecnico_dados_os | pode_ver_os, pode_ver_checklist, pode_acessar_arquivo; policies de checklist_instances/answers/targets/answer_history (histórico só leitura), order_comments/events/evidences/reports, fotos_verificacao e storage evidencias restritas ao que o técnico pode ver | OK | Pendente | Sim |
 | 044_sla_itsm | catálogo (os_categorias), motivos_pausa, sla_politicas, config de prioridade/risco no tenant, campos de tipo/classificação/SLA na OS, gatilho fn_orders_sla, sla_situacao, previa_sla, salvar_config_prioridade, listar_os com SLA; prioridades convertidas | OK | Pendente | Sim |
+| 045_alertas_sla | orders.sla_alerta_*; gatilho de reset; notificacoes + marcar_notificacoes_lidas + verificar_alertas_sla; realtime; job atos-alertas-sla (5 min) | OK | Pendente | Sim |
 
 ---
 
@@ -1773,6 +1774,28 @@ de em risco/vencido) é a próxima; depois F7.
 - Dados de teste: OS-0026 a OS-0029 ("Teste SLA …"); categorias CFTV,
   Câmera sem imagem, Rede; metas sugeridas e exceção Atakarejo
 
+### SLA — etapa C: alertas (2026-09-28) — CONCLUÍDA
+- **Migration 045**: `orders.sla_alerta_risco_em/sla_alerta_vencido_em`
+  (um aviso por situação) + gatilho que zera quando os prazos mudam
+  (pausa, agendamento, reclassificação → pode alertar de novo);
+  tabela `notificacoes` (por pessoa; leitura só da própria; escrita só
+  pelas funções), `marcar_notificacoes_lidas()`, `verificar_alertas_sla()`
+  (só servidor) — avisa admin e gestor ativos da empresa quando a OS
+  fica "em risco" e quando vence (texto: "OS-0028 — SLA vencido ·
+  título · cliente · atendimento venceu 28/09 às 08:44"); job
+  **`atos-alertas-sla` a cada 5 min**; `notificacoes` na publicação de
+  tempo real
+- Tela: **sino no menu** (admin/gestor) com contador de não lidos, painel
+  com os avisos (ícone por tipo, "há 3 min"), tocar abre a OS e marca
+  lido, "Marcar todos como lidos"; no celular, ponto vermelho no botão
+  do menu. Técnico não tem sino
+- Testado: no banco — em risco gera 1 aviso, rodar de novo não duplica,
+  vencido gera o segundo; na URL pública — contador 2, aviso novo
+  chegou **sem recarregar** (3), painel, tocar abriu a OS e baixou para
+  2, marcar todos zerou, ponto vermelho no celular, técnico sem sino, 0
+  erros. Job automático executando (cron.job_run_details)
+- Ainda não: aviso por WhatsApp/e-mail (vem com a notificação diária)
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -1790,7 +1813,7 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–044 em ordem. Publicar de novo a função
+- Aplicar migrations 001–045 em ordem (045 agenda `atos-alertas-sla`). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
