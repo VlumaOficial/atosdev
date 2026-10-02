@@ -199,7 +199,7 @@ function Kpi({ rotulo, valor, sub, variacao, destaque, testid }: { rotulo: strin
   return (
     <Card className="p-4" data-kpi={testid}>
       <p className="text-xs text-muted-foreground">{rotulo}</p>
-      <div className="flex items-baseline gap-2 mt-1"><p className="text-2xl font-semibold text-foreground tabular-nums">{valor}</p>{destaque}</div>
+      <div className="flex flex-wrap items-baseline gap-x-2 mt-1"><p className="text-2xl font-semibold text-foreground tabular-nums">{valor}</p>{destaque}</div>
       {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
       {variacao && <div className="mt-1">{variacao}</div>}
     </Card>
@@ -216,7 +216,7 @@ function Desempenho({ d }: { d: Painel }) {
       <h2 className="text-sm font-semibold text-foreground mb-2">Desempenho do período <span className="text-xs font-normal text-muted-foreground">· comparado a {dataBR(d.periodo.ant_de)}–{dataBR(d.periodo.ant_ate)}</span></h2>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 [&>*]:min-w-0">
         <Kpi testid="sla" rotulo="SLA cumprido" valor={sla === null ? '—' : `${sla}%`}
-          destaque={situacao && <span className="text-[11px] inline-flex items-center gap-0.5" style={{ color: situacao.c }}><situacao.I size={12} />{situacao.t}</span>}
+          destaque={situacao && <span className="text-[11px] inline-flex items-center gap-0.5 whitespace-nowrap" style={{ color: situacao.c }}><situacao.I size={12} />{situacao.t}</span>}
           sub={a.sla_total ? `${a.sla_ok} de ${a.sla_total} OS com SLA · meta ${d.meta_sla}%` : `Nenhuma OS com SLA concluída · meta ${d.meta_sla}%`}
           variacao={<Variacao atual={sla} anterior={slaAnt} tipo="pp" />} />
         <Kpi testid="concluidas" rotulo="OS concluídas" valor={String(a.concluidas)} sub={`${a.abertas} abertas no período`}
