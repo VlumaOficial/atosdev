@@ -127,7 +127,7 @@ function PainelGerencial() {
         <div className={cn('space-y-6 transition-opacity', carregando && 'opacity-60')} data-testid="painel">
           <Agora d={dados} linkOS={linkOS} linkCk={linkCk} />
           <Desempenho d={dados} />
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
             <Card className="p-4 lg:col-span-2">
               <p className="text-sm font-medium text-foreground mb-3">Evolução no período</p>
               <GraficoEvolucao dados={dados.evolucao} meta={dados.meta_sla} semanal={dados.periodo.semanal} />
@@ -135,11 +135,11 @@ function PainelGerencial() {
             <IdadeBacklog d={dados} linkOS={linkOS} />
           </div>
           <Equipe d={dados} />
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
             <Clientes d={dados} />
             <Reincidencia d={dados} />
           </div>
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
             <Preventivas d={dados} linkCk={linkCk} />
             <Comprovacao d={dados} />
           </div>
@@ -165,7 +165,7 @@ function Agora({ d, linkOS, linkCk }: { d: Painel; linkOS: (m: Record<string, st
         <h2 className="text-sm font-semibold text-foreground">Agora</h2>
         <Link to={linkOS({ sit: 'em_aberto' })} className="text-xs text-primary hover:underline">{a.em_aberto} OS em aberto →</Link>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 [&>*]:min-w-0">
         {cards.map(c => (
           <Link key={c.k} to={c.link} data-agora={c.k}
             className="rounded-lg border border-border bg-card p-3 hover:border-primary/40 transition">
@@ -214,7 +214,7 @@ function Desempenho({ d }: { d: Painel }) {
   return (
     <section>
       <h2 className="text-sm font-semibold text-foreground mb-2">Desempenho do período <span className="text-xs font-normal text-muted-foreground">· comparado a {dataBR(d.periodo.ant_de)}–{dataBR(d.periodo.ant_ate)}</span></h2>
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 [&>*]:min-w-0">
         <Kpi testid="sla" rotulo="SLA cumprido" valor={sla === null ? '—' : `${sla}%`}
           destaque={situacao && <span className="text-[11px] inline-flex items-center gap-0.5" style={{ color: situacao.c }}><situacao.I size={12} />{situacao.t}</span>}
           sub={a.sla_total ? `${a.sla_ok} de ${a.sla_total} OS com SLA · meta ${d.meta_sla}%` : `Nenhuma OS com SLA concluída · meta ${d.meta_sla}%`}

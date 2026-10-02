@@ -26,7 +26,7 @@ function barra(x: number, y: number, w: number, h: number) {
 
 export default function GraficoEvolucao({ dados, meta, semanal }: { dados: Balde[]; meta: number; semanal: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [larg, setLarg] = useState(640)
+  const [larg, setLarg] = useState(300)   // começa estreito: o contêiner define a largura real
   const [foco, setFoco] = useState<number | null>(null)
   const [tabela, setTabela] = useState(false)
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function GraficoEvolucao({ dados, meta, semanal }: { dados: Balde
         <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: LARANJA }} /> Concluídas</span>
         <span className="ml-auto">{semanal ? 'Por semana' : 'Por dia'}</span>
       </div>
-      <div ref={ref} className="relative" onMouseLeave={() => setFoco(null)}>
+      <div ref={ref} className="relative w-full overflow-hidden" onMouseLeave={() => setFoco(null)}>
         <svg width={larg} height={H1 + BASE + H2 + 26} role="img" aria-label="Evolução: OS abertas e concluídas, e percentual de SLA cumprido">
           {/* grade e eixo y do gráfico 1 */}
           {[0, 0.5, 1].map(t => (
