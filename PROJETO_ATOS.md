@@ -953,6 +953,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 043_seguranca_tecnico_dados_os | pode_ver_os, pode_ver_checklist, pode_acessar_arquivo; policies de checklist_instances/answers/targets/answer_history (histórico só leitura), order_comments/events/evidences/reports, fotos_verificacao e storage evidencias restritas ao que o técnico pode ver | OK | Pendente | Sim |
 | 044_sla_itsm | catálogo (os_categorias), motivos_pausa, sla_politicas, config de prioridade/risco no tenant, campos de tipo/classificação/SLA na OS, gatilho fn_orders_sla, sla_situacao, previa_sla, salvar_config_prioridade, listar_os com SLA; prioridades convertidas | OK | Pendente | Sim |
 | 045_alertas_sla | orders.sla_alerta_*; gatilho de reset; notificacoes + marcar_notificacoes_lidas + verificar_alertas_sla; realtime; job atos-alertas-sla (5 min) | OK | Pendente | Sim |
+| 046_painel_gerencial | tenants.sla_meta_pct + definir_meta_sla; orders.tempo_atendimento_min/tempo_solucao_min (gatilho na conclusão + backfill); fn_primeira_visita, painel_desempenho, painel_gerencial; listar_os com várias prioridades | OK | Pendente | Sim |
+| 047_lista_os_periodo_conclusao | listar_os aceita periodo_por = conclusao (links do painel) | OK | Pendente | Sim |
 
 ---
 
@@ -1796,10 +1798,91 @@ de em risco/vencido) é a próxima; depois F7.
   erros. Job automático executando (cron.job_run_details)
 - Ainda não: aviso por WhatsApp/e-mail (vem com a notificação diária)
 
+### F7 — Painel gerencial (2026-10-01/02) — CONCLUÍDA
+Desenho e KPIs aprovados pelo usuário em 2026-09-25 (VISAO_ATOS.md "KPIs do
+painel"). O painel fica no Dashboard (`/`) e é só para **admin/gestor**. O
+técnico continua com o app de campo, que já basta, e o Super Admin vê um
+aviso.
+- **Migration 046**:
+  - `tenants.sla_meta_pct` (padrão 90, de 50 a 100) + `definir_meta_sla()`
+  - `orders.tempo_atendimento_min` / `tempo_solucao_min` são calculados
+    pelo gatilho `trg_orders_tempos` e **gravados na conclusão**; reabrir
+    a OS limpa os valores. O painel não recalcula horas úteis.
+  - Backfill das OS concluídas feito com `handle_orders_updated_at`
+    desligado; o hash de `updated_at` foi conferido, sem mudança.
+  - `fn_primeira_visita(uuid)`, `painel_desempenho()`
+  - `painel_gerencial(p)`: uma chamada devolve o painel inteiro e
+    respeita os filtros de período, cliente, técnico e categoria.
+  - `listar_os` com prioridade em lista (`critico,alto`)
+- **Migration 047**: `listar_os` aceita `periodo_por = 'conclusao'`.
+  - Achado na revisão final contra o desenho aprovado ("tudo clicável até
+    a lista"): os indicadores do período contam pela **data de
+    conclusão**, mas a lista só filtrava pela abertura. O link mostraria
+    outra quantidade (ex.: setembro, 8 no painel × 9 na lista).
+  - Agora os links "Ver concluídas" e "Ver N fora do prazo" abrem a lista
+    com o chip **"Concluída em"**.
+- **Definições dos KPIs**:
+  - **Tempo médio até o atendimento** = abertura → 1º início, em horas
+    úteis.
+  - **Tempo médio de solução** = abertura → conclusão, em horas úteis,
+    menos as pausas que param o relógio.
+  - **% SLA cumprido** = OS concluídas com SLA cujos prazos (resposta,
+    atendimento e solução) foram todos cumpridos. O selo vem com ícone e
+    texto: "Na meta", "Abaixo da meta" (até 10 p.p. abaixo) ou "Longe da
+    meta".
+  - **Resolução na 1ª visita** = incidente concluído que não foi reaberto
+    e sem nova OS da mesma unidade e categoria em 30 dias.
+  - **Comparação** com o período anterior de mesmo tamanho: p.p. para
+    percentuais, % para quantidades e tempos. Em tempo, menor é melhor.
+- **Seções**:
+  - **Agora** (cartões que levam à lista filtrada): SLA vencido, em risco,
+    sem técnico, Crítico/Alto em aberto, preventivas atrasadas.
+  - **Desempenho**: 5 KPIs.
+  - **Evolução**: por dia, ou por semana quando o período passa de 31
+    dias.
+  - **Idade do backlog**: até 2 dias / 3–7 / 8–15 / mais de 15.
+  - **Equipe**: carga, concluídas, SLA e tempo; marca "sobrecarregado"
+    com 3 ou mais OS em aberto e 50% acima da média.
+  - **Clientes**: top 10 com volume, % SLA e unidades reincidentes.
+  - **Reincidência**: unidades com 2 ou mais incidentes no período.
+  - **Preventivas**: checklists previstos no prazo/atrasados e a proporção
+    preventiva × corretiva.
+  - **Comprovação**: % com foto, assinatura e relatório enviado.
+- **Gráfico de evolução** (regras de visualização de dados):
+  - **Dois gráficos empilhados** com o mesmo eixo de datas, em vez de um
+    gráfico de dois eixos. Barras: abertas × concluídas. Linha: % SLA com
+    a meta tracejada.
+  - Paleta validada no fundo escuro do cartão: azul #3987e5 e laranja
+    #d95926.
+  - Cores de status (verde, âmbar, vermelho) sempre com ícone e texto.
+  - Dica ao passar o mouse ou tocar, e "Ver em tabela".
+- **Meta de SLA** editável pela empresa em *Catálogo e SLA › Prioridades*.
+- **Ajustes encontrados e corrigidos nos testes**:
+  - grades do painel estouravam a largura no celular (`min-w-0` nos
+    itens);
+  - rótulos do gráfico colidiam (data × título do 2º gráfico, rótulo da
+    meta);
+  - o selo "Na meta" quebrava a linha;
+  - `fn_primeira_visita` recebia a linha inteira, com erro de tipo;
+    passou a receber o id;
+  - o backfill alteraria `updated_at` (evitado).
+- **Testado na URL pública** (admin, celular 393px e Super Admin):
+  - os valores do "Agora" bateram com o RPC;
+  - os KPIs bateram com o banco: setembro com 8 concluídas e "Ver
+    concluídas" listou as mesmas 8; outubro com 1 OS violada, link "Ver 1
+    fora do prazo" → lista com 1;
+  - drill-downs: Crítico/Alto → `pri=critico,alto`; SLA vencido →
+    OS-0028/0029;
+  - filtro por técnico; dica e tabela de 30 linhas;
+  - meta alterada para 85, refletida no painel e devolvida para 90;
+  - 0 erros no console.
+- Massa de teste nova: **OS-0030** ("Teste F7 SLA violado", concluída
+  fora do prazo), que entra na limpeza do fim do desenvolvimento.
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
-  Único Atrasado", OS-0018 a OS-0029 e fotos de teste na OS-0010. Não
+  Único Atrasado", OS-0018 a OS-0030 e fotos de teste na OS-0010. Não
   apagar antes — servem de massa para testes e validação
 
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
@@ -1813,7 +1896,7 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–045 em ordem (045 agenda `atos-alertas-sla`). Publicar de novo a função
+- Aplicar migrations 001–047 em ordem (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código

@@ -83,7 +83,7 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 | **F4** | App de Campo (visão do Técnico, mobile) | Sim | ✅ Concluída |
 | **F5** | Checklists dinâmicos de verificação | Sim | ✅ Concluída |
 | **F6** | Assinatura digital, evidências, PDF e envio | Sim | 🔄 Em andamento — **atualizado 2026-09-24:** Blocos A, B, C, D (Básico/Intermediário) e E feitos; falta o nível Avançado (Evolution). Antes: "Blocos A e B feitos" |
-| **F7** | Painel gerencial e indicadores | Sim | ⏳ Pendente |
+| **F7** | Painel gerencial e indicadores | Sim | ✅ Concluída — **atualizado 2026-10-02** (migrations 046–047, testada na URL pública). Antes: "⏳ Pendente" |
 | **F8** | Planos, Asaas, cobrança, trial | Não | 📋 Backlog |
 | **F9** | Integração GLPI | Não | 📋 Backlog |
 | **F10** | OWASP e segurança | Não | 📋 Pós-MVP |
@@ -200,7 +200,8 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - **Bloqueio global:** Admin desliga o envio para todo o tenant
 - **Bloqueio por técnico:** Admin define quais técnicos podem enviar OS
 
-### F7 — Painel Gerencial ⏳
+### F7 — Painel Gerencial ✅
+> **ENTREGUE em 2026-10-02** (migrations 046–047; ver PROJETO_ATOS.md "F7 — Painel gerencial"): painel no Dashboard para admin/gestor com Agora (tempo real, clicável até a lista filtrada), Desempenho do período vs anterior (% SLA × meta configurável, concluídas, tempo até atendimento, tempo de solução, 1ª visita), Evolução, Idade do backlog, Equipe, Clientes, Reincidência, Preventivas e Comprovação. Filtros de período, cliente, técnico e categoria. Técnico sem painel (decisão do usuário).
 > **Refinamento 2026-09-25 (em discussão):** técnico **não** ganha painel próprio — a visão atual do app de campo basta (decisão do usuário), com acesso restrito às próprias OS/checklists já garantido no banco (migrations 042/043). Painel é do gestor/admin. Proposta de KPIs levada ao usuário (situação/backlog, atrasos, concluídas no período com comparação, tempo médio em horas úteis, produtividade e carga por técnico, ranking e **reincidência** por cliente/unidade, evolução, checklists no prazo e **comprovação do serviço** — % com assinatura, foto e relatório enviado). Pergunta do usuário: criar o painel sem o SLA? Recomendação: **SLA v1 antes da F7** (a base de horas úteis já existe), para o painel nascer com "no prazo / em risco / vencido" — aguardando decisão
 Indicadores da operação: OS abertas / em andamento / concluídas, **produtividade por técnico**, **tempo médio de atendimento**, OS por cliente.
 
@@ -219,7 +220,7 @@ Pedido do usuário: refinamento completo (painel de configuração de criticidad
 - Cuidado pedido pelo usuário: a OS atual muda — **não quebrar o que já funciona e foi testado**
 - **Respostas finais (2026-09-25):** (3) metas por nível = horas para **iniciar** (atendimento) e para **concluir** (solução), **resposta opcional** — e **a própria empresa configura** (admin/gestor); (5) **alerta "em risco"** sim (padrão 75%, ajustável); **sem justificativa obrigatória** ao estourar; OS antigas: não se preocupar (ambiente de desenvolvimento); (4) níveis por tipo: **Incidente → Crítico/Alto/Baixo** (matriz Impacto × Urgência ou modo simples), **Preventiva → nível "Preventiva"**, **Requisição → nível "Requisição"**, **Visita → sem SLA**
 - Entrega: (A) banco + tela "Catálogo e SLA" → (B) OS (formulário, lista, detalhe, app do técnico, pausa, agendamento, PDF) com regressão completa → (C) alertas de em risco/vencido → F7
-- **A, B e C ENTREGUES em 2026-09-28** (migrations 044–045, testadas na URL pública — ver PROJETO_ATOS.md). Próximo: **F7 (painel gerencial)** com os KPIs aprovados
+- **A, B e C ENTREGUES em 2026-09-28** (migrations 044–045, testadas na URL pública — ver PROJETO_ATOS.md). Próximo: **F7 (painel gerencial)** com os KPIs aprovados — **F7 entregue em 2026-10-02**
 
 **Modelo ITSM (ITIL, simplificado para PME de campo):**
 - **Tipo de OS**: Corretiva (incidente) · Preventiva (planejada — liga com checklists recorrentes) · Instalação/Requisição · Visita técnica/Orçamento
