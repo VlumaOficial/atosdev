@@ -83,7 +83,7 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 | **F4** | App de Campo (visão do Técnico, mobile) | Sim | ✅ Concluída |
 | **F5** | Checklists dinâmicos de verificação | Sim | ✅ Concluída |
 | **F6** | Assinatura digital, evidências, PDF e envio | Sim | 🔄 Em andamento — **atualizado 2026-09-24:** Blocos A, B, C, D (Básico/Intermediário) e E feitos; falta o nível Avançado (Evolution). Antes: "Blocos A e B feitos" |
-| **F7** | Painel gerencial e indicadores | Sim | ✅ Concluída — **atualizado 2026-10-02** (migrations 046–047, testada na URL pública). Antes: "⏳ Pendente" |
+| **F7** | Painel gerencial e indicadores | Sim | ✅ Concluída e **validada pelo usuário** — **atualizado 2026-10-02** (migrations 046–047, testada na URL pública). Antes: "⏳ Pendente" |
 | **F8** | Planos, Asaas, cobrança, trial | Não | 📋 Backlog |
 | **F9** | Integração GLPI | Não | 📋 Backlog |
 | **F10** | OWASP e segurança | Não | 📋 Pós-MVP |
@@ -201,7 +201,7 @@ Entregue em duas camadas: checklist **vinculado a uma OS** (o gestor associa um 
 - **Bloqueio por técnico:** Admin define quais técnicos podem enviar OS
 
 ### F7 — Painel Gerencial ✅
-> **ENTREGUE em 2026-10-02** (migrations 046–047; ver PROJETO_ATOS.md "F7 — Painel gerencial"): painel no Dashboard para admin/gestor com Agora (tempo real, clicável até a lista filtrada), Desempenho do período vs anterior (% SLA × meta configurável, concluídas, tempo até atendimento, tempo de solução, 1ª visita), Evolução, Idade do backlog, Equipe, Clientes, Reincidência, Preventivas e Comprovação. Filtros de período, cliente, técnico e categoria. Técnico sem painel (decisão do usuário).
+> **ENTREGUE e VALIDADA pelo usuário em 2026-10-02** (migrations 046–047; ver PROJETO_ATOS.md "F7 — Painel gerencial"): painel no Dashboard para admin/gestor com Agora (tempo real, clicável até a lista filtrada), Desempenho do período vs anterior (% SLA × meta configurável, concluídas, tempo até atendimento, tempo de solução, 1ª visita), Evolução, Idade do backlog, Equipe, Clientes, Reincidência, Preventivas e Comprovação. Filtros de período, cliente, técnico e categoria. Técnico sem painel (decisão do usuário).
 > **Refinamento 2026-09-25 (em discussão):** técnico **não** ganha painel próprio — a visão atual do app de campo basta (decisão do usuário), com acesso restrito às próprias OS/checklists já garantido no banco (migrations 042/043). Painel é do gestor/admin. Proposta de KPIs levada ao usuário (situação/backlog, atrasos, concluídas no período com comparação, tempo médio em horas úteis, produtividade e carga por técnico, ranking e **reincidência** por cliente/unidade, evolução, checklists no prazo e **comprovação do serviço** — % com assinatura, foto e relatório enviado). Pergunta do usuário: criar o painel sem o SLA? Recomendação: **SLA v1 antes da F7** (a base de horas úteis já existe), para o painel nascer com "no prazo / em risco / vencido" — aguardando decisão
 Indicadores da operação: OS abertas / em andamento / concluídas, **produtividade por técnico**, **tempo médio de atendimento**, OS por cliente.
 

@@ -972,7 +972,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - [ ] Portal do Solicitante/Cliente — área onde o contato do cliente acompanha e comenta as OS dele (quando existir, o solicitante vira tipo de usuário e pode comentar)
 - [ ] Modal/página de cliente com gestão de unidades embutida (abas Dados/Unidades)
 - [ ] Criação de técnicos via convite por e-mail (inviteUserByEmail)
-- [ ] Módulo de SLA + status e prioridades configuráveis por tenant
+- [ ] Módulo de SLA + status e prioridades configuráveis por tenant — *atualizado 2026-10-02: SLA e prioridades configuráveis FEITOS (migrations 044–045, "Catálogo e SLA"); falta só status configuráveis por empresa*
 - [ ] Aplicar todas as migrations no PRD ao replicar
 - [x] Campo "nome fantasia/exibição" no tenant (nome longo cortado na sidebar) — **feito em 2026-09-24** (migration 031, `trade_name`, editável pelo admin)
 - [ ] Ajuste de contraste do ícone ATOS na sidebar
@@ -1798,7 +1798,7 @@ de em risco/vencido) é a próxima; depois F7.
   erros. Job automático executando (cron.job_run_details)
 - Ainda não: aviso por WhatsApp/e-mail (vem com a notificação diária)
 
-### F7 — Painel gerencial (2026-10-01/02) — CONCLUÍDA
+### F7 — Painel gerencial (2026-10-01/02) — CONCLUÍDA · **VALIDADA pelo usuário em 2026-10-02**
 Desenho e KPIs aprovados pelo usuário em 2026-09-25 (VISAO_ATOS.md "KPIs do
 painel"). O painel fica no Dashboard (`/`) e é só para **admin/gestor**. O
 técnico continua com o app de campo, que já basta, e o Super Admin vê um
