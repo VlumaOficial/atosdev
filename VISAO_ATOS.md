@@ -344,6 +344,24 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
 - **Acesso por ambos:** URL genérica (`app.vluma.com.br/atakarejo`) **e** subdomínio próprio (`soundreport.infoxtec.com.br`)
 - **Subdomínio customizado = ADD-ON PAGO**
 - Impacto: solicitante vira **tipo de usuário**; muda modelo de dados e camada de acesso
+- **Retomado pelo usuário em 2026-10-02 (antes das escalas), aguardando decisão.** Desenho do usuário:
+  - **Supervisor** (do cliente): vê todos os chamados do cliente, painel com os principais KPIs, cria usuários e equipes
+  - **Usuário**: vê os próprios chamados e os da sua equipe, com KPIs básicos
+- **Parecer levado ao usuário (Engenheiro/PO/UX), 2026-10-02:** desenho aprovado na essência. Propostas:
+  - chamado do portal vira OS direto ("origem: portal", sem técnico), e a empresa classifica tipo, categoria e prioridade
+  - o cliente informa só "problema ou solicitação", categoria do catálogo marcada como visível no portal e um impacto em linguagem simples
+  - o SLA de **resposta** mede a triagem
+  - comentários **públicos × internos**
+  - status em linguagem do cliente; "Aguardando você" ligado ao motivo de pausa "Aguardando o cliente", que retoma quando o cliente responde
+  - confirmação da solução, reabertura e nota de satisfação (CSAT)
+  - convite por e-mail (o supervisor não define senha)
+  - equipe = grupo de pessoas, com unidades opcionais
+  - a empresa liga o portal por cliente e convida o 1º supervisor
+  - limites por plano (F8)
+  - experiência separada do painel interno, celular primeiro, com a marca da empresa
+  - **risco técnico principal:** as policies atuais filtram só por empresa (tenant), então um usuário do portal veria tudo. Exige papel próprio, auditoria de todas as policies e funções e teste de personificação tabela por tabela
+  - entrega em 3 etapas
+  - perguntas em aberto: equipe × unidade; o cliente vê SLA?; CSAT na etapa 1?; o portal entra antes do PRD?
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
