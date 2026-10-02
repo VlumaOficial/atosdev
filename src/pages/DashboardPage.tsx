@@ -104,6 +104,8 @@ function PainelGerencial() {
     return q
   }, [f.cli, f.tec, f.cat])
   const linkOS = (mais: Record<string, string>) => { const q = new URLSearchParams(extras); for (const [k, v] of Object.entries(mais)) q.set(k, v); return '/os?' + q.toString() }
+  // OS concluídas no período (os indicadores de desempenho contam pela data de conclusão)
+  const linkConcl = (mais: Record<string, string> = {}) => linkOS({ sit: 'concluida', per: 'personalizado', de: dados?.periodo.de ?? '', ate: dados?.periodo.ate ?? '', por: 'conclusao', ...mais })
   const linkCk = () => { const q = new URLSearchParams({ sit: 'atrasado' }); if (f.cli) q.set('cli', f.cli); if (f.tec) q.set('tec', f.tec); return '/checklists/avulsos?' + q.toString() }
 
   const campos = [
@@ -126,7 +128,7 @@ function PainelGerencial() {
       {!dados ? <div className="flex justify-center py-16"><Loader2 className="animate-spin text-muted-foreground" /></div> : (
         <div className={cn('space-y-6 transition-opacity', carregando && 'opacity-60')} data-testid="painel">
           <Agora d={dados} linkOS={linkOS} linkCk={linkCk} />
-          <Desempenho d={dados} />
+          <Desempenho d={dados} linkConcl={linkConcl} />
           <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
             <Card className="p-4 lg:col-span-2">
               <p className="text-sm font-medium text-foreground mb-3">Evolução no período</p>
@@ -195,18 +197,19 @@ function Variacao({ atual, anterior, tipo, menorMelhor }: { atual: number | null
   )
 }
 
-function Kpi({ rotulo, valor, sub, variacao, destaque, testid }: { rotulo: string; valor: string; sub?: React.ReactNode; variacao?: React.ReactNode; destaque?: React.ReactNode; testid?: string }) {
+function Kpi({ rotulo, valor, sub, variacao, destaque, testid, link }: { rotulo: string; valor: string; sub?: React.ReactNode; variacao?: React.ReactNode; destaque?: React.ReactNode; testid?: string; link?: React.ReactNode }) {
   return (
     <Card className="p-4" data-kpi={testid}>
       <p className="text-xs text-muted-foreground">{rotulo}</p>
       <div className="flex flex-wrap items-baseline gap-x-2 mt-1"><p className="text-2xl font-semibold text-foreground tabular-nums">{valor}</p>{destaque}</div>
       {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
       {variacao && <div className="mt-1">{variacao}</div>}
+      {link && <div className="mt-1.5">{link}</div>}
     </Card>
   )
 }
 
-function Desempenho({ d }: { d: Painel }) {
+function Desempenho({ d, linkConcl }: { d: Painel; linkConcl: (m?: Record<string, string>) => string }) {
   const a = d.atual, b = d.anterior
   const sla = pct(a.sla_ok, a.sla_total), slaAnt = pct(b.sla_ok, b.sla_total)
   const fv = pct(a.inc_primeira, a.inc_total), fvAnt = pct(b.inc_primeira, b.inc_total)
@@ -218,9 +221,11 @@ function Desempenho({ d }: { d: Painel }) {
         <Kpi testid="sla" rotulo="SLA cumprido" valor={sla === null ? '—' : `${sla}%`}
           destaque={situacao && <span className="text-[11px] inline-flex items-center gap-0.5 whitespace-nowrap" style={{ color: situacao.c }}><situacao.I size={12} />{situacao.t}</span>}
           sub={a.sla_total ? `${a.sla_ok} de ${a.sla_total} OS com SLA · meta ${d.meta_sla}%` : `Nenhuma OS com SLA concluída · meta ${d.meta_sla}%`}
-          variacao={<Variacao atual={sla} anterior={slaAnt} tipo="pp" />} />
+          variacao={<Variacao atual={sla} anterior={slaAnt} tipo="pp" />}
+          link={a.sla_total > a.sla_ok ? <Link to={linkConcl({ sla: 'violado' })} className="text-[11px] text-primary hover:underline">Ver {a.sla_total - a.sla_ok} fora do prazo →</Link> : undefined} />
         <Kpi testid="concluidas" rotulo="OS concluídas" valor={String(a.concluidas)} sub={`${a.abertas} abertas no período`}
-          variacao={<Variacao atual={a.concluidas} anterior={b.concluidas} tipo="pct" />} />
+          variacao={<Variacao atual={a.concluidas} anterior={b.concluidas} tipo="pct" />}
+          link={a.concluidas > 0 ? <Link to={linkConcl()} className="text-[11px] text-primary hover:underline">Ver concluídas →</Link> : undefined} />
         <Kpi testid="mtta" rotulo="Tempo médio até o atendimento" valor={horas(a.mtta_min)} sub="abertura → início, horas úteis"
           variacao={<Variacao atual={a.mtta_min} anterior={b.mtta_min} tipo="pct" menorMelhor />} />
         <Kpi testid="mttr" rotulo="Tempo médio de solução" valor={horas(a.mttr_min)} sub="abertura → conclusão, horas úteis"

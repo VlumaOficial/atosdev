@@ -78,14 +78,14 @@ export default function OrdersPage() {
   const hoje = hojeNoFuso(tenant?.fuso_horario)
   // filtros + página na URL (voltar da OS mantém a lista como estava)
   const { valores: f, definir, limpar } = useFiltrosUrl({
-    sit: 'em_aberto', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', pri: '', tipo: '', cat: '', sla: '', pag: '1', tam: '25',
+    sit: 'em_aberto', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', pri: '', tipo: '', cat: '', sla: '', por: '', pag: '1', tam: '25',
   })
   const periodo = intervaloDoPeriodo(f.per as ChavePeriodo, hoje, f.de, f.ate)
   const pagina = Math.max(1, parseInt(f.pag) || 1)
   const tamanho = parseInt(f.tam) || 25
   const { itens, total, contagens, loading, error, recarregar } = useListaOS({
     situacao: f.sit, q: f.q, de: periodo.de, ate: periodo.ate, cliente: f.cli, unidade: f.uni, tecnico: f.tec, prioridade: f.pri,
-    tipo: f.tipo, categoria: f.cat, sla: f.sla,
+    tipo: f.tipo, categoria: f.cat, sla: f.sla, periodo_por: f.por,
   }, pagina, tamanho)
   const { opcoes: categoriasOp, categorias } = useCategorias()
   const { locations: todasUnidades } = useLocations()
@@ -304,7 +304,7 @@ export default function OrdersPage() {
       <FiltrosLista campos={camposFiltro}
         valores={{ cli: f.cli, uni: f.uni, tec: f.tec, pri: f.pri, tipo: f.tipo, cat: f.cat, sla: f.sla }}
         onChange={(k, v) => definir(k === 'cli' ? { cli: v, uni: '' } : { [k]: v })}
-        periodo={{ rotulo: 'Aberta em', valor: f.per as ChavePeriodo, de: f.de, ate: f.ate, onChange: (per, de, ate) => definir({ per, de: per === 'personalizado' ? (de ?? '') : '', ate: per === 'personalizado' ? (ate ?? '') : '' }) }}
+        periodo={{ rotulo: f.por === 'conclusao' ? 'Concluída em' : 'Aberta em', valor: f.per as ChavePeriodo, de: f.de, ate: f.ate, onChange: (per, de, ate) => definir({ per, por: per ? f.por : '', de: per === 'personalizado' ? (de ?? '') : '', ate: per === 'personalizado' ? (ate ?? '') : '' }) }}
         onLimpar={() => limpar()} />
       {error ? (
         <Card className="p-6 text-center text-red-400 text-sm">{error}</Card>

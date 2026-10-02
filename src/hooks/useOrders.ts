@@ -82,6 +82,7 @@ export interface FiltrosOS {
   situacao?: string; q?: string; de?: string | null; ate?: string | null
   cliente?: string; unidade?: string; tecnico?: string; prioridade?: string
   tipo?: string; categoria?: string; sla?: string
+  periodo_por?: string   // '' = abertura (padrão) · 'conclusao' (links do painel gerencial)
 }
 export type ContagensOS = Record<'todas' | 'em_aberto' | OrderStatus | 'sla_vencido' | 'sla_em_risco', number>
 
