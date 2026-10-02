@@ -36,7 +36,7 @@ export default function GraficoEvolucao({ dados, meta, semanal }: { dados: Balde
     return () => ro.disconnect()
   }, [])
 
-  const ME = 34, MD = 8, H1 = 150, H2 = 90, BASE = 20
+  const ME = 34, MD = 8, H1 = 150, H2 = 90, BASE = 40   // BASE: datas do gráfico 1 + título do gráfico 2 sem colidir
   const n = Math.max(1, dados.length)
   const area = larg - ME - MD
   const passo = area / n
@@ -57,7 +57,7 @@ export default function GraficoEvolucao({ dados, meta, semanal }: { dados: Balde
         <span className="ml-auto">{semanal ? 'Por semana' : 'Por dia'}</span>
       </div>
       <div ref={ref} className="relative w-full overflow-hidden" onMouseLeave={() => setFoco(null)}>
-        <svg width={larg} height={H1 + BASE + H2 + 26} role="img" aria-label="Evolução: OS abertas e concluídas, e percentual de SLA cumprido">
+        <svg width={larg} height={H1 + BASE + H2 + 10} role="img" aria-label="Evolução: OS abertas e concluídas, e percentual de SLA cumprido">
           {/* grade e eixo y do gráfico 1 */}
           {[0, 0.5, 1].map(t => (
             <g key={t}>
@@ -79,8 +79,8 @@ export default function GraficoEvolucao({ dados, meta, semanal }: { dados: Balde
             <text key={d.ini} x={cx(i)} y={H1 + 14} textAnchor="middle" fontSize={10} fill={TINTA2}>{dm(d.ini)}</text>
           ))}
           {/* gráfico 2: % SLA (mesmo eixo de datas) */}
-          <g transform={`translate(0, ${H1 + BASE + 6})`}>
-            <text x={ME} y={-2} fontSize={11} fill={TINTA2}>% SLA cumprido (OS concluídas com SLA)</text>
+          <g transform={`translate(0, ${H1 + BASE})`}>
+            <text x={ME} y={-8} fontSize={11} fill={TINTA2}>% SLA cumprido (OS concluídas com SLA)</text>
             {[0, 100].map(t => (
               <g key={t}>
                 <line x1={ME} x2={larg - MD} y1={y2(t)} y2={y2(t)} stroke={GRADE} strokeWidth={1} />
@@ -88,7 +88,7 @@ export default function GraficoEvolucao({ dados, meta, semanal }: { dados: Balde
               </g>
             ))}
             <line x1={ME} x2={larg - MD} y1={y2(meta)} y2={y2(meta)} stroke={TINTA2} strokeWidth={1} strokeDasharray="4 4" />
-            <text x={larg - MD} y={y2(meta) - 4} textAnchor="end" fontSize={10} fill={TINTA2}>meta {meta}%</text>
+            <text x={larg - MD} y={y2(meta) + 12} textAnchor="end" fontSize={10} fill={TINTA2}>meta {meta}%</text>
             {pontos.length > 1 && (
               <polyline fill="none" stroke={AZUL} strokeWidth={2} strokeLinejoin="round"
                 points={pontos.map(p => `${cx(p.i)},${y2(p.pct)}`).join(' ')} />
@@ -97,9 +97,9 @@ export default function GraficoEvolucao({ dados, meta, semanal }: { dados: Balde
             {pontos.length === 0 && <text x={ME + area / 2} y={H2 / 2} textAnchor="middle" fontSize={11} fill={TINTA2}>Sem OS concluídas com SLA no período</text>}
           </g>
           {/* mira e áreas de foco (maiores que as marcas) */}
-          {foco !== null && <line x1={cx(foco)} x2={cx(foco)} y1={4} y2={H1 + BASE + H2 + 6} stroke={TINTA2} strokeWidth={1} opacity={0.5} />}
+          {foco !== null && <line x1={cx(foco)} x2={cx(foco)} y1={4} y2={H1 + BASE + H2} stroke={TINTA2} strokeWidth={1} opacity={0.5} />}
           {dados.map((d, i) => (
-            <rect key={d.ini} x={ME + passo * i} y={0} width={passo} height={H1 + BASE + H2 + 26} fill="transparent"
+            <rect key={d.ini} x={ME + passo * i} y={0} width={passo} height={H1 + BASE + H2 + 10} fill="transparent"
               onMouseEnter={() => setFoco(i)} onClick={() => setFoco(i)} />
           ))}
         </svg>
