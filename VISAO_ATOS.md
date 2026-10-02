@@ -362,6 +362,25 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - **risco técnico principal:** as policies atuais filtram só por empresa (tenant), então um usuário do portal veria tudo. Exige papel próprio, auditoria de todas as policies e funções e teste de personificação tabela por tabela
   - entrega em 3 etapas
   - perguntas em aberto: equipe × unidade; o cliente vê SLA?; CSAT na etapa 1?; o portal entra antes do PRD?
+- **Respostas do usuário ao parecer (2026-10-02)** — o refinamento é feito **um ponto por vez**, só avançando com a resposta dele:
+  - **WhatsApp**: discordou do meu argumento de que o portal "tira o chamado do WhatsApp". O WhatsApp é um canal consolidado, com os 3 modelos de conexão a refinar (F6), e abertura por telefone nunca foi cogitada. **O portal é um canal ao lado do WhatsApp, não substituto.**
+  - **Prioridade**: o usuário do portal **pode e deve escolher a prioridade** (o ITIL permite). O chamado nasce sem técnico e **sem grupo**, e a equipe de **N1** reclassifica → a refinar (o ATOS ainda não tem grupos/filas internos).
+  - **Tipos**: deixar **todas as opções** no portal (ex.: uma assistência técnica cujos clientes pedem visita) → a refinar.
+  - **Impacto em linguagem simples**: o usuário não entendeu → a refinar.
+  - De acordo: valor para retenção, categorias visíveis no portal, comentário público × interno.
+  - **Ponto que faltou no parecer** (apontado pelo usuário): **um portal de atendimento para cada empresa que contrata a VLUMA**.
+- **Pauta do refinamento (ordem proposta):**
+  1. portal por empresa (endereço, identidade, ativação)
+  2. canais (portal + WhatsApp)
+  3. abertura, prioridade e N1/grupos
+  4. tipos no portal
+  5. impacto
+  6. perfis e equipes
+  7. "aguardando você", fechamento e satisfação
+  8. SLA visível ao cliente
+  9. telas e KPIs
+  10. segurança e dados
+  11. etapas e posição no roadmap
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
