@@ -37,6 +37,7 @@ export interface Tenant {
   sede_cidade_ibge?: string | null
   sede_cidade?: string | null
   sla_risco_pct?: number
+  sla_meta_pct?: number
   prioridade_modo?: 'matriz' | 'simples'
   prioridade_matriz?: Record<string, Record<string, string>>
   sla_por_cliente?: boolean

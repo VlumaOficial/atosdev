@@ -147,7 +147,7 @@ export default function OrdersPage() {
     { chave: 'uni', rotulo: 'Unidade', opcoes: unidadesFiltro, vazio: 'Todas as unidades' },
     { chave: 'tec', rotulo: 'Técnico', opcoes: [{ value: 'sem', label: 'Sem técnico (backlog)' }, ...technicians.map(t => ({ value: t.id, label: t.name }))], vazio: 'Todos os técnicos' },
     { chave: 'tipo', rotulo: 'Tipo', opcoes: TIPOS.map(t => ({ value: t.value, label: t.label })), vazio: 'Todos os tipos' },
-    { chave: 'pri', rotulo: 'Prioridade', opcoes: NIVEIS.map(n => ({ value: n.value, label: n.label })), vazio: 'Todas as prioridades' },
+    { chave: 'pri', rotulo: 'Prioridade', opcoes: [{ value: 'critico,alto', label: 'Crítico e Alto' }, ...NIVEIS.map(n => ({ value: n.value, label: n.label }))], vazio: 'Todas as prioridades' },
     { chave: 'cat', rotulo: 'Categoria', opcoes: categoriasOp, vazio: 'Todas as categorias' },
     { chave: 'sla', rotulo: 'SLA', opcoes: [{ value: 'vencido', label: 'Vencido' + (contagens ? ` (${(contagens as any).sla_vencido ?? 0})` : '') }, { value: 'em_risco', label: 'Em risco' + (contagens ? ` (${(contagens as any).sla_em_risco ?? 0})` : '') }, { value: 'no_prazo', label: 'No prazo' }, { value: 'pausado', label: 'Pausado' }, { value: 'cumprido', label: 'Cumprido' }, { value: 'violado', label: 'Violado' }, { value: 'sem_sla', label: 'Sem SLA' }], vazio: 'Qualquer situação' },
   ]

@@ -161,14 +161,16 @@ function AbaPrioridades({ podeEditar }: { podeEditar: boolean }) {
   const [modo, setModo] = useState<'matriz' | 'simples'>(tenant?.prioridade_modo ?? 'matriz')
   const [matriz, setMatriz] = useState<Matriz>((tenant?.prioridade_matriz as Matriz) ?? MATRIZ_PADRAO)
   const [risco, setRisco] = useState(String(tenant?.sla_risco_pct ?? 75))
+  const [meta, setMeta] = useState(String(tenant?.sla_meta_pct ?? 90))
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null)
   const [salvando, setSalvando] = useState(false)
 
   async function salvar() {
     setSalvando(true); setMsg(null)
     const { error } = await supabase.rpc('salvar_config_prioridade', { p_modo: modo, p_matriz: matriz, p_risco: parseInt(risco) || 75 })
+    const r2 = error ? null : await supabase.rpc('definir_meta_sla', { p_meta: parseInt(meta) || 90 })
     setSalvando(false)
-    if (error) { setMsg({ ok: false, t: error.message }); return }
+    if (error || r2?.error) { setMsg({ ok: false, t: (error ?? r2?.error)!.message }); return }
     await refreshTenant(); setMsg({ ok: true, t: 'Configuração salva.' })
   }
 
@@ -218,6 +220,10 @@ function AbaPrioridades({ podeEditar }: { podeEditar: boolean }) {
           Avisar quando <Input aria-label="Percentual de risco" value={risco} onChange={e => setRisco(e.target.value.replace(/\D/g, '').slice(0, 2))} disabled={!podeEditar} className="w-16 text-center" />% do prazo tiver passado
         </div>
         <p className="text-[11px] text-muted-foreground">Ex.: prazo de 8 h com alerta em 75% → a OS fica "em risco" depois de 6 h. Vale também para as OS em aberto.</p>
+        <div className="flex items-center gap-2 text-sm text-foreground pt-2">
+          Meta de SLA cumprido: <Input aria-label="Meta de SLA" value={meta} onChange={e => setMeta(e.target.value.replace(/\D/g, '').slice(0, 3))} disabled={!podeEditar} className="w-16 text-center" />%
+        </div>
+        <p className="text-[11px] text-muted-foreground">Referência do painel gerencial ("na meta" / "abaixo da meta").</p>
         <p className="text-[11px] text-muted-foreground">Níveis por tipo: {TIPOS.map(t => `${t.label} → ${t.value === 'incidente' ? 'Crítico/Alto/Baixo' : t.value === 'visita' ? 'sem SLA' : ROTULO_NIVEL[t.value]}`).join(' · ')}</p>
       </Card>
       {podeEditar && (
