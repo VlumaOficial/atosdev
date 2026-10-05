@@ -395,6 +395,15 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - Acréscimos: o convite para quem já tem conta não cria nova senha; o portal aberto pelo endereço mostra só os dados daquela empresa; uma pessoa com mais de um cliente na mesma empresa escolhe "abrindo chamado para".
     - Recomendação: **entra na Etapa 1** — aguardando confirmação.
   - **Um endereço por empresa × por cliente final**: o usuário não entendeu → reexplicado com exemplo, aguardando.
+  - **Decisões de 2026-10-04:**
+    - **um endereço único por empresa** para todos os clientes dela, com o cliente final reconhecido pelo login;
+    - **mesma pessoa em vários portais entra na Etapa 1**;
+    - endereço padrão = **subdomínio da VLUMA**, no formato proposto pelo usuário `atendimento.<empresa>.vluma.com.br`;
+    - **domínio próprio** à escolha da empresa (opção C).
+  - **Nota técnica levada ao usuário (aguardando):** o formato `atendimento.<empresa>.vluma.com.br` tem dois níveis, e um certificado curinga não o cobre. Cada empresa ativada exige criar um registro de DNS e cadastrar o domínio na Vercel. Isso é automatizável se o DNS da VLUMA tiver API; se não, é um passo manual da VLUMA a cada empresa.
+    - A alternativa `<empresa>.atendimento.vluma.com.br` é configurada **uma vez**: o subdomínio é delegado à Vercel e o e-mail Zoho não é tocado. A ativação fica automática, o que é necessário para o auto-cadastro do backlog.
+    - Nos dois formatos: lista de nomes reservados (app, www, mail, api…).
+    - A opção A (caminho `/empresa`) fica só como recurso interno de teste e contingência.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
