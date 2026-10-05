@@ -381,6 +381,20 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   9. telas e KPIs
   10. segurança e dados
   11. etapas e posição no roadmap
+- **Ponto 1 — portal por empresa (respostas de 2026-10-04):**
+  - **Endereço**: deixar o ambiente **preparado para as 3 opções**:
+    - (A) caminho no domínio da VLUMA, ex. `/infoxtec`;
+    - (B) subdomínio da VLUMA;
+    - (C) domínio próprio da empresa.
+
+    Uma tabela de endereços do portal resolve qual empresa abrir. A opção B só exige DNS curinga quando for ligada. Ainda falta definir o domínio da VLUMA.
+  - **Identidade** (logo, nome do portal, cor, boas-vindas, contatos com WhatsApp, rodapé "Tecnologia ATOS"): **OK**, ajustável quando necessário.
+  - **Mesma pessoa em vários portais**: tratar já, se não onerar.
+    - Avaliação: custo pequeno. O vínculo pessoa ↔ cliente já é necessário de qualquer forma; virar N vínculos quase não muda.
+    - O acesso continua checado linha a linha contra os vínculos da própria pessoa.
+    - Acréscimos: o convite para quem já tem conta não cria nova senha; o portal aberto pelo endereço mostra só os dados daquela empresa; uma pessoa com mais de um cliente na mesma empresa escolhe "abrindo chamado para".
+    - Recomendação: **entra na Etapa 1** — aguardando confirmação.
+  - **Um endereço por empresa × por cliente final**: o usuário não entendeu → reexplicado com exemplo, aguardando.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
