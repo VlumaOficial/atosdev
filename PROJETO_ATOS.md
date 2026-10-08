@@ -969,7 +969,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 - [ ] F11: Manual + docs
 
 ### Levantado durante o desenvolvimento
-- [ ] Portal do Solicitante/Cliente — área onde o contato do cliente acompanha e comenta as OS dele (quando existir, o solicitante vira tipo de usuário e pode comentar) — *2026-10-02: retomado pelo usuário com desenho de perfis (Supervisor/Usuário/equipes); parecer e perguntas em VISAO_ATOS.md 9.1, aguardando decisão*
+- [ ] Portal do Solicitante/Cliente — área onde o contato do cliente acompanha e comenta as OS dele (quando existir, o solicitante vira tipo de usuário e pode comentar) — *2026-10-02: retomado pelo usuário com desenho de perfis (Supervisor/Usuário/equipes); parecer e perguntas em VISAO_ATOS.md 9.1, aguardando decisão* — *2026-10-08: refinamento ponto a ponto em andamento; ponto 1 (portal por empresa, endereço, domínio próprio em autoatendimento) FECHADO; ponto 2 (canais) em discussão. Nada construído*
 - [ ] Modal/página de cliente com gestão de unidades embutida (abas Dados/Unidades)
 - [ ] Criação de técnicos via convite por e-mail (inviteUserByEmail)
 - [ ] Módulo de SLA + status e prioridades configuráveis por tenant — *atualizado 2026-10-02: SLA e prioridades configuráveis FEITOS (migrations 044–045, "Catálogo e SLA"); falta só status configuráveis por empresa*

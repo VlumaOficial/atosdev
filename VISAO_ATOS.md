@@ -422,6 +422,34 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
       - botão "Pedir ajuda à VLUMA", que avisa o Super Admin.
     - **Super Admin:** lista de domínios próprios com a situação, configurar ou remover em nome da empresa.
     - **Engenharia:** cadastro e verificação pela API da Vercel. Antes do PRD, conferir os limites de domínios do plano da Vercel (entra na conversa de custos da F8).
+- ✅ **PONTO 1 FECHADO — confirmado pelo usuário em 2026-10-08.** Resumo do combinado:
+  1. **Um portal de atendimento por empresa** que contrata a VLUMA, com **um único endereço para todos os clientes dela**; o cliente final é reconhecido pelo login.
+  2. **Endereço padrão** = subdomínio VLUMA **`atendimento.<empresa>.vluma.com.br`**, criado automaticamente na ativação.
+     - Cloudflare API: registro "somente DNS"; Vercel API: domínio com certificado automático.
+     - Cria o "espaço da empresa" `<empresa>.vluma.com.br` para o ecossistema.
+  3. **Domínio próprio** (ex.: `atendimento.infoxtec.com.br`) = **adicional pago**, em **autoatendimento pelo admin da empresa**.
+     - Configurações › Portal: digita o endereço → o sistema mostra o registro de DNS, com instruções para os provedores comuns → "Verificar" → Aguardando DNS / Verificando / Ativo.
+     - O subdomínio VLUMA redireciona para o domínio próprio.
+     - Botão "Pedir ajuda à VLUMA".
+     - **Super Admin:** libera o adicional, lista os domínios com a situação, configura ou remove em nome da empresa.
+  4. **Ambiente preparado para as 3 opções**: caminho `/empresa` (só interno: teste e contingência), subdomínio VLUMA e domínio próprio. Uma tabela de endereços resolve a empresa.
+  5. **Nome curto:** sugerido do nome fantasia e ajustável; minúsculas, sem acento, 3–30 caracteres; nomes reservados (app, www, mail, api, admin…); se trocar, o antigo redireciona por um período.
+  6. **Identidade do portal:** logo, nome do portal, cor principal, boas-vindas, contatos (com o WhatsApp da empresa), rodapé "Tecnologia ATOS · VLUMA". Ajustável quando necessário.
+  7. **Ativação em dois níveis:** o Super Admin habilita o portal (plano F8); a empresa configura e escolhe quais clientes têm acesso.
+  8. **Mesma pessoa em vários portais já na Etapa 1:** N vínculos por pessoa; convite para quem já tem conta sem nova senha; cada portal mostra só os dados da sua empresa; "Abrindo chamado para" quando a pessoa tiver mais de um cliente na mesma empresa.
+  9. **Para construir:** token da Cloudflare restrito à zona vluma.com.br e token da Vercel (segredos, nunca no git; trocar no fim do MVP). Conferir os limites de domínios do plano da Vercel antes do PRD.
+  - **Construção:** só depois de refinados todos os pontos e decidida a posição no roadmap (ponto 11). Nada construído ainda.
+- **Ponto 2 — canais (portal + WhatsApp): proposta levada em 2026-10-08, aguardando.**
+  - O portal **não substitui** o WhatsApp. Os dois alimentam a mesma OS, com o campo **origem** (portal / WhatsApp / e-mail / interno) e o KPI "chamados por canal".
+  - Os 3 modelos de conexão do WhatsApp (F6): aparelho, Evolution, API oficial da Meta.
+  - **Etapa 1:**
+    - no portal, botão "Falar pelo WhatsApp" com o número do chamado na mensagem;
+    - na OS, "Avisar pelo WhatsApp" com mensagem pronta e link do chamado;
+    - o gestor registra o chamado recebido no WhatsApp em nome do solicitante (origem WhatsApp), e ele passa a aparecer no portal do cliente;
+    - avisos automáticos por e-mail.
+  - **Com Evolution ou API oficial ligada:** avisos automáticos de situação pelo WhatsApp.
+  - **Etapa 3:** abertura automática por WhatsApp (o número identifica o solicitante; as respostas viram comentários públicos).
+  - O solicitante escolhe por onde quer ser avisado.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
