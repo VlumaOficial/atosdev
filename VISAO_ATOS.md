@@ -776,6 +776,15 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - perfil **Atendente**;
     - **painel F7 + canal, % reclassificados, resolução no N1, transferências e filtro por grupo**.
   - Mesmos padrões do ATOS: celular primeiro no portal, contraste AA, gráficos pelas regras de visualização já usadas na F7.
+  - **Respostas do usuário (2026-10-08):**
+    - mapa de telas, KPIs do Supervisor e lado da empresa: **OK**;
+    - sobre o "app": perguntou se a ideia era de produto e pediu para **não tirar a opção web**.
+  - **Esclarecimento levado:** é um **PWA**, o próprio portal web que pode ser **instalado** na tela inicial. Não há código, loja nem versão separada: **a web continua igual** e a instalação é opcional.
+    - Atualiza na hora, junto com o portal.
+    - Avisos no celular: Android pelo navegador; iPhone (iOS 16.4+) só quando instalado.
+    - **App nativo nas lojas descartado:** um app com a marca de cada empresa exigiria uma publicação por empresa, e a Apple recusa apps "modelo" publicados por terceiros (diretriz 4.3).
+    - Dica discreta "Instale o app da <empresa>" a partir da 2ª visita, que pode ser dispensada.
+    - Aguardando confirmação: PWA na Etapa 1.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
