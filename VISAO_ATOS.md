@@ -88,6 +88,9 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 | **F9** | Integração GLPI | Não | 📋 Backlog |
 | **F10** | OWASP e segurança | Não | 📋 Pós-MVP |
 | **F11** | Manual e documentação | Não | 📋 Pós-MVP |
+| **F12** | App nas lojas (App Store / Google Play) — criada em 2026-10-08 a pedido do usuário; detalhes na seção 9.9 | A definir | 📋 Planejada — posição na sequência a definir |
+
+> **2026-10-08 — revisão da sequência em discussão com o usuário:** esta tabela não mostra os módulos inseridos durante o desenvolvimento: Calendários (etapa 1 feita; escalas + notificação diária pendentes), SLA ITSM (feito, migrations 044–045), Portal de atendimento (em refinamento, seção 9.1, Etapas 1–3) e F12. O usuário sinalizou que as etapas não estão na sequência que esperava. A sequência consolidada será definida com ele e então refletida aqui.
 
 **Princípio:** cada fase é concluída **integralmente** antes de avançar. Validação na URL pública (Vercel) a cada etapa.
 
@@ -878,7 +881,8 @@ Pedido do usuário: ter app nas lojas para **ampliar a comercialização**; o cl
   1. App "ATOS" (modelo A) com técnico + solicitante;
   2. **offline do técnico** (diferencial de campo);
   3. app com a marca da empresa (modelo B) como premium.
-- **Perguntas em aberto:**
+- **2026-10-08 — decisão do usuário:** por ora, **apenas criar a fase** (F12 no roadmap); os detalhes ficam para depois.
+- **Perguntas em aberto (para quando a F12 for detalhada):**
   - fase própria no roadmap?
   - um app para todos os perfis ou dois (Campo × Atendimento)?
   - modelo B como premium na F8?
