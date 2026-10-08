@@ -785,6 +785,8 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - **App nativo nas lojas descartado:** um app com a marca de cada empresa exigiria uma publicação por empresa, e a Apple recusa apps "modelo" publicados por terceiros (diretriz 4.3).
     - Dica discreta "Instale o app da <empresa>" a partir da 2ª visita, que pode ser dispensada.
     - Aguardando confirmação: PWA na Etapa 1.
+- ✅ **PONTO 9 FECHADO — confirmado pelo usuário em 2026-10-08:** mapa de telas, KPIs do Supervisor e lado da empresa aprovados; **PWA na Etapa 1**, com a web mantida igual.
+  - O usuário pediu para **abrir um capítulo sobre app nas lojas** (App Store / Google Play), pensando em comercialização: o cliente escolhe usar pela web ou pelo app → registrado na seção **9.9**.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
@@ -853,6 +855,34 @@ Pedido do usuário: registrar feriados nacionais, escala de trabalho dos funcion
     - **Sede da empresa pela Receita** na Identidade legal do Super Admin
     - Em aberto: CPF para cliente pessoa física; quais campos do endereço são obrigatórios
   - **Notificação diária fora da escala (decisão do usuário):** por padrão respeita a escala, **mas o gestor pode enviar fora do horário**, com aviso claro de que o funcionário está fora da escala (registrar quem enviou e quando)
+
+### 9.9. App nas lojas (App Store / Google Play) — capítulo aberto pelo usuário em 2026-10-08, em discussão
+Pedido do usuário: ter app nas lojas para **ampliar a comercialização**; o cliente escolhe usar pela **web ou pelo app**. Parecer levado (Engenheiro/PO/UX):
+- **PO — vale a pena:**
+  - "tem app?" é pergunta de compra de PME;
+  - a presença na loja dá credibilidade e prova social (avaliações; o risco de avaliação ruim também é real);
+  - concorrentes de campo (Auvo, Field Control) têm app nas lojas.
+  - **O maior valor comercial está no app do TÉCNICO**: modo **offline** (subsolo, área rural), avisos confiáveis, câmera e GPS nativos. O solicitante ganha avisos confiáveis no iPhone.
+- **Modelos:**
+  - (A) **um app "ATOS" publicado pela VLUMA**: multiempresa; depois do login, assume a marca da empresa; atende técnico e solicitante (o login define a experiência). Permitido pela Apple: um app, um publicador;
+  - (B) **app com a marca da empresa** (adicional premium, F8): a Apple só aceita se publicado na **conta de desenvolvedor da própria empresa** (diretriz 4.2.6), com a VLUMA gerando e enviando por ela.
+- **Engenheiro:**
+  - **Capacitor** sobre o app React atual: reaproveita praticamente todo o código e acrescenta recursos nativos (push FCM/APNs, câmera, GPS, armazenamento offline, biometria);
+  - sem reescrever em React Native;
+  - a Apple recusa "site empacotado" sem valor nativo (diretriz 4.2) → push, offline e biometria resolvem;
+  - atualizações de tela sem passar pela loja são permitidas enquanto não mudam o propósito do app (3.3.2);
+  - links do e-mail/WhatsApp abrem no app quando instalado (universal links / app links, configurados por domínio);
+  - contas: Apple Developer (US$ 99/ano, organização com D-U-N-S da VLUMA) e Google Play Console (US$ 25 uma vez).
+- **UX:** mesma conta e mesmos dados na web, no PWA e no app; o usuário escolhe; o app soma offline e avisos nativos.
+- **Sugestão de posicionamento no roadmap:** fase própria **depois** da Etapa 1 do portal e da promoção para PRD.
+  1. App "ATOS" (modelo A) com técnico + solicitante;
+  2. **offline do técnico** (diferencial de campo);
+  3. app com a marca da empresa (modelo B) como premium.
+- **Perguntas em aberto:**
+  - fase própria no roadmap?
+  - um app para todos os perfis ou dois (Campo × Atendimento)?
+  - modelo B como premium na F8?
+  - contas das lojas no CNPJ da VLUMA?
 
 ## 10. ECOSSISTEMA VLUMA — PRODUTO IRMÃO: CLAREZZA
 
