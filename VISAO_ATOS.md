@@ -91,6 +91,20 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 | **F12** | App nas lojas (App Store / Google Play) — criada em 2026-10-08 a pedido do usuário; detalhes na seção 9.9 | A definir | 📋 Planejada — posição na sequência a definir |
 
 > **2026-10-08 — revisão da sequência em discussão com o usuário:** esta tabela não mostra os módulos inseridos durante o desenvolvimento: Calendários (etapa 1 feita; escalas + notificação diária pendentes), SLA ITSM (feito, migrations 044–045), Portal de atendimento (em refinamento, seção 9.1, Etapas 1–3) e F12. O usuário sinalizou que as etapas não estão na sequência que esperava. A sequência consolidada será definida com ele e então refletida aqui.
+>
+> **Decisão do usuário (2026-10-08):** antes de colocar em produção (PRD), fazer o **plano de pagamento e suas integrações (F8)** e **depois todo o painel do Super Admin**.
+>
+> **Proposta de sequência consolidada levada (aguardando):**
+> 1. Portal: fechar o refinamento (pontos 10–11) e construir a **Etapa 1**;
+> 2. **Escalas + notificação diária**;
+> 3. **F6 Avançado** (WhatsApp automático);
+> 4. **F8 Planos, pagamento (Asaas) e integrações**;
+> 5. **Painel do Super Admin completo**;
+> 6. **Segurança pré-produção** (essencial do OWASP, antecipado da F10, porque o portal abre o sistema a usuários externos) + responsividade do painel admin;
+> 7. limpeza dos dados de teste + troca de credenciais → **promoção para PRD**;
+> 8. depois do PRD: Portal Etapas 2 e 3, F12 App nas lojas, F9 GLPI, F10 completa, F11 Manual.
+>
+> Numeração única na tabela a confirmar.
 
 **Princípio:** cada fase é concluída **integralmente** antes de avançar. Validação na URL pública (Vercel) a cada etapa.
 
