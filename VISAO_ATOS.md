@@ -645,6 +645,38 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - **Avisos:** o técnico de destino e o coordenador do grupo de destino são notificados.
     - **KPI "transferências por chamado"** + alerta de **"pingue-pongue"** (mais de 3 transferências) ao coordenador. É um diferencial.
     - **No portal:** mensagem genérica "Seu chamado foi encaminhado a um especialista", sem os nomes internos dos grupos.
+- ✅ **PONTO 6B FECHADO — confirmado pelo usuário em 2026-10-08:**
+  - cadastro do grupo (nível, membros, coordenador, categorias, área de atuação);
+  - filas;
+  - distribuição manual + "Assumir" opcional por grupo (padrão desligado; quando ligado, o membro vê só a fila do próprio grupo);
+  - **"Transferir"** para grupo e/ou técnico (direção automática, motivo obrigatório, SLA sem reiniciar, tempo por grupo, avisos);
+  - quem pode: técnico responsável, coordenadores, atendentes, gestores/admin;
+  - alerta de pingue-pongue a partir de 3 transferências (ajustável);
+  - alertas de SLA também ao coordenador;
+  - mensagem genérica no portal;
+  - **Etapa 1:** cadastro, filas, distribuição manual, Assumir, roteamento por categoria, transferência, alertas;
+  - **Etapa 2:** região, distribuição automática, plantão.
+- **Ponto 7 — "aguardando você", fechamento e satisfação: proposta levada em 2026-10-08, aguardando.**
+  - **7a. Aguardando você:**
+    - cada **motivo de pausa** ganha **"texto para o cliente"** e a marca **"aguarda o cliente"**;
+    - usar um motivo desses exige um **comentário público** com o que se pede;
+    - no portal: "Aguardando sua resposta";
+    - a resposta do cliente (portal ou WhatsApp) **retoma a OS automaticamente** (relógio do SLA volta) e avisa o técnico/grupo;
+    - lembretes automáticos (ex.: 1 e 3 dias úteis) e **encerramento por falta de retorno** após N dias úteis (configurável; fica fora do % de SLA; pode reabrir dentro do prazo).
+  - **7b. Fechamento:**
+    - "Concluída" na OS = **"Resolvido"** no portal, com resumo + PDF + botões **"Confirmar solução"** / **"Não foi resolvido"**;
+    - sem resposta em N dias úteis (padrão 3) → **"Fechado"** automático;
+    - **reabertura** só dentro do prazo, com motivo; volta ao último grupo/técnico; o relógio volta a contar (o tempo entre resolvido e reaberto não conta); afeta a 1ª visita e o KPI de reabertura;
+    - depois de fechado: **novo chamado vinculado** ("relacionado a #123"), que alimenta a reincidência;
+    - sem status interno novo: Concluída + "fechada em" (confirmada ou automática);
+    - opção: **assinatura do próprio solicitante em campo** conta como confirmação.
+  - **7c. Satisfação (CSAT):**
+    - **uma pergunta**, 1–5 estrelas + comentário opcional, na confirmação ou por link de um clique no e-mail/WhatsApp;
+    - KPI por técnico, grupo e cliente, no painel F7 e no do Supervisor;
+    - **nota 1–2 → alerta ao coordenador/gestor** para retorno ao cliente (diferencial: ciclo fechado).
+  - **Etapas propostas:**
+    - **Etapa 1:** 7a (sem lembretes) e 7b;
+    - **Etapa 2:** CSAT, lembretes, encerramento por falta de retorno, alerta de nota baixa.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
