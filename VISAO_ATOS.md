@@ -486,6 +486,51 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
        - A empresa pode usar o próprio texto, também versionado.
        - Nova versão pede novo aceite.
        - Recomendação: revisão jurídica do padrão antes da venda.
+- ✅ **PONTO 2 FECHADO — confirmado pelo usuário em 2026-10-08.** Resumo:
+  1. O portal e o WhatsApp alimentam a **mesma OS**, com **origem** registrada (portal / WhatsApp / e-mail / interno) e o KPI "chamados por canal".
+  2. **Etapa 1:**
+     - WhatsApp pelo aparelho: botão "Falar pelo WhatsApp" no portal, com o número do chamado; botão na OS com mensagem pronta + link;
+     - o gestor registra em nome do solicitante;
+     - avisos automáticos por e-mail.
+  3. **Com Evolution ou API oficial ligada:** avisos automáticos pelo WhatsApp.
+  4. **Etapa 3:** abertura automática pelo WhatsApp, **nativa no ATOS** (Edge Function, mesmas regras do portal). n8n só como integração opcional futura para as empresas.
+  5. **Fluxo da conversa:**
+     - a empresa é identificada pelo número que recebeu a mensagem; o solicitante, pelo celular confirmado;
+     - aceite no primeiro contato;
+     - menu: abrir / acompanhar / falar com atendente;
+     - abertura guiada (assunto → unidade → descrição com foto e áudio → prioridade → confirmação);
+     - mensagens seguintes viram comentário público; fora do horário, avisa o horário.
+  6. **"Falar com um atendente"** configurável pela empresa: desativado (não aparece) / atendente humano (pausa o robô) / mensagem com contatos.
+  7. **Número desconhecido:** envia os contatos da empresa dona do número + link do portal com **"Solicitar acesso"** (nome, e-mail, cliente → a empresa ou o Supervisor aprova). Nunca expõe contatos de pessoas dos clientes. Sem OS automática.
+  8. **Canal dos avisos:** a empresa libera os canais e o usuário escolhe entre os liberados. Canal não liberado: "A <empresa> não disponibiliza este tipo de comunicação no momento".
+  9. **LGPD:**
+     - aceite registrado (texto, versão, data, canal);
+     - retirada a qualquer momento ("SAIR", link no e-mail, preferências no portal);
+     - só comunicações de serviço;
+     - a empresa é a controladora e a VLUMA a operadora.
+  10. **Módulo de termos:**
+      - termos padrão VLUMA (uso do portal, privacidade, consentimento de comunicação), versionados pelo Super Admin;
+      - a empresa pode substituir pelos próprios, também versionados;
+      - nova versão pede novo aceite;
+      - recomendada revisão jurídica do padrão antes da venda (não bloqueia o desenvolvimento).
+- **Ponto 3 — abertura, prioridade e grupos (N1): proposta levada em 2026-10-08, aguardando.**
+  - **3a. Prioridade escolhida pelo solicitante** (decisão do usuário), seguindo o modo da empresa:
+    - **modo simples:** escolhe Crítico/Alto/Baixo, com a descrição de cada nível escrita pela empresa;
+    - **modo matriz:** responde 2 perguntas simples, e o sistema calcula. Este é o "impacto em linguagem simples" do ponto 5; proposto juntar o ponto 5 ao 3.
+    - Configuração "solicitante escolhe a prioridade" (padrão: sim).
+  - **3b. Reclassificação pelo N1:**
+    - guardar a **prioridade informada** e a **final**;
+    - o SLA recalcula a partir da abertura (o gatilho já faz isso);
+    - motivo da reclassificação visível ao solicitante;
+    - KPI "% reclassificados" por cliente.
+  - **3c. Grupos de atendimento** (conceito novo):
+    - nome + membros;
+    - OS com grupo e técnico;
+    - "Minha fila";
+    - fila "Novos sem grupo";
+    - roteamento automático por categoria (opcional).
+    - O papel de quem faz a triagem está em aberto: gestor ou novo perfil "Atendente".
+    - SLA de resposta = até a primeira classificação/atribuição ou a primeira resposta pública.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
