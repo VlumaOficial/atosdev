@@ -549,6 +549,22 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
       5. roteamento automático por **categoria e/ou região da unidade**;
       6. foto/áudio do cliente na abertura para o técnico levar a peça certa (sobe a resolução na 1ª visita).
     - Aguardando decisão do usuário sobre os diferenciais e as etapas.
+- ✅ **PONTO 3 FECHADO (e o PONTO 5 — impacto — resolvido junto) — confirmado pelo usuário em 2026-10-08:**
+  - padrão ITIL aplicado como descrito acima;
+  - os 6 diferenciais aprovados;
+  - **Etapa 1:** prioridade em linguagem simples, confirmação/ajuste pelo N1 com motivo visível, KPI de reclassificação, grupos com escalonamento registrado, KPI de resolução no 1º nível, perfil "Atendente", diferenciais 1 (prazo previsto na abertura), 2 (duplicado / "também me afeta"), 5 (roteamento por categoria) e 6 (foto/áudio na abertura);
+  - **Etapa 2:** diferenciais 3 (triagem com contexto de campo, remoto × técnico), 4 (visitas evitadas com economia) e roteamento por região.
+- **Ponto 4 — tipos no portal: proposta levada em 2026-10-08, aguardando.**
+  - Os 4 tipos aparecem como **opções em linguagem do cliente**, com nome e descrição editáveis pela empresa, que também escolhe quais aparecem (padrão: todos, por decisão do usuário):
+    - Incidente → "Relatar um problema";
+    - Requisição → "Fazer uma solicitação";
+    - Visita → "Solicitar visita técnica";
+    - Preventiva → "Agendar manutenção preventiva".
+  - **Categoria ligada aos tipos** em que aparece (catálogo de serviços, prática ITIL), além de "visível no portal".
+  - **Prioridade só no Incidente.** Requisição e Preventiva têm nível fixo; Visita não tem SLA.
+  - **Preferência de data/período** (Visita, Preventiva, Requisição), conferida contra o horário de funcionamento e os feriados da unidade (Calendários). O N1 confirma, e o agendamento "a pedido do cliente" vira o prazo, como já existe.
+  - **Aprovação do Supervisor do cliente** em requisições de categorias marcadas (cumprimento de requisição no ITIL) — proposta para a Etapa 2.
+  - Visita que gera orçamento → backlog.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
