@@ -473,6 +473,19 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
       - só comunicações de serviço (sem marketing);
       - papéis: a empresa é a controladora e a VLUMA a operadora;
       - textos a validar com o jurídico.
+  - **Respostas do usuário (2026-10-08):**
+    1. **Abertura nativa no ATOS**, com o n8n como integração opcional futura: **OK**.
+    2. **"Falar com um atendente" configurável pela empresa**, em 3 modos (nem toda empresa tem atendimento humano):
+       - **Desativado:** a opção não aparece no menu.
+       - **Ativado → atendente:** encaminha para um atendente humano, e o robô pausa naquela conversa.
+       - **Ativado → contatos:** mostra uma mensagem com as formas de contato (e-mail, telefone etc.).
+    3. **Número desconhecido:** só orienta e envia os contatos para pedir acesso, sem abrir chamado.
+       - Esclarecimento levado ao usuário (aguardando): o número desconhecido não permite saber de qual cliente a pessoa é. Recomendação: enviar os contatos da empresa dona do número + o link do portal, sem expor contatos de pessoas dos clientes (LGPD).
+    4. **Termos:** sem jurídico próprio, então **seguir um padrão**, com um **módulo para a empresa substituir pelos próprios termos** se quiser.
+       - Proposta: termos padrão da VLUMA (uso do portal, aviso de privacidade, consentimento de comunicação), versionados e mantidos pelo Super Admin.
+       - A empresa pode usar o próprio texto, também versionado.
+       - Nova versão pede novo aceite.
+       - Recomendação: revisão jurídica do padrão antes da venda.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
