@@ -531,6 +531,24 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - roteamento automático por categoria (opcional).
     - O papel de quem faz a triagem está em aberto: gestor ou novo perfil "Atendente".
     - SLA de resposta = até a primeira classificação/atribuição ou a primeira resposta pública.
+  - **Orientação do usuário (2026-10-08): "siga o ITIL e as melhores práticas do mercado, busque diferencial entre os concorrentes".**
+    - **Pesquisa feita:** materiais de ITIL e de ferramentas de ITSM sobre a matriz de prioridade, e os concorrentes BR. Movidesk, Milvus e Tiflux são fortes em help desk/portal e fracos em campo; Auvo e Field Control são fortes em campo, com portal simples e pouco personalizável (Auvo: "Central do Cliente").
+    - **Aplicado como padrão de mercado (ITIL):**
+      - prioridade = impacto × urgência, com rótulos em linguagem simples, exemplos e ajuda;
+      - a escolha do solicitante é **entrada**: o N1 confirma ou ajusta, com motivo registrado;
+      - prazo recalculado pela prioridade final;
+      - KPI de classificação incorreta;
+      - grupos de atendimento com escalonamento funcional (N1 → N2/campo) registrado;
+      - KPI de resolução no 1º nível;
+      - papel "Atendente" (agente do service desk).
+    - **Diferenciais propostos:**
+      1. o solicitante vê, já ao abrir, **por que** a prioridade ficou assim e o **prazo previsto** (depende do ponto 8);
+      2. **detecção de chamado duplicado** na abertura ("já existe chamado aberto nesta unidade sobre este assunto") com "também me afeta", que pode subir o impacto;
+      3. **triagem com contexto de campo** (OS abertas e recentes da unidade, reincidência, horário de funcionamento) e decisão **"resolver remoto × enviar técnico"**;
+      4. KPI **"visitas evitadas"** com economia estimada (custo médio de deslocamento configurável);
+      5. roteamento automático por **categoria e/ou região da unidade**;
+      6. foto/áudio do cliente na abertura para o técnico levar a peça certa (sobe a resolução na 1ª visita).
+    - Aguardando decisão do usuário sobre os diferenciais e as etapas.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
