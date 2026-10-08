@@ -450,6 +450,29 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - **Com Evolution ou API oficial ligada:** avisos automáticos de situação pelo WhatsApp.
   - **Etapa 3:** abertura automática por WhatsApp (o número identifica o solicitante; as respostas viram comentários públicos).
   - O solicitante escolhe por onde quer ser avisado.
+  - **Respostas do usuário (2026-10-08):**
+    1. Portal e WhatsApp alimentando a mesma OS, com a origem registrada: **OK**.
+    2. Divisão por etapas: **OK**, mas a **abertura pelo WhatsApp precisa ser mais refinada**. O usuário perguntou se usaríamos o **n8n**.
+    3. **Canal dos avisos — decisão:** a **empresa libera os canais** e o **usuário escolhe entre os liberados**. Se ele tentar um canal não liberado, recebe: "A <nome da empresa> não disponibiliza este tipo de comunicação no momento". **Termo de aceite do usuário** para essas comunicações: garantir a LGPD.
+  - **Proposta levada (2026-10-08), aguardando:**
+    - **Abertura pelo WhatsApp nativa no ATOS**: a Evolution ou a Meta avisam uma Edge Function, que aplica as mesmas regras do portal (empresa, permissões, aceite, auditoria), versionada e testada como o resto.
+    - **n8n não no núcleo**, por quatro motivos: mais um componente a operar e proteger; regra de negócio fora do código versionado; isolamento entre empresas feito à mão; e a licença do n8n para uso dentro de produto vendido a terceiros com credenciais dos clientes precisa ser verificada (possível exigência de licença "Embed").
+    - **n8n como integração opcional para a empresa** (o ATOS emite avisos de eventos e oferece API) — futuro.
+    - **Fluxo da conversa:**
+      - a empresa é identificada pelo número que recebeu a mensagem;
+      - o solicitante é identificado pelo celular cadastrado e confirmado; número desconhecido recebe orientação + link do portal, e o gestor é avisado (sem OS automática);
+      - menu: novo chamado / acompanhar chamado aberto / falar com atendente;
+      - novo chamado: assunto (categorias do portal) → unidade (se houver mais de uma) → descrição (texto, foto, áudio) → prioridade (conforme o ponto 3) → confirmação → OS com origem WhatsApp + número e link;
+      - mensagens seguintes viram comentário público, e anexos viram anexos;
+      - fora do horário de atendimento (Calendários), avisa o horário;
+      - "falar com atendente" pausa o robô naquela conversa;
+      - primeiro contato pede o aceite.
+    - **LGPD:**
+      - aceite **versionado e registrado** (texto, versão, data, canal), no padrão do consentimento de localização já existente;
+      - retirada a qualquer momento ("SAIR" no WhatsApp, link no e-mail, preferências no portal);
+      - só comunicações de serviço (sem marketing);
+      - papéis: a empresa é a controladora e a VLUMA a operadora;
+      - textos a validar com o jurídico.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
