@@ -741,6 +741,41 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
       - **Números congelados** no fechamento (prova contratual; uma reabertura posterior não altera o mês fechado). Reprocessamento só pelo admin, com auditoria.
     - **Acesso:** o admin escolhe quem vê o painel e quem recebe cada relatório, com **escopo por pessoa**: tudo / grupo(s) / cliente(s).
       - Em aberto: se o admin pode dar acesso também ao **Supervisor de um cliente** (só os dados daquele cliente, respeitando o nível de transparência do ponto 8) ou só a pessoas internas.
+- ✅ **PONTO 8 FECHADO — confirmado pelo usuário em 2026-10-08:**
+  1. o admin **pode liberar** o painel e os relatórios de SLA também ao **Supervisor de um cliente** (só os dados daquele cliente, respeitando o nível de transparência dele);
+  2. semanal na segunda às 8h; mensal no 1º dia útil; **mês congelado** no fechamento (reprocessar só pelo admin, com auditoria);
+  3. **3 níveis** do que o cliente vê (Oculto / **Previsão — padrão** / Completo), configurados pela empresa com exceção por cliente;
+  4. **"prazo explicado"** na linha do tempo na **Etapa 1**.
+  - **Atividade "Painel e Relatórios de SLA"** na Etapa 2 (painel próprio, semanal com tendência, fechamento mensal com visão do ano, acesso escolhido pelo admin com escopo tudo / grupos / clientes).
+- **Ponto 9 — telas e KPIs: proposta levada em 2026-10-08, aguardando.**
+  - **Portal do cliente:**
+    - **login** com a marca da empresa + "Solicitar acesso" + aceite dos termos;
+    - **Início**: "Aguardando você" no topo, botão grande "Abrir chamado", contadores (abertos, aguardando você, resolvidos no mês), chamados recentes;
+    - **Abrir chamado**: cartões de tipo → assunto → unidade → descrição/foto/áudio → prioridade ou preferência de data → aviso de duplicado → "abrindo para" / "compartilhar com a equipe" → confirmação com número e previsão;
+    - **Meus chamados**: abas Abertos / Aguardando você / Resolvidos / Fechados, com filtros e busca;
+    - **Chamado**: trilha de etapas (Recebido → Em atendimento → Resolvido → Fechado), previsão, conversa com o prazo explicado, anexos, PDF, confirmar/reabrir, "também me afeta";
+    - **Supervisor**: + Painel, Usuários e equipes, Solicitações de acesso, Aprovações (Etapa 2), Relatórios de SLA (se liberados);
+    - **Preferências**: canais de aviso e termos aceitos, com retirada do aceite.
+  - **KPIs do Supervisor:**
+    - abertos e em atendimento agora, aguardando o cliente;
+    - abertos × resolvidos no período, com tendência;
+    - tempo médio até o atendimento e até a solução;
+    - % no prazo (nível Completo);
+    - por unidade, equipe e assunto;
+    - unidades com reincidência;
+    - quem mais abre;
+    - satisfação (Etapa 2).
+  - **Diferencial: o portal instalável como app (PWA) com o ícone e o nome da empresa** — "o app da Infoxtec" sem loja de aplicativos, com avisos no celular.
+  - **Lado da empresa:**
+    - **Configurações › Portal**: identidade, endereço/domínio, canais, tipos e textos, transparência, termos, atendente, dias para fechar;
+    - aba **Portal** no Cliente;
+    - campos novos no Catálogo;
+    - página **Grupos de atendimento**;
+    - filas na lista de OS;
+    - na OS: solicitante, equipe, origem, grupo, prioridade informada × final, comentário público/interno e **Transferir**;
+    - perfil **Atendente**;
+    - **painel F7 + canal, % reclassificados, resolução no N1, transferências e filtro por grupo**.
+  - Mesmos padrões do ATOS: celular primeiro no portal, contraste AA, gráficos pelas regras de visualização já usadas na F7.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
