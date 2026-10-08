@@ -412,6 +412,16 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - **Nome curto:** escolhido na ativação a partir do nome fantasia; minúsculas, sem acento, 3–30 caracteres, nomes reservados; se trocar, o endereço antigo redireciona por um período.
     - **Engenharia:** registro de DNS "somente DNS" (sem o proxy laranja) + domínio cadastrado na Vercel por API, com certificado automático. Na implementação, precisa de um token da Cloudflare restrito à zona vluma.com.br e de um token da Vercel.
     - Aguardando confirmação para fechar o ponto 1.
+  - **Pergunta do usuário (2026-10-08): quem configura o domínio próprio, o admin da empresa ou o Super Admin?**
+    - **Recomendação: o próprio admin da empresa (autoatendimento), quando o plano incluir o adicional.** O Super Admin habilita o adicional, acompanha e pode agir pela empresa.
+    - **Fluxo:**
+      - o admin digita o endereço (ex.: `atendimento.infoxtec.com.br`);
+      - o sistema mostra o registro a criar no DNS da empresa, com instruções para os provedores comuns (Registro.br, Cloudflare, Hostinger, GoDaddy) e o botão "Verificar";
+      - situação visível: Aguardando DNS → Verificando → Ativo;
+      - o subdomínio VLUMA continua funcionando e passa a redirecionar para o domínio próprio;
+      - botão "Pedir ajuda à VLUMA", que avisa o Super Admin.
+    - **Super Admin:** lista de domínios próprios com a situação, configurar ou remover em nome da empresa.
+    - **Engenharia:** cadastro e verificação pela API da Vercel. Antes do PRD, conferir os limites de domínios do plano da Vercel (entra na conversa de custos da F8).
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
