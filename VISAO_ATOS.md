@@ -565,6 +565,15 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - **Preferência de data/período** (Visita, Preventiva, Requisição), conferida contra o horário de funcionamento e os feriados da unidade (Calendários). O N1 confirma, e o agendamento "a pedido do cliente" vira o prazo, como já existe.
   - **Aprovação do Supervisor do cliente** em requisições de categorias marcadas (cumprimento de requisição no ITIL) — proposta para a Etapa 2.
   - Visita que gera orçamento → backlog.
+  - **Resposta do usuário (2026-10-08):** concorda com 4a–4d. Dúvida sobre a frase "catálogo de serviços do ITIL, que o ATOS já tem pela metade" e o impacto dela no portal.
+  - **Esclarecimento levado:**
+    - **Hoje o catálogo tem:** nome em 2 níveis, impacto/urgência padrão, exceção de SLA por categoria, ativo.
+    - **Falta para o portal:** descrição para o cliente, "visível no portal", tipos em que aparece, grupo padrão (diferencial 5), "exige aprovação" (4d), **público** (quais clientes veem) e **formulário próprio do serviço**.
+    - **Impacto:** o portal é a vitrine do catálogo, e a qualidade do catálogo define a experiência. A OS interna não muda.
+  - **Propostas novas (aguardando):**
+    - padrão seguro: categoria **não** visível no portal até a empresa marcar, com um assistente de ativação;
+    - **público por cliente** na Etapa 2;
+    - **formulário do serviço** reaproveitando o construtor de checklists da F5, na Etapa 2.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
