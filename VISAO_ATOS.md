@@ -634,6 +634,17 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - **hierárquico:** os alertas de SLA (045) avisam também o coordenador do grupo.
   - **Painel (F7):** filtro por grupo e indicadores por grupo (SLA, fila, idade).
   - **Etapa 2:** horário/plantão do grupo integrado às **escalas** (próximo módulo), com roteamento para quem está de plantão. O horário do grupo **não** altera o SLA do cliente, que segue o horário de atendimento do contrato.
+  - **Lembrete do usuário (2026-10-08): os grupos podem transferir o chamado para outro grupo ou para um técnico.** O "Escalar" vira a ação ampla **"Transferir"** (proposta, aguardando):
+    - **Destino:** outro grupo (qualquer nível) e/ou um técnico de qualquer grupo. Se o técnico estiver em vários grupos, escolhe-se o grupo. Se o destino for só o grupo, a OS cai na fila dele.
+    - **Direção registrada automaticamente** pelo nível: escalonamento (sobe), devolução (desce) ou lateral (mesmo nível).
+    - **Motivo obrigatório e curto**, para quem recebe saber o que já foi feito (prática ITIL).
+    - **Quem pode:** o técnico responsável pela OS, os coordenadores, os atendentes e os gestores/admin.
+    - **O SLA não reinicia:** o prazo é do cliente, de ponta a ponta.
+    - **Histórico com o tempo em cada grupo** (base para o KPI "tempo por grupo" futuro).
+    - **OS em andamento transferida** volta para "Aberta" na fila ou com o técnico de destino, com registro.
+    - **Avisos:** o técnico de destino e o coordenador do grupo de destino são notificados.
+    - **KPI "transferências por chamado"** + alerta de **"pingue-pongue"** (mais de 3 transferências) ao coordenador. É um diferencial.
+    - **No portal:** mensagem genérica "Seu chamado foi encaminhado a um especialista", sem os nomes internos dos grupos.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
