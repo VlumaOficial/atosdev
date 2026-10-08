@@ -574,6 +574,13 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - padrão seguro: categoria **não** visível no portal até a empresa marcar, com um assistente de ativação;
     - **público por cliente** na Etapa 2;
     - **formulário do serviço** reaproveitando o construtor de checklists da F5, na Etapa 2.
+  - **Respostas do usuário (2026-10-08):**
+    - público por cliente na Etapa 2: OK;
+    - formulário do serviço na Etapa 2: OK;
+    - sobre "começa invisível", perguntou: "por que já não nasce com o admin escolhendo o que aparece?"
+  - **Alinhamento proposto (aguardando):** é o mesmo objetivo.
+    - **Categoria nova:** o formulário pergunta "Aparece no portal do cliente?" (Sim/Não), escolha **obrigatória e sem resposta pré-marcada**. O admin decide no momento da criação.
+    - **Categorias que já existem** (criadas antes do portal): na ativação do portal, o assistente lista todas para o admin marcar. Até lá, nenhuma aparece.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
