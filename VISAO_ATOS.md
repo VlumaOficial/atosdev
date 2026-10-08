@@ -404,6 +404,14 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - A alternativa `<empresa>.atendimento.vluma.com.br` é configurada **uma vez**: o subdomínio é delegado à Vercel e o e-mail Zoho não é tocado. A ativação fica automática, o que é necessário para o auto-cadastro do backlog.
     - Nos dois formatos: lista de nomes reservados (app, www, mail, api…).
     - A opção A (caminho `/empresa`) fica só como recurso interno de teste e contingência.
+  - **2026-10-08:** o DNS da vluma.com.br está na **Cloudflare**, que tem API, então a ativação fica automática nos dois formatos e o argumento técnico deixa de existir. O usuário pediu uma sugestão de produto.
+    - **Recomendação do PO: manter o formato do usuário**, `atendimento.<empresa>.vluma.com.br`:
+      - lê-se naturalmente ("atendimento Infoxtec");
+      - cria o **espaço da empresa** `<empresa>.vluma.com.br` para o ecossistema (Clarezza e módulos futuros, cada produto com um prefixo);
+      - o domínio próprio segue o mesmo padrão, sem o ".vluma" (`atendimento.infoxtec.com.br`): o upgrade é "tirar o vluma".
+    - **Nome curto:** escolhido na ativação a partir do nome fantasia; minúsculas, sem acento, 3–30 caracteres, nomes reservados; se trocar, o endereço antigo redireciona por um período.
+    - **Engenharia:** registro de DNS "somente DNS" (sem o proxy laranja) + domínio cadastrado na Vercel por API, com certificado automático. Na implementação, precisa de um token da Cloudflare restrito à zona vluma.com.br e de um token da Vercel.
+    - Aguardando confirmação para fechar o ponto 1.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
