@@ -611,6 +611,29 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - **6d. Lado da empresa:**
     - aba **"Portal"** no cadastro do cliente (liga/desliga, supervisores, usuários, equipes), com o admin/gestor podendo gerenciar em nome do cliente;
     - na OS: solicitante e equipe.
+- ✅ **PONTO 6 (lado do cliente) FECHADO — confirmado pelo usuário em 2026-10-08:** 6a–6d como propostos.
+  - Falta apontada pelo usuário: **os grupos de atendimento (a equipe técnica, lado interno)**, só esboçados no ponto 3c → detalhados no **ponto 6B**.
+- **Ponto 6B — grupos de atendimento (equipe técnica): proposta levada em 2026-10-08, aguardando.**
+  - **Nomes distintos:** "Equipes" = lado do cliente; "Grupos de atendimento" = lado interno.
+  - **Cadastro do grupo:**
+    - nome, descrição, **nível** (N1 / N2 / N3 / Campo);
+    - **membros** (técnicos, atendentes, gestores; uma pessoa em vários grupos);
+    - **coordenador(es)**;
+    - **categorias atendidas** (roteamento automático, Etapa 1);
+    - **área de atuação** (UF/cidades, roteamento por região, Etapa 2).
+  - **Filas:**
+    - "Novos sem grupo" (entrada do N1);
+    - **"Fila do grupo"** (OS do grupo sem técnico);
+    - "Minhas OS".
+  - **Distribuição:**
+    - manual pelo coordenador, atendente ou gestor;
+    - **"Assumir"** pelo próprio membro **só se o grupo permitir**. Padrão desligado, para preservar a regra atual de que o técnico vê só as próprias OS (decisão do usuário, migrations 042/043). Isso resolve o backlog "técnico pegar OS sem dono";
+    - automática por rodízio ou menor carga na Etapa 2.
+  - **Escalonamento:**
+    - **funcional:** "Escalar para outro grupo" com motivo; histórico e KPI de resolução no 1º nível;
+    - **hierárquico:** os alertas de SLA (045) avisam também o coordenador do grupo.
+  - **Painel (F7):** filtro por grupo e indicadores por grupo (SLA, fila, idade).
+  - **Etapa 2:** horário/plantão do grupo integrado às **escalas** (próximo módulo), com roteamento para quem está de plantão. O horário do grupo **não** altera o SLA do cliente, que segue o horário de atendimento do contrato.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
