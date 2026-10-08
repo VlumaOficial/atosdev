@@ -706,6 +706,25 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
       - NPS segmentado por perfil (Supervisor × Usuário).
       - O Supervisor do cliente vê só o agregado do seu cliente; a nota individual do técnico visível a ele é decisão da empresa.
     - Sugestão: módulo inteiro na **Etapa 2**.
+- ✅ **PONTO 7 FECHADO — 2026-10-08.** O usuário delegou os itens 1–3 ao PO ("aplique as melhores práticas de mercado, sempre buscando um diferencial"). Decisões do PO:
+  1. **Matriz de motivos de pausa** adotada como proposta (aciona / comunica / interno; padrões dos 4 motivos semeados; aviso ao parar o SLA em motivo interno). Acréscimos:
+     - **diferencial**: KPI **"tempo em pausa por motivo"**, que mostra quanto do tempo foi espera do cliente, de terceiro ou interna (argumento em renegociação de contrato);
+     - mudança da **previsão** avisa o cliente automaticamente.
+  2. **Satisfação:** CSAT por chamado + NPS relacional periódico por pessoa + CES opcional. Acréscimos:
+     - **tratativa obrigatória** para detrator ou CSAT 1–2, com **prazo de contato de 2 dias úteis** (boa prática "fechar o ciclo em até 48h") e alerta se vencer;
+     - **diferencial "Saúde do cliente"**: índice por cliente que combina NPS, CSAT, SLA cumprido e reincidência, com o alerta **"cliente em risco"** no painel;
+     - sem "filtrar avaliações" (pedir avaliação pública só a promotores é proibido pelas regras do Google).
+  3. **Público do NPS:** todos os usuários do portal **com chamado nos últimos 90 dias**, segmentado por perfil (Supervisor × Usuário), com quarentena de 90 dias por pessoa.
+  4. **Decisão do usuário:** o Módulo de Satisfação vira uma **atividade própria dentro da Etapa 2** (CSAT, NPS, CES, tratativas, Painel de Satisfação, Saúde do cliente).
+  - **Etapa 1 do ponto 7:** matriz de pausa ("aciona" sem os lembretes), "Aguardando você" com retomada automática, Resolvido → Fechado com confirmar/reabrir, assinatura do solicitante como confirmação, novo chamado ligado ao anterior.
+  - **Etapa 2:** lembretes, encerramento por falta de retorno e a atividade Satisfação.
+- **Ponto 8 — SLA visível ao cliente: proposta levada em 2026-10-08, aguardando.**
+  - **3 níveis de transparência**, configurados pela empresa com exceção por cliente:
+    - **Oculto**: sem prazos;
+    - **Previsão** (padrão recomendado): "Previsão de atendimento" e "de solução" em data/hora (não "horas úteis"); Visita mostra só "Agendado para…";
+    - **Completo**: + selo no prazo/fora do prazo por chamado e % no prazo no painel do Supervisor.
+  - **Diferencial "prazo explicado"**: quando o prazo muda, a linha do tempo diz por quê ("ajustado: aguardávamos sua resposta de 10/10 14h a 11/10 9h"; "reclassificado para Baixo: motivo").
+  - **Diferencial "Relatório mensal de SLA"**: PDF automático por e-mail ao Supervisor (chamados, prazos, tempos, satisfação), a prova de contrato que prestadores B2B precisam (Etapa 2).
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
