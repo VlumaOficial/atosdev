@@ -581,6 +581,36 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - **Alinhamento proposto (aguardando):** é o mesmo objetivo.
     - **Categoria nova:** o formulário pergunta "Aparece no portal do cliente?" (Sim/Não), escolha **obrigatória e sem resposta pré-marcada**. O admin decide no momento da criação.
     - **Categorias que já existem** (criadas antes do portal): na ativação do portal, o assistente lista todas para o admin marcar. Até lá, nenhuma aparece.
+- ✅ **PONTO 4 FECHADO — confirmado pelo usuário em 2026-10-08** ("caso não fique legal, modificamos durante o desenvolvimento"). Resumo:
+  - 4 tipos em cartões na linguagem do cliente; a empresa escolhe quais aparecem (padrão: todos) e edita nome e descrição;
+  - categoria indica em quais tipos aparece;
+  - prioridade só no Incidente;
+  - **preferência de data/período** com checagem do calendário da unidade, em que a confirmação do N1 vira o prazo (Etapa 1);
+  - aprovação do Supervisor em categorias marcadas (Etapa 2);
+  - **ficha do catálogo** completada: descrição para o cliente, visível no portal, tipos, grupo padrão, exige aprovação;
+  - "Aparece no portal?" obrigatório e sem pré-marcação na criação; assistente para as categorias que já existem na ativação;
+  - **público por cliente** (Etapa 2);
+  - **formulário do serviço** reaproveitando o construtor de checklists da F5 (Etapa 2);
+  - orçamento → backlog.
+- **Ponto 6 — perfis e equipes: proposta levada em 2026-10-08, aguardando.**
+  - **6a. Perfis** (desenho do usuário):
+    - **Supervisor:** todos os chamados do cliente, painel completo, gestão de usuários e equipes, aprovações (Etapa 2), abrir chamado em nome de um usuário do cliente. Pode haver mais de um por cliente.
+    - **Usuário:** abre chamados; vê os próprios e os das suas equipes; contadores básicos; pode comentar e usar "também me afeta" nos chamados da equipe.
+  - **6b. Equipe** = grupo de pessoas do cliente (ex.: "Loja Centro", "Financeiro"), com **unidades opcionais**; uma pessoa pode estar em **várias equipes**.
+    - Na abertura, a equipe é automática (se a pessoa tem uma só) ou escolhida.
+    - Se a equipe tem unidades, o campo de unidade mostra só as dela.
+    - **"Compartilhar com minha equipe"** ligado por padrão; desmarcado, o chamado fica visível só para o solicitante e o Supervisor (prática de mercado para assuntos sensíveis).
+  - **6c. Gestão de usuários:**
+    - convite por e-mail;
+    - nome, e-mail e celular (a confirmação do celular entra na Etapa 3, junto com a abertura pelo WhatsApp);
+    - **desativar em vez de excluir** (o histórico é preservado);
+    - reenviar convite, mudar perfil e equipes;
+    - fila de "Solicitar acesso" (Supervisor; se não houver, a empresa);
+    - limites por plano (F8);
+    - auditoria de quem criou/desativou.
+  - **6d. Lado da empresa:**
+    - aba **"Portal"** no cadastro do cliente (liga/desliga, supervisores, usuários, equipes), com o admin/gestor podendo gerenciar em nome do cliente;
+    - na OS: solicitante e equipe.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
