@@ -677,6 +677,35 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - **Etapas propostas:**
     - **Etapa 1:** 7a (sem lembretes) e 7b;
     - **Etapa 2:** CSAT, lembretes, encerramento por falta de retorno, alerta de nota baixa.
+  - **Respostas do usuário (2026-10-08):**
+    1. Quando o motivo de pausa **depende do cliente**, o cliente deve ser **acionado**; nos demais, apenas **comunicado** → **matriz de motivos de pausa**.
+    2. "Resolvido → Fechado" (7b): **OK**.
+    3. Assinatura do próprio solicitante em campo conta como confirmação: **OK**.
+    4. Satisfação: pesquisa com as **melhores práticas de NPS e satisfação do usuário**, com **painel próprio**.
+  - **Proposta levada (aguardando):**
+    - **Matriz de motivos de pausa**, configurável por motivo:
+      - para o SLA (já existe);
+      - **comportamento**: *aciona o cliente* (Aguardando você, comentário público obrigatório, lembretes, retomada automática, encerramento por falta de retorno) / *comunica* (texto ao cliente + **previsão de retorno** opcional; vencida a previsão, alerta ao coordenador) / *interno* (o cliente vê só "Em andamento");
+      - texto para o cliente;
+      - exige previsão.
+      - Padrão dos motivos semeados: "Aguardando o cliente" e "Acesso não liberado" = aciona e para o SLA; "Aguardando peça ou material" = comunica com previsão; "Outro" = interno.
+      - Boa prática: parar o SLA só para dependência do cliente ou de terceiro previsto em contrato.
+    - **Módulo de Satisfação:**
+      - **CSAT transacional** (1 pergunta 1–5 por chamado, logo após resolver; métrica % de notas 4–5);
+      - **NPS relacional** (0–10 "recomendaria a <Empresa>?" + "por quê?"; **periódico**, ex.: trimestral, **por pessoa**, nunca por chamado; NPS = % promotores − % detratores);
+      - **CES opcional** ("foi fácil resolver?");
+      - **anti-fadiga**: quarentena por pessoa, 1 CSAT por chamado, respeito ao aceite LGPD;
+      - canais: portal, e-mail de um clique, WhatsApp;
+      - **ciclo fechado**: detrator (0–6) ou CSAT 1–2 gera uma **tratativa** com status (aberta / contatado / resolvida) e responsável.
+    - **Painel de Satisfação** próprio:
+      - NPS e tendência, distribuição promotores/neutros/detratores, taxa de resposta;
+      - CSAT por técnico, grupo, cliente e categoria;
+      - comentários (detratores primeiro);
+      - tratativas;
+      - **cruzamento satisfação × SLA cumprido × 1ª visita** (diferencial);
+      - NPS segmentado por perfil (Supervisor × Usuário).
+      - O Supervisor do cliente vê só o agregado do seu cliente; a nota individual do técnico visível a ele é decisão da empresa.
+    - Sugestão: módulo inteiro na **Etapa 2**.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
