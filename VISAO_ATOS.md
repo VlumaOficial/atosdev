@@ -725,6 +725,22 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - **Completo**: + selo no prazo/fora do prazo por chamado e % no prazo no painel do Supervisor.
   - **Diferencial "prazo explicado"**: quando o prazo muda, a linha do tempo diz por quê ("ajustado: aguardávamos sua resposta de 10/10 14h a 11/10 9h"; "reclassificado para Baixo: motivo").
   - **Diferencial "Relatório mensal de SLA"**: PDF automático por e-mail ao Supervisor (chamados, prazos, tempos, satisfação), a prova de contrato que prestadores B2B precisam (Etapa 2).
+  - **Refinamento do usuário (2026-10-08):** em vez do relatório mensal simples, **relatório de SLA semanal com tendência** + **fechamento mensal com visão do ano** + **painel próprio** com essas métricas e KPIs, **só para a coordenação (admin)**, que **escolhe quem terá acesso**.
+  - **Proposta levada (aguardando):** atividade **"Painel e Relatórios de SLA"** (Etapa 2).
+    - **Painel de SLA** (separado do painel gerencial F7):
+      - % cumprido por prazo (resposta, atendimento, solução) × meta;
+      - tendência das últimas 12 semanas;
+      - abertas × resolvidas e backlog;
+      - tempos médios;
+      - violações por prioridade, categoria, grupo, cliente e técnico;
+      - tempo em pausa por motivo;
+      - reabertura e 1ª visita;
+      - **visão do ano**: mês a mês, acumulado do ano × meta × ano anterior.
+    - **Relatório semanal** (PDF + e-mail): semana fechada de segunda a domingo × tendência das últimas 8–12 semanas, enviado na segunda às 8h (fuso da empresa).
+    - **Fechamento mensal:** mês fechado + visão do ano, enviado no 1º dia útil.
+      - **Números congelados** no fechamento (prova contratual; uma reabertura posterior não altera o mês fechado). Reprocessamento só pelo admin, com auditoria.
+    - **Acesso:** o admin escolhe quem vê o painel e quem recebe cada relatório, com **escopo por pessoa**: tudo / grupo(s) / cliente(s).
+      - Em aberto: se o admin pode dar acesso também ao **Supervisor de um cliente** (só os dados daquele cliente, respeitando o nível de transparência do ponto 8) ou só a pessoas internas.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
