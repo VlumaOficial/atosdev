@@ -958,6 +958,9 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 048_seguranca_cadastro_publico | handle_new_user não aceita perfil vindo do cadastro; contas do portal não viram usuários internos (+ Auth: cadastro público desligado, site_url corrigido) | OK | Pendente | Sim |
 | 049_seguranca_politicas_escrita | users: admin só na própria empresa, gestor só técnicos, gatilho trg_users_protege (sem trocar empresa, sem mudar o próprio perfil, sem promover a super_admin); order_comments/order_evidences update exigem pode_ver_os | OK | Pendente | Sim |
 | 050_seguranca_funcoes | revoga execução de sla_politica_para, fn_motivos_pausa_padrao e fn_os_tempos_uteis pelos usuários | OK | Pendente | Sim |
+| 051_portal_fundacao | portal E1: config do portal no tenant, nomes curtos antigos, plataforma, endereços, pessoas e vínculos, termos versionados + aceites, auditoria, bucket portal-publico, funções portal_* e de configuração | OK | Pendente | Sim |
+| 052_portal_pessoa_nao_interna | gatilho em auth.users remove a linha interna órfã quando a conta é marcada como do portal | OK | Pendente | Sim |
+| 053_seguranca_papel_nulo | get_meu_role() devolve 'nenhum' para quem não tem perfil interno (guardas das funções); feriados da plataforma só para usuários internos | OK | Pendente | Sim |
 
 ---
 
@@ -1933,10 +1936,48 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
   - inserir OS calcula o prazo de SLA (gatilho) OK;
   - chamada direta a `sla_politica_para` → "permission denied".
 
+### 🔴→✅ Segurança — "sem perfil" passava pelas guardas das funções (2026-10-09, migration 053)
+- **Achado pelo roteiro automático de segurança da E1:** cerca de 35 funções se protegem com `if get_meu_role() <> 'admin' then raise` (ou `not in`). Para quem **não tem perfil interno** (as pessoas do portal, por desenho), o papel era NULL, e a comparação com NULL não dispara o IF: **a guarda deixava passar**.
+  - Exemplos: trocar a chave de geocodificação da plataforma, a identidade legal de qualquer empresa ou habilitar o portal de qualquer empresa.
+  - Só pessoas do portal poderiam explorar. Elas não existiam antes da E1; no DEV, só a pessoa de teste.
+- **Correção na raiz:** `get_meu_role()` devolve `'nenhum'` para quem não tem perfil interno.
+  - As regras de tabela já eram seguras: toda comparação negativa vem junto com `tenant_id = get_meu_tenant()`, que é nulo para essas pessoas.
+  - Também os **feriados da plataforma** deixaram de ser legíveis por visitante anônimo e por pessoas do portal.
+- **Testado:**
+  - roteiro automático com **0 falhas**;
+  - o roteiro **detectou** uma regra de vazamento e uma função sem guarda plantadas de propósito (desfeitas no fim);
+  - regressão: admin com papel "admin" e painel OK; técnico com papel "tecnico" e as 22 OS dele;
+  - funções chamadas pelo servidor (`ler_senha_smtp`, `registrar_uso_geocodificacao`, jobs) não dependem de papel.
+
+### Portal de atendimento — Etapa 1 · E1 Fundação (2026-10-09) — EM ANDAMENTO
+- **Migration 051 (banco do portal):**
+  - **empresa:** `tenants.portal_*` — habilitado (Super Admin), ativo, nome curto, nome, cor, boas-vindas, contatos, termos próprios, versão da logo;
+  - `portal_slug_erro` (formato + nomes reservados);
+  - `portal_slugs_antigos`: o nome curto trocado redireciona por 90 dias;
+  - `portal_plataforma`: domínio base e prefixo do subdomínio;
+  - `portal_enderecos`: subdomínio VLUMA / domínio próprio;
+  - `portal_pessoas` + `portal_vinculos`: pessoa ↔ cliente, perfil supervisor/usuario, vários portais e vários clientes por pessoa;
+  - `termos` versionados (padrão VLUMA v1 de uso, privacidade e comunicação, com `{{empresa}}`) + `termos_aceites` (versão, data, canal, IP, navegador, retirada);
+  - `portal_auditoria`;
+  - bucket público `portal-publico`, só para a logo;
+  - **funções:**
+    - públicas: `portal_resolver` (identidade pública por nome curto ou host; prévia para admin/gestor) e `portal_termo_texto`;
+    - da pessoa do portal: `portal_meu_contexto`, `portal_aceitar_termos`, `portal_registrar_acesso`;
+    - da empresa: `portal_slug_disponivel`, `salvar_portal_config`, `portal_logo_atualizada`, `publicar_termo`;
+    - da plataforma: `definir_portal_habilitado`, `portal_config_plataforma`, `definir_portal_plataforma`.
+  - **Isolamento:** pessoas do portal não estão em `public.users`; as tabelas novas não têm leitura para elas; tudo passa pelas funções `portal_*`.
+- **Migration 052:** o Auth grava o `app_metadata.tipo = portal` num UPDATE depois do INSERT, então o gatilho de INSERT (048) não o via e criava a linha interna. O novo gatilho remove essa linha (só se for órfã, sem empresa).
+- **Roteiro automático de segurança:** `supabase/tests/seguranca_isolamento.sql` (rodar com `sql.sh` a cada mudança de banco).
+  - Anônimo e pessoa do portal não leem nenhuma linha de nenhuma tabela, nem arquivo do storage.
+  - Toda função privilegiada executável por usuário tem guarda ou está na lista revisada.
+  - Funções do portal sem acesso a outra empresa.
+  - Pega também tabelas e funções criadas no futuro.
+- **Pessoa de teste do portal:** `portal.teste@example.com` (supervisora do cliente "Cliente Trigger Teste", Infoxtec). A senha está só no scratchpad e entra na limpeza do fim.
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
-  Único Atrasado", OS-0018 a OS-0030, os técnicos sem empresa sdoreaestudo@gmail.com e sdoreaestudo1@gmail.com e fotos de teste na OS-0010. Não
+  Único Atrasado", OS-0018 a OS-0030, os técnicos sem empresa sdoreaestudo@gmail.com e sdoreaestudo1@gmail.com, a pessoa de teste do portal portal.teste@example.com e fotos de teste na OS-0010. Não
   apagar antes — servem de massa para testes e validação
 
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
@@ -1951,7 +1992,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–050 em ordem (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–053 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
