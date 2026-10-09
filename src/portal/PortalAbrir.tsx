@@ -105,7 +105,7 @@ function Formulario({ ctx, userId }: { ctx: PortalContexto; userId: string }) {
   async function enviar() {
     setErro('')
     if (!tipo) { setErro('Escolha o que você quer fazer.'); return }
-    if (!cat) { setErro('Escolha o assunto.'); return }
+    if (categorias.length > 0 && !cat) { setErro('Escolha o assunto.'); return }
     if (titulo.trim().length < 3) { setErro('Dê um título ao chamado (mínimo 3 letras).'); return }
     if (desc.trim().length < 10) { setErro('Descreva o que está acontecendo (mínimo 10 letras).'); return }
     if (escolhePrioridade) {
@@ -118,7 +118,7 @@ function Formulario({ ctx, userId }: { ctx: PortalContexto; userId: string }) {
     try {
       const up = anexos.length ? await enviarAnexos(id.tenant_id, clientId, userId, anexos) : []
       const { data, error } = await supabase.rpc('portal_abrir_chamado', { p: {
-        client_id: clientId, tipo, categoria_id: cat, location_id: loc || null, titulo: titulo.trim(), descricao: desc.trim(),
+        client_id: clientId, tipo, categoria_id: cat || null, location_id: loc || null, titulo: titulo.trim(), descricao: desc.trim(),
         equipe_id: equipe || null, compartilhado: compart, nivel: nivel || null, impacto: imp || null, urgencia: urg || null, preferencias, anexos: up,
       } })
       if (error) {
@@ -185,14 +185,14 @@ function Formulario({ ctx, userId }: { ctx: PortalContexto; userId: string }) {
                 <div><label htmlFor="ab-equipe" className="block text-sm font-medium text-foreground mb-1.5">Em nome da equipe</label>
                   <select id="ab-equipe" value={equipe} onChange={e => setEquipe(e.target.value)} className={campo}><option value="">Escolha…</option>{cfg.equipes.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}</select></div>
               )}
-              <div>
+              {categorias.length > 0 && <div>
                 <label htmlFor="ab-assunto" className="block text-sm font-medium text-foreground mb-1.5">Assunto *</label>
                 <select id="ab-assunto" value={cat} onChange={e => setCat(e.target.value)} className={campo}>
                   <option value="">Escolha o assunto…</option>
                   {categorias.map(c => <option key={c.id} value={c.id}>{c.pai ? `${c.pai} › ${c.nome}` : c.nome}</option>)}
                 </select>
                 {categoriaSel?.descricao && <p className="text-xs text-muted-foreground mt-1" data-testid="descricao-assunto">{categoriaSel.descricao}</p>}
-              </div>
+              </div>}
               {unidades.length > 0 && (
                 <div><label htmlFor="ab-unidade" className="block text-sm font-medium text-foreground mb-1.5">Unidade</label>
                   <select id="ab-unidade" value={loc} onChange={e => setLoc(e.target.value)} className={campo}><option value="">{unidades.length > 1 ? 'Escolha a unidade…' : 'Selecione…'}</option>{unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}</select></div>

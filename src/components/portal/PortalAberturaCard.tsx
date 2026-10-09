@@ -38,10 +38,16 @@ export default function PortalAberturaCard() {
     setEmail(cfg.canais?.email ?? true)
   }, [tenant?.portal_abertura]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // quantas categorias aparecem no portal para cada tipo (sem categoria visível, o cartão não aparece para o cliente)
+  // quantas categorias aparecem no portal para cada tipo (o tipo aparece sempre que está ativo; sem categoria, o cliente abre sem assunto)
   const visiveis = useMemo(() => {
+    const porId = new Map(categorias.map(c => [c.id, c]))
     const r: Record<string, number> = {}
-    for (const k of Object.keys(PADRAO)) r[k] = categorias.filter(c => c.ativo && c.visivel_portal && c.tipos_portal.includes(k)).length
+    for (const k of Object.keys(PADRAO)) {
+      r[k] = categorias.filter(c => {
+        const pai = c.pai_id ? porId.get(c.pai_id) : null   // pai oculto esconde a filha
+        return c.ativo && c.visivel_portal && c.tipos_portal.includes(k) && (!c.pai_id || (!!pai && pai.ativo && !!pai.visivel_portal))
+      }).length
+    }
     return r
   }, [categorias])
   const modoMatriz = tenant?.prioridade_modo === 'matriz'
@@ -72,7 +78,7 @@ export default function PortalAberturaCard() {
                   <span className="text-[11px] text-muted-foreground">({visiveis[value] ?? 0} {(visiveis[value] ?? 0) === 1 ? 'assunto' : 'assuntos'} no portal)</span>
                 </label>
                 {(visiveis[value] ?? 0) === 0 && tipos[value]?.ativo && (
-                  <p className="text-[11px] text-amber-300 mt-1 inline-flex items-start gap-1" data-aviso-tipo={value}><AlertTriangle size={11} className="mt-0.5 flex-shrink-0" /> Nenhuma categoria aparece neste tipo, então o cliente não vê este cartão. Marque as categorias em Catálogo e SLA.</p>
+                  <p className="text-[11px] text-amber-300 mt-1 inline-flex items-start gap-1" data-aviso-tipo={value}><AlertTriangle size={11} className="mt-0.5 flex-shrink-0" /> Nenhuma categoria do catálogo aparece para este tipo: o cliente abre o chamado sem escolher assunto e ele cai na fila de entrada. Para pedir o assunto, marque categorias em Catálogo e SLA.</p>
                 )}
                 {tipos[value]?.ativo && (
                   <div className="grid sm:grid-cols-2 gap-2 mt-2">
