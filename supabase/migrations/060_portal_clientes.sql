@@ -153,7 +153,8 @@ begin
         'user_id', p.user_id, 'nome', p.nome, 'email', p.email, 'celular', p.celular, 'perfil', v.perfil, 'ativo', v.ativo, 'desde', v.criado_em,
         'equipes', coalesce((select jsonb_agg(m.equipe_id) from public.portal_equipe_membros m join public.portal_equipes e on e.id = m.equipe_id
                               where m.user_id = v.user_id and e.client_id = p_client), '[]'::jsonb)) order by p.nome)
-      from public.portal_vinculos v join public.portal_pessoas p on p.user_id = v.user_id where v.client_id = p_client), '[]'::jsonb),
+      from public.portal_vinculos v join public.portal_pessoas p on p.user_id = v.user_id
+      where v.client_id = p_client and p.email not like '%@anonimizado.invalid'), '[]'::jsonb),   -- pessoas anonimizadas (LGPD) saem da lista
     'convites', coalesce((select jsonb_agg(jsonb_build_object('id', c.id, 'nome', c.nome, 'email', c.email, 'perfil', c.perfil,
         'criado_em', c.criado_em, 'expira_em', c.expira_em, 'expirado', c.expira_em < now()) order by c.criado_em desc)
       from public.portal_convites c where c.client_id = p_client and c.aceito_em is null and c.revogado_em is null), '[]'::jsonb),
@@ -177,7 +178,9 @@ begin
   if v_papel is null then raise exception 'Sem permissão'; end if;
   if p_perfil not in ('supervisor', 'usuario') then raise exception 'Perfil inválido.'; end if;
   select * into v from public.portal_vinculos where client_id = p_client and user_id = p_user;
-  if v.id is null then raise exception 'Pessoa não encontrada neste cliente.'; end if;
+  if v.id is null or exists (select 1 from public.portal_pessoas where user_id = p_user and email like '%@anonimizado.invalid') then
+    raise exception 'Pessoa não encontrada neste cliente.';   -- inclui quem foi anonimizado (LGPD): não volta mais
+  end if;
   if v_papel = 'supervisor' and p_user = auth.uid() then raise exception 'Você não pode alterar o seu próprio acesso. Peça a outro Supervisor ou à empresa.'; end if;
   if v.perfil = 'supervisor' and v.ativo and (p_perfil <> 'supervisor' or not p_ativo) and v_papel <> 'interno' then
     select count(*) into v_outros from public.portal_vinculos where client_id = p_client and perfil = 'supervisor' and ativo and user_id <> p_user;

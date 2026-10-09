@@ -967,6 +967,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 057_grupos_atendimento | grupos de atendimento + membros, ficha do catálogo (portal/grupo padrão), OS com grupo e roteamento, transferir_os/assumir_os, histórico, alerta de pingue-pongue, alertas de SLA ao coordenador | OK | Pendente | Sim |
 | 058_lista_os_filas | listar_os com filtro/coluna de grupo e contagem "novos sem grupo" | OK | Pendente | Sim |
 | 059_usuario_inativo_sem_acesso | get_meu_role()/get_meu_tenant() tratam usuário desativado como sem perfil | OK | Pendente | Sim |
+| 060_portal_clientes | portal por cliente, equipes, convites (hash do token), pedidos de acesso, papel no cliente, gestão de pessoas, LGPD (exportar), chave do anti-robô, avisos com destino | OK | Pendente | Sim |
 
 ---
 
@@ -2119,6 +2120,67 @@ Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 3, 4, 6B e 7).
 - **Pendente (já previsto):** roteamento por região e distribuição automática (Etapa 2 do portal); "exige aprovação" na ficha (Etapa 2).
 - **Massa de teste do DEV:** grupos "Central N1", "Redes N2" e "Campo Interior" (usados pelo roteiro de SQL), o usuário `atendente.teste@infoxtec.com.br` (senha no scratchpad). Os resíduos dos testes de tela foram apagados. Tudo entra na limpeza do fim do desenvolvimento.
 
+### 🔴→✅ O roteiro de segurança tinha checagens vazias (2026-10-09, corrigido)
+- **Achado ao construir a E3:** no `supabase/tests/seguranca_isolamento.sql`, a seção 5 (funções do portal) terminava com um tratador `EXCEPTION`. Em PL/pgSQL, **um tratador desfaz tudo o que o bloco já gravou**: as falhas registradas antes dele eram descartadas em silêncio (a chamada que lança erro de propósito acionava o tratador). Ou seja, as checagens da E1 (e as novas da E3) **nunca poderiam acusar falha**.
+- **Correção:** sem tratador no bloco externo; cada chamada que deve falhar tem o seu sub-bloco; os ids dos clientes são calculados antes de trocar de papel (a pessoa do portal não lê a tabela de vínculos); e há uma verificação **positiva** (o Supervisor consegue gerenciar o próprio cliente), que prova que o teste não é vazio.
+- **Prova de que agora detecta:** três falhas plantadas (Supervisor lendo outro cliente, pessoa do portal publicando termo, acesso a outra empresa) foram acusadas. Resultado real: 0 falhas.
+- **Regra:** todo roteiro novo é validado com uma falha plantada antes de ser aceito (já valia para o de grupos).
+
+### Portal de atendimento — Etapa 1 · E3 Clientes no portal (2026-10-09/10) — CONCLUÍDA E TESTADA
+Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 2, 6 e 10).
+- **Migration 060:**
+  - `clients.portal_ativo` (a empresa liga o portal **por cliente**);
+  - `portal_equipes` (+ membros e unidades opcionais);
+  - `portal_convites` (**só o hash do token** fica no banco; vale 7 dias, uso único);
+  - `portal_solicitacoes_acesso`;
+  - `notificacoes.link` e o novo tipo "solicitacao_acesso";
+  - `portal_papel_no_cliente` (quem consulta é 'interno' = admin/gestor da empresa, 'supervisor' ativo daquele cliente, ou nenhum);
+  - funções: `definir_portal_cliente`, `portal_listar_gestao`, `portal_alterar_vinculo`, `portal_salvar_equipe`, `portal_solicitacoes_empresa`, `portal_exportar_pessoa`, `definir_turnstile`;
+  - `portal_resolver` devolve a chave pública do anti-robô.
+  - Regras:
+    - o Supervisor não altera o próprio acesso;
+    - o último Supervisor só sai pela empresa;
+    - desativar nunca exclui e tira a pessoa das equipes;
+    - pessoa anonimizada some da lista e não volta.
+- **Edge Function `portal-acesso`** (verify_jwt true; também aceita chamadas públicas):
+  - **públicas:** `consultar` (convite), `aceitar` (a pessoa cria a **própria senha**; senha ≥ 8 com letras e números), `solicitar` (pedido de acesso);
+  - **autenticadas** (equipe interna ou Supervisor do cliente): `convidar`, `reenviar`, `revogar_convite`, `decidir_solicitacao`;
+  - **administrador:** `anonimizar`.
+  - **Segurança:**
+    - o link do convite **nunca é devolvido a quem convida** (ele poderia criar a conta no lugar da pessoa);
+    - e-mail de usuário da equipe interna não vira conta de portal;
+    - quem já tem conta em qualquer portal recebe o acesso sem criar senha nova;
+    - o "Solicitar acesso" responde sempre igual (não revela e-mails nem clientes), tem limite de 5 pedidos por hora por origem, deduplica e reconhece o nome do cliente sem acento/caixa;
+    - e-mail sai com o remetente da empresa (próprio ou "via ATOS") e **nunca para domínios de teste** (example.com, .test, .invalid…): nesses o link fica só na auditoria.
+  - **LGPD:** exportar (JSON, administrador) e anonimizar. Se a pessoa só tem acesso a esta empresa, nome, e-mail e celular são apagados e a conta é bloqueada; se tem outros portais, é só removida deste.
+- **Telas:**
+  - **Clientes › aba Portal** (equipe interna): liga o portal do cliente; pessoas (perfil, desativar/reativar, exportar e anonimizar), convites (reenviar/cancelar), equipes e pedidos de acesso.
+  - **Portal:**
+    - página do link do convite (cria a senha e cai no aceite dos termos);
+    - "Solicitar acesso" (link na entrada);
+    - "Usuários e equipes" do Supervisor, com seletor quando ele supervisiona mais de um cliente.
+  - **Configurações › Portal:** pedidos de acesso da empresa (aprovar escolhendo o cliente ou recusar); o aviso do sino abre essa seção mesmo já estando em Configurações.
+  - **Super Admin:** chave pública do anti-robô.
+  - Em tela: o Usuário comum não vê o atalho nem a área de gestão.
+- **Anti-robô (Turnstile):** o formulário só mostra a verificação quando a chave pública está salva e só exige quando o segredo `TURNSTILE_SECRET` da função estiver configurado. **Hoje não há chaves: o "Solicitar acesso" funciona só com o limite por origem.** Falta o usuário criar o widget na Cloudflare. O login do portal **não** usa captcha (mudaria também o login interno); fica anotado.
+- **Testes na URL pública:**
+  - API, 57 verificações: convites, token, expirado, revogado, reenviar, aceitar, conta existente em outro cliente, bloqueios por perfil, pedidos, limite, aprovação, anonimização, lista e reativação;
+  - tela, empresa + convidada + Supervisora no celular + visitante, aprovações, sino, LGPD e seletor de clientes;
+  - roteiro de SQL de isolamento com as novas checagens (0 falhas, falhas plantadas detectadas);
+  - regressão completa: login do ATOS, E1, endereço do portal, E2 (admin, Atendente e técnico), Usuários, desativação e varredura das 16 telas.
+- **Achados corrigidos no caminho:**
+  - o roteiro de segurança vazio (acima);
+  - a exportação marcada como somente-leitura gravava a auditoria;
+  - aprovar pedido sem cliente caía na regra errada;
+  - o aviso do sino não abria a seção quando já estava em Configurações;
+  - pessoa anonimizada ainda aparecia/reativava.
+- **Decisões do PO/Engenheiro (a confirmar):**
+  1. O pedido de acesso é ligado ao cliente pelo **nome digitado** (comparação exata sem acento/caixa). Quem acerta vai ao Supervisor do cliente (e à empresa); quem não acerta vai só à empresa. O portal não lista clientes (não expõe quem a empresa atende).
+  2. O Supervisor pode convidar outros **Supervisores**.
+  3. Notificação por e-mail da aprovação/recusa usa o remetente da empresa.
+  4. Limites de usuários por plano e verificação em duas etapas do Supervisor ficam para a F8 / Etapa 2.
+- **Massa de teste do DEV:** `portal.teste@example.com` (Supervisora) segue; os resíduos de teste (e3, e3ui, removido-) foram apagados.
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -2138,7 +2200,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–059 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–060 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
@@ -2148,6 +2210,7 @@ sessão, nunca no git).
   gatilho `fn_orders_relatorio_ao_concluir` tem a URL do projeto DEV
   (`vgkiddqahubznlzkxfgb`) escrita — trocar pelo ref do PRD
 - **Portal — endereços (PRD):** (a) publicar `portal-endereco` (verify_jwt true) e definir seus 5 segredos (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`) com o projeto da Vercel do PRD; (b) `portal_plataforma.dominio_base = 'vluma.com.br'` (no DEV é `dev.vluma.com.br`); (c) adicionar `atos.vluma.com.br` ao projeto da Vercel e a `VITE_PAINEL_HOSTS`, se mudar; (d) conferir os limites de domínios/uso comercial do plano Vercel (ver "Vercel — plano atual"); (e) links permitidos de recuperação de senha no Auth
+- **Portal — acesso (E3):** publicar `portal-acesso` (verify_jwt true); segredo `SITE_URL` com o domínio do PRD; **anti-robô:** criar o widget do Turnstile na Cloudflare (nomes de host: o domínio base da plataforma), salvar a chave pública no Super Admin e o segredo `TURNSTILE_SECRET` na função
 - **Funções alteradas na E2:** republicar `criar-tecnico` (aceita o perfil; ignora usuário inativo), `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os` e `portal-endereco` (ignoram usuário inativo)
 - Publicar as Edge Functions: `criar-tecnico` (verify_jwt true),
   `verificar-foto` (false — pública), `geocodificar` (true),
