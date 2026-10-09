@@ -169,7 +169,7 @@ export default function PortalConfigCard() {
 
           {/* logo */}
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span>O portal usa a logo da seção "Marca e dados da empresa".</span>
+            <span>O portal usa a logo e o <b>nome de exibição</b> da seção "Marca e dados da empresa"{!tenant.trade_name ? <> — hoje sem nome de exibição, então aparece a razão social ({tenant.name})</> : null}.</span>
             <Button variant="outline" size="sm" onClick={() => atualizarLogo(true)}>Atualizar logo do portal</Button>
           </div>
 

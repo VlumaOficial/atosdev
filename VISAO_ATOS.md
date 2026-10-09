@@ -866,6 +866,7 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - escopo da Etapa 1 nas entregas E1–E6;
   - KPI "tempo em pausa por motivo" na Etapa 2;
   - **construção iniciada pela E1 em 2026-10-09**.
+  - **2026-10-09:** E1 construída e testada na URL pública (35 verificações OK + roteiro de segurança com 0 falhas), exceto o subdomínio automático, que aguarda os tokens da Cloudflare e da Vercel e a decisão do domínio do DEV. Detalhes em PROJETO_ATOS.md.
   - Na preparação, achado e corrigido um risco de segurança anterior ao portal (cadastro público com perfil escolhido pelo usuário — PROJETO_ATOS.md, migration 048).
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS

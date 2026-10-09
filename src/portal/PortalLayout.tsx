@@ -14,7 +14,8 @@ export function MarcaPortal({ grande = false }: { grande?: boolean }) {
         : <div className={(grande ? 'w-12 h-12' : 'w-8 h-8') + ' rounded-md bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0'}>
             <Headset size={grande ? 22 : 16} className="text-primary" />
           </div>}
-      <div className="min-w-0">
+      {/* no topo estreito do celular, a logo já identifica a empresa: o nome some para não cortar */}
+      <div className={'min-w-0' + (!grande && logo ? ' hidden sm:block' : '')}>
         <p className={(grande ? 'text-lg' : 'text-sm') + ' font-semibold text-foreground leading-tight truncate'}>{id.nome}</p>
         {grande && <p className="text-xs text-muted-foreground truncate">{id.empresa}</p>}
       </div>

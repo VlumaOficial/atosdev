@@ -961,6 +961,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 051_portal_fundacao | portal E1: config do portal no tenant, nomes curtos antigos, plataforma, endereços, pessoas e vínculos, termos versionados + aceites, auditoria, bucket portal-publico, funções portal_* e de configuração | OK | Pendente | Sim |
 | 052_portal_pessoa_nao_interna | gatilho em auth.users remove a linha interna órfã quando a conta é marcada como do portal | OK | Pendente | Sim |
 | 053_seguranca_papel_nulo | get_meu_role() devolve 'nenhum' para quem não tem perfil interno (guardas das funções); feriados da plataforma só para usuários internos | OK | Pendente | Sim |
+| 054_portal_termos_recusa | consentimento de comunicação opcional: portal_aceitar_termos(aceitos, recusados); pendente = versão sem nenhuma resposta | OK | Pendente | Sim |
 
 ---
 
@@ -1949,7 +1950,7 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
   - regressão: admin com papel "admin" e painel OK; técnico com papel "tecnico" e as 22 OS dele;
   - funções chamadas pelo servidor (`ler_senha_smtp`, `registrar_uso_geocodificacao`, jobs) não dependem de papel.
 
-### Portal de atendimento — Etapa 1 · E1 Fundação (2026-10-09) — EM ANDAMENTO
+### Portal de atendimento — Etapa 1 · E1 Fundação (2026-10-09) — CONSTRUÍDA E TESTADA, exceto o subdomínio automático (aguardando tokens da Cloudflare e da Vercel)
 - **Migration 051 (banco do portal):**
   - **empresa:** `tenants.portal_*` — habilitado (Super Admin), ativo, nome curto, nome, cor, boas-vindas, contatos, termos próprios, versão da logo;
   - `portal_slug_erro` (formato + nomes reservados);
@@ -1973,6 +1974,55 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
   - Funções do portal sem acesso a outra empresa.
   - Pega também tabelas e funções criadas no futuro.
 - **Pessoa de teste do portal:** `portal.teste@example.com` (supervisora do cliente "Cliente Trigger Teste", Infoxtec). A senha está só no scratchpad e entra na limpeza do fim.
+- **Migration 054:** o **consentimento de comunicação é opcional** (LGPD: consentimento livre).
+  - Termos de uso e aviso de privacidade são obrigatórios.
+  - A recusa fica registrada (aceite já retirado) e não é perguntada de novo a cada login, só numa versão nova.
+  - `portal_aceitar_termos(tenant, aceitos, recusados)`.
+- **Telas:**
+  - **Portal** (`src/portal/`):
+    - montado na raiz quando o site é aberto por um host de portal, ou em `/portal/<nome>` no domínio do painel;
+    - tema na cor da empresa (luminosidade ajustada para o fundo escuro; texto do botão claro ou escuro conforme a cor);
+    - Entrar (mensagens claras, aviso de excesso de tentativas);
+    - Esqueci minha senha (mesma resposta exista ou não a conta) e Redefinir senha (volta ao portal);
+    - Termos públicos (`/termos/uso|privacidade|comunicacao`);
+    - Aceite (obrigatórios + comunicação opcional, texto expansível);
+    - Início (saudação, boas-vindas, vínculos e perfil, contatos da empresa com WhatsApp; os chamados chegam na E4);
+    - "Sem acesso" com contatos;
+    - **prévia interna** para a equipe da empresa logada;
+    - aviso de prévia com o portal inativo;
+    - nome curto antigo redireciona mantendo a página;
+    - registro de acesso uma vez por sessão;
+    - rodapé "Tecnologia ATOS · VLUMA".
+  - **Configurações › Portal de atendimento** (admin):
+    - nome curto com conferência ao digitar (formato, reservados, em uso) e aviso de redirecionamento de 90 dias;
+    - nome, cor com prévia do botão, boas-vindas (500), contatos (WhatsApp guardado só com dígitos);
+    - logo (cópia pública ao salvar pela 1ª vez + "Atualizar logo do portal"; trocar a logo da empresa também atualiza a do portal);
+    - termos por tipo (padrão VLUMA × texto próprio, publicar nova versão, ler);
+    - ativar e abrir o portal.
+  - **Super Admin:**
+    - Empresas › "Portal: habilitado/desabilitado";
+    - Configurações › "Plataforma — portal de atendimento" (domínio base + prefixo; termos padrão: ler e publicar nova versão).
+  - `useAuth` passou a usar `maybeSingle` (pessoa do portal não gera 406 no console).
+- **Testes na URL pública:** `portal_e1.mjs`, 35 verificações, **TUDO OK**:
+  - Super Admin habilita; nome reservado recusado; configuração salva (WhatsApp só com dígitos); logo publicada;
+  - prévia do admin com o portal inativo; botão na cor da empresa; visitante não vê o portal inativo;
+  - texto próprio de uso publicado e escolhido; portal ativado;
+  - sem sessão → Entrar com boas-vindas; aviso de privacidade público com o nome da empresa; nome inexistente → "Portal não encontrado";
+  - no celular: senha errada com mensagem clara; 1º acesso → aceite com o termo PRÓPRIO; "Continuar" bloqueado sem os obrigatórios;
+  - recusou a comunicação → Início (saudação, vínculo "Cliente Trigger Teste · Supervisor", WhatsApp `wa.me/5571999990000`), sem rolagem horizontal;
+  - aceites gravados (comunicação como recusa, com navegador); acesso na auditoria;
+  - 2º login sem novo aceite; pessoa do portal no painel interno → login;
+  - troca do nome curto → antigo redireciona mantendo a página → devolvido para "infoxtec";
+  - console só com o 400 esperado da senha errada.
+  - Roteiro de segurança depois dos testes: 0 falhas.
+- **Achados corrigidos nos testes:**
+  - o registro de acesso nunca era enviado (a chamada do Supabase só dispara quando o resultado é lido);
+  - 406 no console pelo perfil interno inexistente;
+  - nome do portal cortado no topo do celular (com logo, o nome aparece só em telas largas);
+  - aviso na configuração quando a empresa não tem nome de exibição (o portal mostra a razão social).
+- **Falta para fechar a E1 — subdomínio automático:**
+  - Edge Function que cria o registro DNS na Cloudflare e o domínio na Vercel e acompanha a situação em `portal_enderecos`;
+  - aguarda do usuário: token da Cloudflare (só DNS de vluma.com.br), token da Vercel e a decisão do domínio do DEV.
 
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
@@ -1992,7 +2042,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–053 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–054 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
