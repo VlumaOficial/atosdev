@@ -29,7 +29,10 @@ grant insert, select on _falhas to anon, authenticated;
 create temp table _alvo on commit drop as
   select p.user_id as uid,
          (select v.tenant_id from public.portal_vinculos v where v.user_id = p.user_id and v.ativo limit 1) as tenant,
-         (select t.id from public.tenants t where t.id <> (select v.tenant_id from public.portal_vinculos v where v.user_id = p.user_id and v.ativo limit 1) limit 1) as outra
+         (select t.id from public.tenants t where t.id <> (select v.tenant_id from public.portal_vinculos v where v.user_id = p.user_id and v.ativo limit 1) limit 1) as outra,
+         (select v.client_id from public.portal_vinculos v where v.user_id = p.user_id and v.ativo limit 1) as meu_cliente,
+         (select c.id from public.clients c where c.tenant_id = (select v.tenant_id from public.portal_vinculos v where v.user_id = p.user_id and v.ativo limit 1)
+             and c.id <> (select v.client_id from public.portal_vinculos v where v.user_id = p.user_id and v.ativo limit 1) limit 1) as outro_cliente
   from public.portal_pessoas p where p.email = 'portal.teste@example.com';
 grant select on _alvo to anon, authenticated;
 
@@ -93,13 +96,55 @@ begin
     insert into _falhas values ('publicar_termo', 'pessoa do portal publicou termo');
   exception when others then null;
   end;
-  if public.painel_gerencial('{}'::jsonb) is not null then
+  -- E3: Supervisor de um cliente não gerencia OUTRO cliente da mesma empresa
+  declare v_outro uuid; v_meu uuid;
+  begin
+    v_meu := a.meu_cliente; v_outro := a.outro_cliente;   -- calculados antes de trocar de papel
+    if v_meu is null or v_outro is null then insert into _falhas values ('preparo E3', 'faltam clientes de teste'); end if;
+    begin
+      perform public.portal_listar_gestao(v_meu);   -- o próprio cliente tem que funcionar (senão os testes abaixo seriam vazios)
+    exception when others then
+      insert into _falhas values ('portal_listar_gestao', 'Supervisor não consegue gerenciar o PRÓPRIO cliente: ' || sqlerrm);
+    end;
+    begin
+      perform public.portal_listar_gestao(v_outro);
+      insert into _falhas values ('portal_listar_gestao', 'Supervisor leu a gestão de outro cliente');
+    exception when others then null;
+    end;
+    begin
+      perform public.portal_alterar_vinculo(v_outro, a.uid, 'supervisor', true);
+      insert into _falhas values ('portal_alterar_vinculo', 'Supervisor alterou vínculo em outro cliente');
+    exception when others then null;
+    end;
+    begin
+      perform public.portal_salvar_equipe(v_outro, null, 'Invasora', '{}', '{}', true);
+      insert into _falhas values ('portal_salvar_equipe', 'Supervisor criou equipe em outro cliente');
+    exception when others then null;
+    end;
+    begin
+      perform public.portal_exportar_pessoa(a.uid);
+      insert into _falhas values ('portal_exportar_pessoa', 'pessoa do portal exportou dados');
+    exception when others then null;
+    end;
+    begin
+      perform public.definir_portal_cliente(v_meu, false);
+      insert into _falhas values ('definir_portal_cliente', 'pessoa do portal desligou o portal do cliente');
+    exception when others then null;
+    end;
+    begin
+      perform public.portal_solicitacoes_empresa();
+      insert into _falhas values ('portal_solicitacoes_empresa', 'pessoa do portal leu as solicitações da empresa');
+    exception when others then null;
+    end;
+  end;
+  begin
+    perform public.painel_gerencial('{}'::jsonb);
     insert into _falhas values ('painel_gerencial', 'pessoa do portal leu o painel');
-  end if;
-exception when others then
-  if sqlerrm not like '%Sem permiss%' and sqlerrm not like '%Acesso%' then
-    insert into _falhas values ('funções do portal', sqlerrm);
-  end if;
+  exception when others then null;
+  end;
+  -- ATENÇÃO: sem EXCEPTION no bloco externo. Um tratador aqui DESFARIA as falhas já
+  -- registradas acima (rollback do bloco) — foi assim que estas checagens ficaram
+  -- vazias até 2026-10-09. Cada chamada que deve falhar tem o seu próprio sub-bloco.
 end $$;
 reset role;
 
@@ -123,7 +168,7 @@ from pg_proc p join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public' and p.prosecdef
   and has_function_privilege('authenticated', p.oid, 'execute')
   and p.prorettype <> 'trigger'::regtype
-  and p.prosrc !~ 'get_meu_tenant|get_meu_role|auth\.uid|pode_ver|portal_tem_vinculo'
+  and p.prosrc !~ 'get_meu_tenant|get_meu_role|auth\.uid|pode_ver|portal_tem_vinculo|portal_papel_no_cliente'
   and p.proname not in (
     'provedor_geocodificacao',   -- devolve só o nome do provedor de mapas (usado na tela do técnico)
     'previa_liberar_espaco',     -- delega para arquivos_para_liberar/os_para_liberar, que checam papel
