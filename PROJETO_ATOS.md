@@ -962,6 +962,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 052_portal_pessoa_nao_interna | gatilho em auth.users remove a linha interna órfã quando a conta é marcada como do portal | OK | Pendente | Sim |
 | 053_seguranca_papel_nulo | get_meu_role() devolve 'nenhum' para quem não tem perfil interno (guardas das funções); feriados da plataforma só para usuários internos | OK | Pendente | Sim |
 | 054_portal_termos_recusa | consentimento de comunicação opcional: portal_aceitar_termos(aceitos, recusados); pendente = versão sem nenhuma resposta | OK | Pendente | Sim |
+| 055_portal_endereco_oficial | portal_resolver devolve host_oficial e interno (cliente só entra pelo endereço oficial; caminho interno só prévia da equipe) | OK | Pendente | Sim |
 
 ---
 
@@ -1978,7 +1979,7 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
 - **Antes da produção/F8:** conferir (a) o **limite de domínios por projeto** do Hobby, já que cada empresa com portal ativo ocupa um endereço (`atendimento.<empresa>…`) e cada domínio próprio, outro; (b) os termos de **uso comercial** do plano Hobby (o produto será vendido). Se o limite ou os termos não servirem, o plano Pro entra na conta de custos da F8.
 - O token da Vercel é criado em **Account Settings › Tokens** (não em Team Settings).
 
-### Portal de atendimento — Etapa 1 · E1 Fundação (2026-10-09) — CONSTRUÍDA E TESTADA, exceto o subdomínio automático (aguardando tokens da Cloudflare e da Vercel)
+### Portal de atendimento — Etapa 1 · E1 Fundação (2026-10-09) — CONCLUÍDA E TESTADA (inclui o endereço automático)
 - **Migration 051 (banco do portal):**
   - **empresa:** `tenants.portal_*` — habilitado (Super Admin), ativo, nome curto, nome, cor, boas-vindas, contatos, termos próprios, versão da logo;
   - `portal_slug_erro` (formato + nomes reservados);
@@ -2048,9 +2049,31 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
   - 406 no console pelo perfil interno inexistente;
   - nome do portal cortado no topo do celular (com logo, o nome aparece só em telas largas);
   - aviso na configuração quando a empresa não tem nome de exibição (o portal mostra a razão social).
-- **Falta para fechar a E1 — subdomínio automático:**
-  - Edge Function que cria o registro DNS na Cloudflare e o domínio na Vercel e acompanha a situação em `portal_enderecos`;
-  - aguarda do usuário: token da Cloudflare (só DNS de vluma.com.br), token da Vercel e a decisão do domínio do DEV.
+- **Endereço automático do portal (concluído em 2026-10-09):**
+  - **Edge Function `portal-endereco`** (verify_jwt true), ações `sincronizar`, `verificar` e `remover`. Admin da empresa age na própria empresa; Super Admin informa a empresa; técnico e gestor recebem 403.
+  - **O que faz:** monta `<prefixo>.<nome curto>.<domínio base>`, **cadastra o domínio no projeto atosdev da Vercel**, cria o **CNAME somente-DNS na Cloudflare** para o alvo que a própria Vercel indica, e acompanha em `portal_enderecos` (aguardando DNS → verificando o certificado → ativo; "ativo" só quando o HTTPS responde de verdade).
+  - **Segurança:** só mexe em nomes no formato `<prefixo>.<slug>.<domínio base>`; **nunca sobrescreve** um registro diferente; só remove registros que ele mesmo criou (comentário "ATOS portal"); os tokens só existem como segredos da função.
+  - **Segredos da função** (supabase secrets): `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`.
+  - **Migration 055:** `portal_resolver` devolve `host_oficial` (endereço ativo e principal) e `interno`.
+    - O **cliente só entra pelo endereço oficial**: o caminho `/portal/<nome>` e um endereço antigo (depois de trocar o nome curto) levam ao oficial, mantendo a página.
+    - Só a **equipe interna logada** mantém o caminho `/portal/<nome>` como prévia.
+    - Enquanto não houver endereço ativo, o caminho interno continua servindo.
+  - **Tela (Configurações › Portal de atendimento):** bloco "Endereço do portal para os seus clientes", com a situação por etapa, o botão "Verificar agora" e o acompanhamento automático (a cada 10 s) até ficar ativo; endereços antigos aparecem como "endereço antigo".
+  - **DEV:** domínio base `dev.vluma.com.br`. O endereço da Infoxtec é **https://atendimento.infoxtec.dev.vluma.com.br** (ativo, HTTPS).
+  - **Auth (Supabase):** links permitidos de recuperação de senha incluem `https://atendimento.*.dev.vluma.com.br/**` e `https://atendimento.*.vluma.com.br/**`.
+  - **Testes na URL pública**, `portal_host.mjs` + `portal_troca.mjs` + `portal_e1.mjs`, **TUDO OK**:
+    - o endereço do portal abre o portal da Infoxtec e **nunca o painel do ATOS** (`/login` e `/os` voltam ao portal);
+    - `atosdev.vluma.com.br` continua sendo o ATOS;
+    - o visitante no caminho interno é levado ao endereço oficial na mesma página; o admin mantém a prévia;
+    - pessoa do portal no celular entra pelo oficial, sem rolagem horizontal, é levada do caminho interno ao oficial e recusada no painel do ATOS;
+    - "esqueci a senha" pelo endereço do portal;
+    - **troca do nome curto**: cria o endereço novo (~1 min até o HTTPS), o anterior vira "endereço antigo" e leva ao novo; voltar ao original o devolve como principal; `remover` apaga na Vercel e na Cloudflare;
+    - técnico recebe 403; o roteiro de segurança segue com **0 falhas**.
+  - **Cloudflare:** a zona passou de 38 para 39 registros (só o CNAME do portal); e-mail, sites e demais registros não foram tocados.
+  - **Pendências deste item:**
+    - não há botão "remover" na tela (a função existe);
+    - endereços antigos continuam servindo e **não são limpos automaticamente** após os 90 dias (limpeza futura);
+    - o **domínio próprio** da empresa (adicional pago) usa a mesma tabela e fica para a F8 / Etapa 3.
 
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
@@ -2067,11 +2090,11 @@ noreply@vluma.com.br (segredo `SMTP_PADRAO_SENHA`), chave do LocationIQ
 teste (Super Admin, admin Infoxtec, técnico atendimento@) foram enviados
 pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
-**2026-10-09:** token da **Cloudflare** (conta adm@vluma.com.br, token de usuário `cfut_…`, permissão só "Editar DNS" na zona vluma.com.br) enviado pelo chat para o subdomínio automático do portal — guardado só no scratchpad; **trocar no fim do MVP** (e revogar o atual na Cloudflare). Em seguida virá o token da Vercel, com o mesmo tratamento.
+**2026-10-09:** token da **Cloudflare** (conta adm@vluma.com.br, token de usuário `cfut_…`, permissão só "Editar DNS" na zona vluma.com.br) enviado pelo chat para o subdomínio automático do portal — guardado só no scratchpad; **trocar no fim do MVP** (e revogar o atual na Cloudflare). **2026-10-09:** token da **Vercel** (`vcp_…`, criado em Account Settings › Tokens com escopo no projeto atosdev; enxerga só esse projeto) enviado pelo chat — guardado só no scratchpad e como segredo da função `portal-endereco`; **trocar no fim do MVP** (revogar o atual na Vercel e atualizar o segredo).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–054 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–055 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
@@ -2080,6 +2103,7 @@ sessão, nunca no git).
   "Gerar nacionais" do Super Admin em Calendários). **Atenção migration 030**: o
   gatilho `fn_orders_relatorio_ao_concluir` tem a URL do projeto DEV
   (`vgkiddqahubznlzkxfgb`) escrita — trocar pelo ref do PRD
+- **Portal — endereços (PRD):** (a) publicar `portal-endereco` (verify_jwt true) e definir seus 5 segredos (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`) com o projeto da Vercel do PRD; (b) `portal_plataforma.dominio_base = 'vluma.com.br'` (no DEV é `dev.vluma.com.br`); (c) adicionar `atos.vluma.com.br` ao projeto da Vercel e a `VITE_PAINEL_HOSTS`, se mudar; (d) conferir os limites de domínios/uso comercial do plano Vercel (ver "Vercel — plano atual"); (e) links permitidos de recuperação de senha no Auth
 - Publicar as Edge Functions: `criar-tecnico` (verify_jwt true),
   `verificar-foto` (false — pública), `geocodificar` (true),
   `gerar-relatorio-os` (true), `enviar-relatorio` (true)

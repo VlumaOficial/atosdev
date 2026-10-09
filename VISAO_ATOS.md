@@ -866,7 +866,7 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - escopo da Etapa 1 nas entregas E1–E6;
   - KPI "tempo em pausa por motivo" na Etapa 2;
   - **construção iniciada pela E1 em 2026-10-09**.
-  - **2026-10-09:** E1 construída e testada na URL pública (35 verificações OK + roteiro de segurança com 0 falhas), exceto o subdomínio automático, que aguarda os tokens da Cloudflare e da Vercel e a decisão do domínio do DEV. Detalhes em PROJETO_ATOS.md.
+  - **2026-10-09:** **E1 concluída** e testada na URL pública (35 verificações da E1 + endereço oficial, troca do nome curto e roteiro de segurança com 0 falhas), incluindo o **endereço automático** `atendimento.<empresa>.dev.vluma.com.br` (Cloudflare + Vercel). Detalhes em PROJETO_ATOS.md.
   - Na preparação, achado e corrigido um risco de segurança anterior ao portal (cadastro público com perfil escolhido pelo usuário — PROJETO_ATOS.md, migration 048).
 
 - ✅ **ESTRUTURA OFICIAL DE ENDEREÇOS — definida pelo usuário em 2026-10-09 (portal: pontos 1 e HML confirmados):**
