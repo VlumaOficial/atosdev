@@ -862,6 +862,11 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - **E6 — Painéis e acabamento:** painel do Supervisor, acréscimos no F7 (canal, % reclassificados, resolução no N1, transferências, filtro por grupo), PWA instalável, auditoria e regressão completa.
   - Cada entrega é testada na URL pública antes da próxima.
   - Colocação proposta (a confirmar): KPI "tempo em pausa por motivo" na atividade "Painel e Relatórios de SLA" (Etapa 2).
+- ✅ **PONTO 11 FECHADO e REFINAMENTO CONCLUÍDO — aprovado pelo usuário em 2026-10-08 ("vamos em frente"):**
+  - escopo da Etapa 1 nas entregas E1–E6;
+  - KPI "tempo em pausa por motivo" na Etapa 2;
+  - **construção iniciada pela E1 em 2026-10-09**.
+  - Na preparação, achado e corrigido um risco de segurança anterior ao portal (cadastro público com perfil escolhido pelo usuário — PROJETO_ATOS.md, migration 048).
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).

@@ -955,6 +955,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 045_alertas_sla | orders.sla_alerta_*; gatilho de reset; notificacoes + marcar_notificacoes_lidas + verificar_alertas_sla; realtime; job atos-alertas-sla (5 min) | OK | Pendente | Sim |
 | 046_painel_gerencial | tenants.sla_meta_pct + definir_meta_sla; orders.tempo_atendimento_min/tempo_solucao_min (gatilho na conclusão + backfill); fn_primeira_visita, painel_desempenho, painel_gerencial; listar_os com várias prioridades | OK | Pendente | Sim |
 | 047_lista_os_periodo_conclusao | listar_os aceita periodo_por = conclusao (links do painel) | OK | Pendente | Sim |
+| 048_seguranca_cadastro_publico | handle_new_user não aceita perfil vindo do cadastro; contas do portal não viram usuários internos (+ Auth: cadastro público desligado, site_url corrigido) | OK | Pendente | Sim |
 
 ---
 
@@ -1879,10 +1880,29 @@ aviso.
 - Massa de teste nova: **OS-0030** ("Teste F7 SLA violado", concluída
   fora do prazo), que entra na limpeza do fim do desenvolvimento.
 
+### 🔴→✅ Segurança — escalada de privilégio pelo cadastro público (2026-10-09, migration 048)
+Achado ao preparar a E1 do portal (usuários externos vão entrar no sistema).
+- **Problema 1:** o gatilho `handle_new_user` (migration 001) copiava o **perfil** (`role`) dos metadados que o próprio usuário escolhe no cadastro.
+- **Problema 2:** o **cadastro público estava ligado** no Auth (`disable_signup = false`).
+- **Risco somado:** qualquer pessoa, só com a chave pública que está no front, poderia chamar `signUp` com `role: super_admin`, confirmar o próprio e-mail e virar **Super Admin**.
+- **Sem sinal de exploração:** os usuários com poder são só os esperados (adm@vluma, admin@novadata, adm@infoxtec). Há 2 técnicos sem empresa, de junho (sdoreaestudo*@gmail.com, contas de teste), que entram na limpeza do fim do desenvolvimento.
+- **Correção (ajuste pequeno de segurança, sem impacto funcional, feito e relatado):**
+  1. **Migration 048:** o perfil nasce sempre "tecnico" sem empresa (perfil e empresa continuam definidos pela função `criar-tecnico`, no servidor). Contas do portal (`app_metadata.tipo = 'portal'`, gravável só pelo servidor) **não** viram usuários internos, como preparo da E1.
+  2. **Auth (Management API):**
+     - `disable_signup = true`;
+     - `site_url` passou de `http://localhost:3000` para `https://atosdev.vercel.app`;
+     - `uri_allow_list = https://atosdev.vercel.app/**`.
+
+     Com o `site_url` antigo, os links de "esqueci minha senha" caíam no localhost. Era um achado escondido.
+- **Testado:**
+  - um cadastro feito antes da propagação da configuração já nasceu "tecnico" sem empresa (a 048 funcionou), e foi apagado;
+  - depois da propagação, o cadastro público foi recusado com `signup_disabled`;
+  - regressão: `criar-tecnico` com o admin da Infoxtec criou o técnico com a empresa certa (conta de teste apagada em seguida).
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
-  Único Atrasado", OS-0018 a OS-0030 e fotos de teste na OS-0010. Não
+  Único Atrasado", OS-0018 a OS-0030, os técnicos sem empresa sdoreaestudo@gmail.com e sdoreaestudo1@gmail.com e fotos de teste na OS-0010. Não
   apagar antes — servem de massa para testes e validação
 
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
@@ -1896,7 +1916,8 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
-- Aplicar migrations 001–047 em ordem (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
+- Aplicar migrations 001–048 em ordem (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
