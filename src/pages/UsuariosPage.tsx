@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Pencil, Power, Loader2, Eye, EyeOff, Info } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
 import { cn } from '@/lib/utils'
+import PedidosAcessoEmpresa from '@/components/portal/PedidosAcessoEmpresa'
 
 // Usuários da equipe interna da empresa (administrador). Cria Atendente e
 // Gestor; técnicos continuam na tela Técnicos. Decisão do portal E2: o
@@ -27,7 +29,9 @@ export default function UsuariosPage() {
   const { user } = useAuth()
   const [lista, setLista] = useState<Usuario[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [filtro, setFiltro] = useState<string>('todos')
+  const [params, setParams] = useSearchParams()
+  const [filtro, setFiltro] = useState<string>(params.get('aba') === 'solicitacoes' ? 'solicitacoes' : 'todos')
+  const [pendentes, setPendentes] = useState(0)
   const [novo, setNovo] = useState(false)
   const [editando, setEditando] = useState<Usuario | null>(null)
 
@@ -37,6 +41,9 @@ export default function UsuariosPage() {
     setCarregando(false)
   }, [])
   useEffect(() => { carregar() }, [carregar])
+  const contar = useCallback(async () => { const { data } = await supabase.rpc('portal_solicitacoes_empresa'); setPendentes(Array.isArray(data) ? data.length : 0) }, [])
+  useEffect(() => { contar() }, [contar])
+  const escolher = (k: string) => { setFiltro(k); setParams(k === 'solicitacoes' ? { aba: 'solicitacoes' } : {}, { replace: true }) }
 
   async function alternarAtivo(u: Usuario) {
     if (u.id === user?.id) return
@@ -53,12 +60,14 @@ export default function UsuariosPage() {
 
       <div className="flex flex-wrap gap-2 mb-3" role="tablist">
         {[['todos', `Todos (${lista.length})`], ...Object.entries(PERFIS).map(([k, v]) => [k, `${v.rotulo}s (${cont(k)})`])].map(([k, r]) => (
-          <button key={k} role="tab" aria-selected={filtro === k} onClick={() => setFiltro(k)}
+          <button key={k} role="tab" aria-selected={filtro === k} onClick={() => escolher(k)}
             className={cn('px-3 py-1 rounded-full text-xs border transition', filtro === k ? 'bg-primary/15 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-secondary')}>{r}</button>
         ))}
+        <button role="tab" aria-selected={filtro === 'solicitacoes'} onClick={() => escolher('solicitacoes')} data-testid="aba-solicitacoes"
+          className={cn('px-3 py-1 rounded-full text-xs border transition', filtro === 'solicitacoes' ? 'bg-primary/15 border-primary/40 text-primary' : pendentes > 0 ? 'border-amber-400/50 text-amber-300 hover:bg-secondary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-secondary')}>Solicitações ({pendentes})</button>
       </div>
 
-      {carregando ? <Loader2 className="animate-spin text-muted-foreground" size={18} /> : (
+      {filtro === 'solicitacoes' ? <Card className="p-4"><PedidosAcessoEmpresa onMudou={setPendentes} /></Card> : carregando ? <Loader2 className="animate-spin text-muted-foreground" size={18} /> : (
         <Card className="divide-y divide-border" data-testid="lista-usuarios">
           {visiveis.map(u => (
             <div key={u.id} className={cn('p-3 flex flex-wrap items-center justify-between gap-3', !u.active && 'opacity-55')} data-usuario={u.email}>

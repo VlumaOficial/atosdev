@@ -262,7 +262,7 @@ Deno.serve(async (req) => {
         await admin.from('notificacoes').insert(
           ((await admin.from('users').select('id').eq('tenant_id', t.id).in('role', ['admin', 'gestor']).eq('active', true)).data ?? []).map((u: any) => ({
             tenant_id: t.id, user_id: u.id, tipo: 'solicitacao_acesso', titulo: `Pedido de acesso ao portal — ${nome}`,
-            corpo: `${mascarar(email)}${txt ? ' · ' + txt : ''}${achado ? '' : ' · cliente não identificado'}`, link: '/configuracoes?secao=portal',
+            corpo: `${mascarar(email)}${txt ? ' · ' + txt : ''}${achado ? '' : ' · cliente não identificado'}`, link: '/usuarios?aba=solicitacoes',
           })))
         await auditar(t.id, null, 'acesso_solicitado', { email: mascarar(email), cliente_identificado: !!achado })
       }

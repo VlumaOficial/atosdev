@@ -62,7 +62,8 @@ export default function SinoNotificacoes({ onNavegar }: { onNavegar?: () => void
     if (!n.lida_em) await marcar([n.id])
     setAberto(false)
     onNavegar?.()
-    if (n.order_id) navigate('/os/' + n.order_id)
+    if (n.tipo === 'solicitacao_acesso') navigate('/usuarios?aba=solicitacoes')
+    else if (n.order_id) navigate('/os/' + n.order_id)
     else if (n.link) navigate(n.link)
   }
 
