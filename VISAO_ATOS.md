@@ -841,6 +841,27 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - **Testes:**
     - personificação tabela a tabela (como na 043), entre empresas, entre clientes e entre equipes;
     - **roteiro automático de regressão de segurança** rodado a cada mudança de banco.
+- ✅ **PONTO 10 FECHADO — 2026-10-08:**
+  1. **Dois botões** "Responder ao cliente" / "Nota interna": OK (usuário).
+  2. **Turnstile**: o usuário perguntou se os clientes do ATOS precisam ter Cloudflare.
+     - **Resposta:** não, só a plataforma ATOS (conta da VLUMA, plano gratuito); o cliente final não percebe nada.
+     - Os subdomínios VLUMA são cobertos pelo cadastro de vluma.com.br.
+     - Domínio próprio (adicional, Etapa 3): cada domínio é cadastrado na configuração do Turnstile por API; conferir o limite de domínios do plano gratuito na construção.
+  3. **Ferramenta de LGPD** (decisão delegada ao Engenheiro/PO) → **Etapa 1**:
+     - desde o primeiro dia o ATOS guarda dados pessoais dos funcionários dos clientes;
+     - a empresa (controladora) precisa atender pedidos do titular em até 15 dias (LGPD art. 19);
+     - desenhar a anonimização desde o início é mais barato do que adaptar depois.
+  4. **Verificação em duas etapas** (decisão delegada) → **opcional para o Supervisor na Etapa 2**. Mas o **Supabase já oferece verificação por aplicativo autenticador (TOTP)** a custo baixo, então ela **entra na "Segurança essencial pré-produção" (item 6 da ordem) para Super Admin e admin das empresas**, que têm mais poder que o Supervisor.
+- **Ponto 11 — etapas e posição no roadmap:** a posição já foi resolvida na ordem de execução (Portal Etapa 1 = item 1; Etapas 2 e 3 depois da produção).
+  - **Escopo consolidado da Etapa 1 e a divisão em 6 entregas foram levados ao usuário para aprovação final antes da construção (2026-10-08, aguardando):**
+    - **E1 — Fundação:** banco (vínculos, endereços do portal, configurações), arquitetura de isolamento + roteiro automático de segurança, Configurações › Portal (identidade, nome curto), subdomínio automático (Cloudflare + Vercel), login com a marca, termos (padrão + substituição) e aceite;
+    - **E2 — Catálogo e grupos:** ficha do catálogo (descrição, visível no portal obrigatório, tipos, grupo padrão), assistente, grupos de atendimento, perfil Atendente, filas, Assumir opcional, Transferir, pingue-pongue, roteamento por categoria, alertas ao coordenador;
+    - **E3 — Clientes no portal:** aba Portal no Cliente, Supervisor/Usuário, equipes, convites, desativar, Solicitar acesso (com Turnstile), vários portais por pessoa, ferramenta de LGPD;
+    - **E4 — Abrir e acompanhar:** telas do portal (início, abrir, meus chamados, chamado), cartões de tipo, prioridade em linguagem simples, aviso de duplicado / "também me afeta", preferência de data com calendário, foto/áudio, origem, e-mails automáticos, botões de WhatsApp, canais liberados × escolha do usuário;
+    - **E5 — Ciclo do chamado:** Responder ao cliente / Nota interna, confirmação/reclassificação pelo N1 com motivo, matriz de pausa e Aguardando você com retomada, Resolvido → Fechado com reabrir e novo chamado ligado, assinatura como confirmação, níveis de transparência, prazo explicado;
+    - **E6 — Painéis e acabamento:** painel do Supervisor, acréscimos no F7 (canal, % reclassificados, resolução no N1, transferências, filtro por grupo), PWA instalável, auditoria e regressão completa.
+  - Cada entrega é testada na URL pública antes da próxima.
+  - Colocação proposta (a confirmar): KPI "tempo em pausa por motivo" na atividade "Painel e Relatórios de SLA" (Etapa 2).
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
