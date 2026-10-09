@@ -14,7 +14,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from('users')
       .select('*, tenants(*)')
       .eq('id', userId)
-      .single()
+      .maybeSingle()   // pessoas do portal não têm perfil interno (sem erro 406 no console)
 
     if (error || !profile) {
       setUser(null)

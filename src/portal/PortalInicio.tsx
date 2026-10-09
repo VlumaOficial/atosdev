@@ -34,7 +34,8 @@ export default function PortalInicio() {
     if (!ctx?.acesso || (ctx.termos_pendentes?.length ?? 0) > 0) return
     const chave = 'atos_portal_acesso_' + id.tenant_id
     try { if (sessionStorage.getItem(chave)) return; sessionStorage.setItem(chave, '1') } catch { /* sem storage: registra de novo */ }
-    supabase.rpc('portal_registrar_acesso', { p_tenant: id.tenant_id })
+    // o cliente do Supabase só dispara a chamada quando o resultado é lido
+    supabase.rpc('portal_registrar_acesso', { p_tenant: id.tenant_id }).then(() => undefined)
   }, [ctx, id.tenant_id])
 
   if (sessao === undefined) return <Carregando />
