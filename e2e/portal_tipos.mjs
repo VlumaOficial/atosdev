@@ -63,7 +63,7 @@ ok(sql(`select count(*)::int n from orders where title='E6TP pela tela sem assun
 // ---- menu da equipe + configuração
 const a = await (await b.newContext({ viewport: { width: 1366, height: 900 } })).newPage(); a.on('pageerror', e => erros.push(e.message))
 await entrar(a, cred.admin)
-const li = a.getByTestId('menu-portal-cliente')
+const li = a.locator('nav a[href="/portal-cliente"]')
 ok(await li.count() === 1, 'menu do administrador tem "Portal do cliente"')
 ok((await li.getAttribute('href')) === '/portal-cliente', 'o item abre a página do portal dentro do ATOS')
 await li.click(); await a.waitForSelector('[data-testid=portal-cliente-pagina]', { timeout: 15000 }); await a.waitForTimeout(2000)
@@ -79,7 +79,7 @@ await a.waitForSelector('[data-testid=portal-abertura-config]'); await a.waitFor
 ok(await a.locator('[data-aviso-tipo="requisicao"]').count() === 1 && await a.locator('[data-aviso-tipo="incidente"]').count() === 0, 'a configuração informa os tipos sem categoria (sem dizer que o cartão some)')
 ok(!/não vê este cartão/.test(await a.getByTestId('portal-abertura-config').innerText()), 'o texto antigo ("o cliente não vê este cartão") saiu')
 const at = await (await b.newContext({ viewport: { width: 1366, height: 900 } })).newPage()
-await entrar(at, cred.atendente); ok(await at.getByTestId('menu-portal-cliente').count() === 0, 'o Atendente não vê o item (só administrador e gestor)')
+await entrar(at, cred.atendente); ok(await at.locator('nav a[href="/portal-cliente"]').count() === 0, 'o Atendente não vê o item (só administrador e gestor)')
 
 console.log('erros:', erros.filter(e => !/favicon/.test(e)))
 for (const x of antes) sql(`update os_categorias set tipos_portal = '{${(x.tipos_portal ?? []).join(',')}}' where id='${x.id}'`)
