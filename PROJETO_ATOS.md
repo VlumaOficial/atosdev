@@ -1950,6 +1950,19 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
   - regressão: admin com papel "admin" e painel OK; técnico com papel "tecnico" e as 22 OS dele;
   - funções chamadas pelo servidor (`ler_senha_smtp`, `registrar_uso_geocodificacao`, jobs) não dependem de papel.
 
+### 🔴→✅ ERRO MEU, GRAVE — o ATOS foi confundido com um portal de cliente (2026-10-09, corrigido no mesmo dia)
+- **O que aconteceu:** o endereço de teste correto do ATOS é **https://atosdev.vluma.com.br** (o usuário já o havia informado). Na E1 eu escrevi o código achando que o ATOS rodava só em `atosdev.vercel.app` e tratei **qualquer outro endereço como portal de cliente**. Resultado: em `atosdev.vluma.com.br`, o login da gestão e dos técnicos mostrava "Portal não encontrado".
+- **Por que não vi:** meus testes rodavam em `atosdev.vercel.app`, que estava na minha lista. Rodei nos dois endereços só depois do alerta do usuário.
+- **Correção (commit c68f6ea):**
+  - `tipoDoHost()` → 'painel' (endereços conhecidos do ATOS), 'portal' (`atendimento.*`) ou 'desconhecido';
+  - endereço desconhecido é conferido no banco (`portal_resolver`), e só vira portal se estiver cadastrado como portal (domínio próprio);
+  - qualquer outro caso é o ATOS, e **o ATOS não fica mais "preso" por um endereço novo**;
+  - endereços extras do ATOS via `VITE_PAINEL_HOSTS`;
+  - Auth: `site_url` passou de `atosdev.vercel.app` para **`atosdev.vluma.com.br`** (os e-mails de "esqueci minha senha" apontam para ele).
+- **Testado em atosdev.vluma.com.br:** login do ATOS, admin no painel, técnico no celular no app de campo, Super Admin e o caminho interno do portal. Mais as 35 verificações da E1: **TUDO OK**.
+- **Regra a partir de agora:** TESTE = **https://atosdev.vluma.com.br** (e `atosdev.vercel.app` como segundo endereço). Mudança que mexe em roteamento, endereço ou login é testada nos dois.
+- **Pendente de decisão do usuário:** o caminho `/portal/<nome>` fica só como prévia da equipe interna (combinado no ponto 1: "só interno: teste e contingência"). Hoje ele ainda aceita a entrada de clientes, e a restrição será feita junto do subdomínio automático.
+
 ### Portal de atendimento — Etapa 1 · E1 Fundação (2026-10-09) — CONSTRUÍDA E TESTADA, exceto o subdomínio automático (aguardando tokens da Cloudflare e da Vercel)
 - **Migration 051 (banco do portal):**
   - **empresa:** `tenants.portal_*` — habilitado (Super Admin), ativo, nome curto, nome, cor, boas-vindas, contatos, termos próprios, versão da logo;
