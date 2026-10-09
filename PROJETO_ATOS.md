@@ -957,6 +957,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 047_lista_os_periodo_conclusao | listar_os aceita periodo_por = conclusao (links do painel) | OK | Pendente | Sim |
 | 048_seguranca_cadastro_publico | handle_new_user não aceita perfil vindo do cadastro; contas do portal não viram usuários internos (+ Auth: cadastro público desligado, site_url corrigido) | OK | Pendente | Sim |
 | 049_seguranca_politicas_escrita | users: admin só na própria empresa, gestor só técnicos, gatilho trg_users_protege (sem trocar empresa, sem mudar o próprio perfil, sem promover a super_admin); order_comments/order_evidences update exigem pode_ver_os | OK | Pendente | Sim |
+| 050_seguranca_funcoes | revoga execução de sla_politica_para, fn_motivos_pausa_padrao e fn_os_tempos_uteis pelos usuários | OK | Pendente | Sim |
 
 ---
 
@@ -1920,6 +1921,18 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
   - técnico movendo o próprio comentário para uma OS de outra empresa → bloqueado;
   - preferências do técnico (`atualizar_minhas_preferencias`) → OK.
 
+### 🔴→✅ Segurança — funções internas expostas (2026-10-09, migration 050)
+- **Varredura** das funções que rodam com privilégio do dono (SECURITY DEFINER) e que qualquer usuário logado podia chamar. Três não tinham checagem de empresa ou papel:
+  - `sla_politica_para` devolvia a política de SLA de **qualquer** empresa;
+  - `fn_motivos_pausa_padrao` semeava motivos em **qualquer** empresa;
+  - `fn_os_tempos_uteis` (cálculo interno).
+- **Correção:** a execução foi retirada dos usuários; as funções continuam disponíveis para os gatilhos e as funções que as usam por dentro.
+- **Testado:**
+  - `previa_sla` OK;
+  - `painel_gerencial` OK;
+  - inserir OS calcula o prazo de SLA (gatilho) OK;
+  - chamada direta a `sla_politica_para` → "permission denied".
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -1938,7 +1951,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–049 em ordem (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–050 em ordem (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
