@@ -1961,6 +1961,7 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
   - Auth: `site_url` passou de `atosdev.vercel.app` para **`atosdev.vluma.com.br`** (os e-mails de "esqueci minha senha" apontam para ele).
 - **Testado em atosdev.vluma.com.br:** login do ATOS, admin no painel, técnico no celular no app de campo, Super Admin e o caminho interno do portal. Mais as 35 verificações da E1: **TUDO OK**.
 - **Regra a partir de agora:** TESTE = **https://atosdev.vluma.com.br** (e `atosdev.vercel.app` como segundo endereço). Mudança que mexe em roteamento, endereço ou login é testada nos dois.
+- **Estrutura oficial de endereços (Super Admin, clientes ATOS e portal, PRD e HML) registrada em VISAO_ATOS.md 9.1 em 2026-10-09.**
 - **Pendente de decisão do usuário:** o caminho `/portal/<nome>` fica só como prévia da equipe interna (combinado no ponto 1: "só interno: teste e contingência"). Hoje ele ainda aceita a entrada de clientes, e a restrição será feita junto do subdomínio automático.
 
 ### Portal de atendimento — Etapa 1 · E1 Fundação (2026-10-09) — CONSTRUÍDA E TESTADA, exceto o subdomínio automático (aguardando tokens da Cloudflare e da Vercel)

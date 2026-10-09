@@ -869,6 +869,24 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
   - **2026-10-09:** E1 construída e testada na URL pública (35 verificações OK + roteiro de segurança com 0 falhas), exceto o subdomínio automático, que aguarda os tokens da Cloudflare e da Vercel e a decisão do domínio do DEV. Detalhes em PROJETO_ATOS.md.
   - Na preparação, achado e corrigido um risco de segurança anterior ao portal (cadastro público com perfil escolhido pelo usuário — PROJETO_ATOS.md, migration 048).
 
+- ✅ **ESTRUTURA OFICIAL DE ENDEREÇOS — definida pelo usuário em 2026-10-09 (portal: pontos 1 e HML confirmados):**
+
+| Quem | PRD | HML (DEV) |
+|---|---|---|
+| **Super Admin** (administração de todos os recursos VLUMA) | `atos.vluma.com.br` | `atosdev.vluma.com.br` |
+| **Clientes VLUMA/ATOS** (administração, supervisão, técnicos) | `atos.vluma.com.br` ou domínio próprio | `atosdev.vluma.com.br` |
+| **Clientes dos clientes** (portal de abertura de chamado) | `atendimento.<empresa>.vluma.com.br` ou domínio próprio de atendimento | `atendimento.<empresa>.dev.vluma.com.br` |
+
+  - O Super Admin e as empresas usam o **mesmo endereço**: o login define o que cada um vê.
+  - **HML do portal:** `atendimento.<empresa>.dev.vluma.com.br`, o mesmo padrão da produção com `.dev` (confirmado pelo usuário). O endereço único `atendimento.dev.vluma.com.br` ficou descartado, porque o portal identifica a empresa pelo endereço.
+  - **Ponto em aberto, sem decisão:** **domínio próprio para a gestão e os técnicos** (`atos.<empresa>.com.br`). Não foi refinado; tende a ser adicional pago na F8, junto do domínio próprio do portal. Hoje um domínio desconhecido cai no ATOS, mas falta o cadastro, a configuração na Vercel e o endereço correto nos e-mails.
+  - **Estado de 2026-10-09:**
+    - o código reconhece `atosdev.vluma.com.br` e `atos.vluma.com.br` como ATOS e `atendimento.*` como portal;
+    - os endereços do portal ainda **não existem** (domínio base da plataforma vazio, sem DNS na Cloudflare, sem cadastro na Vercel);
+    - para criá-los, faltam o token da Cloudflare (+ Zone ID) e o token da Vercel;
+    - no DEV, o domínio base será `dev.vluma.com.br`.
+  - **Regra de teste:** URL pública = `https://atosdev.vluma.com.br`.
+
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
 
