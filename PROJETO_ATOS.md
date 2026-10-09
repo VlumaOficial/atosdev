@@ -2162,7 +2162,7 @@ Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 2, 6 e 10).
   - **Configurações › Portal:** pedidos de acesso da empresa (aprovar escolhendo o cliente ou recusar); o aviso do sino abre essa seção mesmo já estando em Configurações.
   - **Super Admin:** chave pública do anti-robô.
   - Em tela: o Usuário comum não vê o atalho nem a área de gestão.
-- **Anti-robô (Turnstile):** o formulário só mostra a verificação quando a chave pública está salva e só exige quando o segredo `TURNSTILE_SECRET` da função estiver configurado. **Hoje não há chaves: o "Solicitar acesso" funciona só com o limite por origem.** Falta o usuário criar o widget na Cloudflare. O login do portal **não** usa captcha (mudaria também o login interno); fica anotado.
+- **Anti-robô (Turnstile):** o formulário só mostra a verificação quando a chave pública está salva e só exige quando o segredo `TURNSTILE_SECRET` da função estiver configurado. Com as chaves configuradas (2026-10-10), o "Solicitar acesso" exige a verificação além do limite por origem. O widget foi criado e as chaves configuradas em 2026-10-10 (ver abaixo). O login do portal **não** usa captcha (mudaria também o login interno); fica anotado.
 - **Testes na URL pública:**
   - API, 57 verificações: convites, token, expirado, revogado, reenviar, aceitar, conta existente em outro cliente, bloqueios por perfil, pedidos, limite, aprovação, anonimização, lista e reativação;
   - tela, empresa + convidada + Supervisora no celular + visitante, aprovações, sino, LGPD e seletor de clientes;
@@ -2181,8 +2181,13 @@ Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 2, 6 e 10).
   4. Limites de usuários por plano e verificação em duas etapas do Supervisor ficam para a F8 / Etapa 2.
 - **Massa de teste do DEV:** `portal.teste@example.com` (Supervisora) segue; os resíduos de teste (e3, e3ui, removido-) foram apagados.
 - **✅ Decisões 1 a 4 CONFIRMADAS pelo usuário em 2026-10-10** (pedido ligado ao cliente pelo nome digitado; Supervisor convida outros Supervisores; login do portal sem captcha; limite de usuários e verificação em duas etapas do Supervisor para a F8/Etapa 2).
+- **Anti-robô LIGADO em 2026-10-10:** o usuário criou o widget (hostname vluma.com.br) e enviou as chaves.
+  - A **Site Key** (pública) está em `portal_plataforma.turnstile_site_key` (Super Admin › Configurações).
+  - A **Secret Key** está como segredo `TURNSTILE_SECRET` da função `portal-acesso` e **entra na lista de troca do fim do MVP**.
+  - **Testado:** o formulário mostra a verificação da Cloudflare; sem concluir, a tela recusa; o servidor recusa pedido sem verificação e com token falso (nada é gravado); com verificação válida (chave de teste oficial da Cloudflare, temporária, já restaurada) o pedido é aceito.
+  - **Não dá para automatizar:** a Cloudflare bloqueia o clique em navegador automatizado (erro 600010). A conclusão pelo widget REAL é conferida pelo usuário num navegador de verdade, no teste ponta a ponta.
 - **A tratar no teste ponta a ponta (decisão do usuário, 2026-10-10):**
-  - criar o widget do **Turnstile** na Cloudflare (Site Key + Secret Key) e ligar o anti-robô do "Solicitar acesso";
+  - concluir o widget do Turnstile num navegador real e ver o pedido de acesso ser aceito;
   - convite e pedido de acesso **com e-mail real** (os de `example.com` não são enviados), conferindo o texto, o remetente e o link recebidos.
 
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
