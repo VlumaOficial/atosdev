@@ -7,7 +7,7 @@ import VlumaSignature from '@/components/brand/VlumaSignature'
 import type { UserRole } from '@/types'
 import {
   LayoutDashboard, ClipboardList, Users, Building2, MapPin,
-  Settings, LogOut, Menu, X, PenTool, ShieldCheck, Wrench, CheckSquare, ClipboardCheck, CalendarDays, Timer, Users2, Headset, ExternalLink,
+  Settings, LogOut, Menu, X, PenTool, ShieldCheck, Wrench, CheckSquare, ClipboardCheck, CalendarDays, Timer, Users2, Headset,
 } from 'lucide-react'
 import AtribuicaoMapas from '@/components/AtribuicaoMapas'
 import { nomeEmpresa } from '@/lib/empresa'
@@ -31,6 +31,7 @@ const navItems: NavItem[] = [
   { label: 'Catálogo e SLA', to: '/sla', icon: Timer, roles: ['admin','gestor'] },
   { label: 'Grupos de atendimento', to: '/grupos', icon: Users2, roles: ['admin','gestor'] },
   { label: 'Calendários', to: '/calendarios', icon: CalendarDays, roles: ['super_admin','admin','gestor'] },
+  { label: 'Portal do cliente', to: '/portal-cliente', icon: Headset, roles: ['admin','gestor'] },
   { label: 'Usuários', to: '/usuarios', icon: Users, roles: ['admin'] },
   { label: 'Empresas', to: '/tenants', icon: ShieldCheck, roles: ['super_admin'] },
   { label: 'Configurações', to: '/configuracoes', icon: Settings, roles: ['super_admin','admin'] },
@@ -51,7 +52,8 @@ export default function Sidebar() {
 
   if (!user) return null
 
-  const visibleItems = navItems.filter(item => item.roles.includes(user.role))
+  // o portal só aparece para empresas com o módulo habilitado pela plataforma
+  const visibleItems = navItems.filter(item => item.roles.includes(user.role) && (item.to !== '/portal-cliente' || !!tenant?.portal_habilitado))
 
   async function handleSignOut() {
     await signOut()
@@ -86,15 +88,6 @@ export default function Sidebar() {
             </NavLink>
           )
         })}
-        {/* o portal dos clientes abre em outra aba (prévia da equipe); só aparece quando a empresa tem portal */}
-        {['admin', 'gestor'].includes(user.role) && tenant?.portal_habilitado && tenant.portal_slug && (
-          <a href={`/portal/${tenant.portal_slug}`} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)} data-testid="menu-portal-cliente"
-            className="vluma-sidebar-item">
-            <Headset size={16} className="flex-shrink-0" />
-            <span>Portal do cliente</span>
-            <ExternalLink size={12} className="ml-auto opacity-60" />
-          </a>
-        )}
       </nav>
 
       <div className="px-3 py-4 border-t border-border">

@@ -10,6 +10,7 @@ import CalendariosPage from '@/pages/CalendariosPage'
 import CatalogoSlaPage from '@/pages/CatalogoSlaPage'
 import GruposPage from '@/pages/GruposPage'
 import UsuariosPage from '@/pages/UsuariosPage'
+import PortalClientePage from '@/pages/PortalClientePage'
 import ClientsPage from '@/pages/ClientsPage'
 import LocationsPage from '@/pages/LocationsPage'
 import TechniciansPage from '@/pages/TechniciansPage'
@@ -127,6 +128,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['super_admin', 'admin', 'gestor']}>
                   <TechniciansPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="portal-cliente"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'gestor']}>
+                  <PortalClientePage />
                 </ProtectedRoute>
               }
             />
