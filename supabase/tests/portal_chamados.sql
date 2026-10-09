@@ -51,7 +51,7 @@ update public.clients set portal_ativo = true where id in (pg_temp.i('A'), pg_te
 do $$
 declare k text; u uuid;
 begin
-  foreach k in array array['U1', 'U2', 'U3', 'X'] loop
+  foreach k in array array['U1', 'U2', 'U3', 'X', 'Z'] loop
     u := gen_random_uuid();
     insert into auth.users (id, email, aud, role, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
     values (u, lower(k) || '.e4@example.com', 'authenticated', 'authenticated', '{"tipo":"portal"}', now(), now(), now());
@@ -59,9 +59,13 @@ begin
     insert into _id values (k, u);
   end loop;
 end $$;
+-- termos obrigatórios aceitos (pré-requisito para abrir chamados)
+insert into public.termos_aceites (user_id, tenant_id, termo_id, canal)
+  select pg_temp.i(k), pg_temp.i('T'), x.id, 'portal' from unnest(array['U1','U2','U3','X']) k, public.portal_termos_vigentes(pg_temp.i('T')) x where x.tipo in ('uso', 'privacidade');
 insert into public.portal_vinculos (user_id, tenant_id, client_id, perfil) values
   (pg_temp.i('U1'), pg_temp.i('T'), pg_temp.i('A'), 'usuario'), (pg_temp.i('U2'), pg_temp.i('T'), pg_temp.i('A'), 'usuario'),
-  (pg_temp.i('U3'), pg_temp.i('T'), pg_temp.i('A'), 'usuario'), (pg_temp.i('X'), pg_temp.i('T'), pg_temp.i('B'), 'supervisor');
+  (pg_temp.i('U3'), pg_temp.i('T'), pg_temp.i('A'), 'usuario'), (pg_temp.i('X'), pg_temp.i('T'), pg_temp.i('B'), 'supervisor'),
+  (pg_temp.i('Z'), pg_temp.i('T'), pg_temp.i('A'), 'usuario');   -- Z NÃO aceitou os termos
 insert into public.portal_equipes (tenant_id, client_id, nome) values (pg_temp.i('T'), pg_temp.i('A'), 'Equipe E1');
 insert into _id select 'E1', id from public.portal_equipes where nome = 'Equipe E1';
 insert into public.portal_equipe_membros (equipe_id, user_id, tenant_id) values
@@ -113,6 +117,9 @@ select pg_temp.reg('abrir: a entrada do atendimento é avisada (admin, gestor e 
   (select count(*) >= 1 from public.notificacoes where order_id = pg_temp.i('O1') and tipo = 'novo_chamado_portal' and user_id = pg_temp.i('ADM'))
   and (select count(*) >= 1 from public.notificacoes where order_id = pg_temp.i('O1') and tipo = 'novo_chamado_portal' and user_id = pg_temp.i('AT')));
 
+select pg_temp.como('Z'); set local role authenticated;
+select pg_temp.deve_falhar('termos: quem ainda não aceitou os termos obrigatórios NÃO abre chamado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','incidente','categoria_id',%L,'titulo','Teste termos','descricao','Descrição com mais de dez letras','impacto','baixo','urgencia','baixa'))$q$, pg_temp.i('A'), pg_temp.i('CV')), 'Aceite os termos');
+reset role;
 select pg_temp.como('U1'); set local role authenticated;
 select pg_temp.deve_falhar('abrir com categoria oculta → recusado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','incidente','categoria_id',%L,'titulo','Teste','descricao','Descrição com mais de dez letras','impacto','alto','urgencia','alta'))$q$, pg_temp.i('A'), pg_temp.i('CO')), 'assunto');
 select pg_temp.deve_falhar('abrir com subcategoria de pai oculto → recusado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','incidente','categoria_id',%L,'titulo','Teste','descricao','Descrição com mais de dez letras','impacto','alto','urgencia','alta'))$q$, pg_temp.i('A'), pg_temp.i('CF')), 'assunto');

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Navigate, Link } from 'react-router-dom'
-import { Loader2, LogOut, ShieldCheck, Building2, ChevronDown, Ticket, Users2 } from 'lucide-react'
+import { Loader2, LogOut, ShieldCheck, Building2, ChevronDown, Users2 } from 'lucide-react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { PortalContexto, TermoPendente } from '@/lib/portal'
 import { usePortal } from './PortalContext'
 import { MarcaPortal, RodapePortal, AvisoPrevia, ContatosEmpresa } from './PortalLayout'
+import PortalNav from './PortalNav'
+import ResumoChamados from './ResumoChamados'
 
 // Porta de entrada do portal depois do login: confere o vínculo com a
 // empresa, pede o aceite dos termos pendentes e mostra o início.
@@ -59,7 +61,7 @@ async function sair() {
   await supabase.auth.signOut()
 }
 
-export function Topo() {
+export function Topo({ semNav = false }: { semNav?: boolean }) {
   return (
     <header className="border-b border-border bg-card/60 backdrop-blur sticky top-0 z-10">
       <AvisoPrevia />
@@ -69,6 +71,7 @@ export function Topo() {
           <LogOut size={15} /> Sair
         </button>
       </div>
+      {!semNav && <PortalNav />}
     </header>
   )
 }
@@ -200,13 +203,7 @@ function Inicio({ ctx }: { ctx: PortalContexto }) {
         <h1 className="text-xl font-bold text-foreground">Olá, {primeiroNome}!</h1>
         {id.boas_vindas && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">{id.boas_vindas}</p>}
 
-        <div className="vluma-card p-5 mt-6 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-md bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0"><Ticket size={18} className="text-primary" /></div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Chamados</p>
-            <p className="text-sm text-muted-foreground mt-0.5">A abertura e o acompanhamento de chamados por aqui chegam na próxima etapa. Enquanto isso, fale com a {id.empresa} pelos contatos abaixo.</p>
-          </div>
-        </div>
+        <ResumoChamados />
 
         {(ctx.vinculos ?? []).some(v => v.perfil === 'supervisor') && (
           <Link to={`${base}/usuarios`} data-testid="link-gestao"

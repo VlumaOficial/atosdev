@@ -278,6 +278,17 @@ end $$;
 revoke execute on function public.portal_tambem_afeta(uuid) from public, anon;
 grant execute on function public.portal_tambem_afeta(uuid) to authenticated;
 
+-- os termos obrigatórios vigentes (uso e privacidade) foram aceitos por quem consulta?
+create or replace function public.portal_termos_aceitos(p_tenant uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select not exists (
+    select 1 from public.portal_termos_vigentes(p_tenant) x
+     where x.tipo in ('uso', 'privacidade')
+       and not exists (select 1 from public.termos_aceites a where a.user_id = auth.uid() and a.tenant_id = p_tenant and a.termo_id = x.id and a.revogado_em is null))
+$$;
+revoke execute on function public.portal_termos_aceitos(uuid) from public, anon;
+grant execute on function public.portal_termos_aceitos(uuid) to authenticated;
+
 -- ---------- abrir o chamado ----------
 -- p: {client_id, tipo, categoria_id, location_id, titulo, descricao, equipe_id?, compartilhado?,
 --     nivel? (modo simples), impacto?/urgencia? (modo matriz), preferencias?[{data,periodo}], anexos?[{path,nome,tipo,mime,bytes}]}
@@ -295,6 +306,7 @@ begin
   if v_perfil is null then raise exception 'Sem acesso a este cliente.'; end if;
   select tenant_id into v_t from public.clients where id = v_client;
   select * into v_tenant from public.tenants where id = v_t;
+  if not public.portal_termos_aceitos(v_t) then raise exception 'Aceite os termos de uso e o aviso de privacidade para abrir chamados.'; end if;
   select * into v_pessoa from public.portal_pessoas where user_id = auth.uid();
   v_cfg := public.portal_abertura_efetiva(v_t);
 
