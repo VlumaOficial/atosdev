@@ -36,3 +36,5 @@ falha plantada (um tratador EXCEPTION no bloco externo já deixou checagens vazi
 - `e4_interno` zera `preventiva` nas outras categorias antes de checar o aviso de "tipo sem categoria visível".
 
 - `portal_ajustes.mjs`: celular do pedido → convite → cadastro, olho de mostrar senha e rodapé no fim da tela (ajustes do teste manual de 2026-10-10).
+- `email_unico.mjs`: nenhum caminho cadastra e-mail repetido (equipe interna, portal, caixas diferentes, escrita direta no banco).
+- `portal_tipos.mjs`: tipo de chamado só pela configuração, assunto só com categorias, menu "Portal do cliente".

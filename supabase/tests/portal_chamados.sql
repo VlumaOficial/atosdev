@@ -90,8 +90,8 @@ select pg_temp.reg('config: só categorias VISÍVEIS no portal', (select not exi
                    and (select exists (select 1 from jsonb_array_elements(j->'categorias') c where c->>'nome' = 'T4 Visivel') from _cfg));
 select pg_temp.reg('config: subcategoria de pai oculto NÃO aparece; de pai visível aparece',
   (select not exists (select 1 from jsonb_array_elements(j->'categorias') c where c->>'nome' = 'T4 Filha de oculta') and exists (select 1 from jsonb_array_elements(j->'categorias') c where c->>'nome' = 'T4 Filha de visivel') from _cfg));
-select pg_temp.reg('config: os 4 tipos aparecem em linguagem do cliente (só os com categoria visível)',
-  (select exists (select 1 from jsonb_array_elements(j->'tipos') t where t->>'value' = 'incidente' and t->>'rotulo' = 'Relatar um problema') and exists (select 1 from jsonb_array_elements(j->'tipos') t where t->>'value' = 'visita') and not exists (select 1 from jsonb_array_elements(j->'tipos') t where t->>'value' = 'preventiva') from _cfg));
+select pg_temp.reg('config: os tipos ATIVOS aparecem em linguagem do cliente, com ou sem categoria visível',
+  (select exists (select 1 from jsonb_array_elements(j->'tipos') t where t->>'value' = 'incidente' and t->>'rotulo' = 'Relatar um problema') and exists (select 1 from jsonb_array_elements(j->'tipos') t where t->>'value' = 'visita') and exists (select 1 from jsonb_array_elements(j->'tipos') t where t->>'value' = 'preventiva') from _cfg));
 select pg_temp.reg('config: unidades só do cliente da pessoa', (select jsonb_array_length(j->'unidades') >= 1 and not exists (select 1 from jsonb_array_elements(j->'unidades') u where (u->>'id')::uuid = pg_temp.i('LB')) from _cfg));
 select pg_temp.reg('config: a pessoa vê a(s) equipe(s) dela', (select exists (select 1 from jsonb_array_elements(j->'equipes') e where e->>'nome' = 'Equipe E1') from _cfg));
 select pg_temp.como('X'); set local role authenticated;
@@ -126,6 +126,14 @@ select pg_temp.deve_falhar('abrir com subcategoria de pai oculto → recusado', 
 select pg_temp.deve_falhar('abrir em tipo que a categoria não atende (requisição) → recusado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','requisicao','categoria_id',%L,'titulo','Teste','descricao','Descrição com mais de dez letras'))$q$, pg_temp.i('A'), pg_temp.i('CV')), 'assunto');
 select pg_temp.deve_falhar('abrir com unidade de OUTRO cliente → recusado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','incidente','categoria_id',%L,'location_id',%L,'titulo','Teste','descricao','Descrição com mais de dez letras','impacto','alto','urgencia','alta'))$q$, pg_temp.i('A'), pg_temp.i('CV'), pg_temp.i('LB')), 'Unidade');
 select pg_temp.deve_falhar('abrir em OUTRO cliente (sem vínculo) → recusado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','incidente','categoria_id',%L,'titulo','Teste','descricao','Descrição com mais de dez letras','impacto','alto','urgencia','alta'))$q$, pg_temp.i('B'), pg_temp.i('CV')), 'Sem acesso');
+-- tipo sem categoria visível: o assunto não é exigido; com categorias, continua obrigatório
+select pg_temp.deve_falhar('incidente sem assunto (há categorias visíveis para o tipo) → recusado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','incidente','titulo','Teste','descricao','Descrição com mais de dez letras','impacto','alto','urgencia','alta'))$q$, pg_temp.i('A')), 'assunto');
+create temp table _sa as select public.portal_abrir_chamado(jsonb_build_object('client_id', pg_temp.i('A'), 'tipo', 'preventiva', 'titulo', 'Preventiva sem assunto', 'descricao', 'Pedido de preventiva sem assunto escolhido')) j;
+reset role;   -- a pessoa do portal não lê tabelas (por desenho): a conferência da OS é feita fora do papel dela
+select pg_temp.reg('tipo sem categoria visível (preventiva): abre SEM assunto e cai sem categoria/grupo',
+  (select categoria_id is null and tipo = 'preventiva' and origem = 'portal' from public.orders where id = (select (j->>'id')::uuid from _sa)),
+  (select concat_ws(' | ', categoria_id::text, tipo, origem) from public.orders where id = (select (j->>'id')::uuid from _sa)));
+select pg_temp.como('U1'); set local role authenticated;
 select pg_temp.deve_falhar('incidente sem responder as perguntas de prioridade → recusado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','incidente','categoria_id',%L,'titulo','Teste','descricao','Descrição com mais de dez letras'))$q$, pg_temp.i('A'), pg_temp.i('CV')), 'perguntas');
 select pg_temp.deve_falhar('título curto demais → recusado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','incidente','categoria_id',%L,'titulo','ab','descricao','Descrição com mais de dez letras','impacto','alto','urgencia','alta'))$q$, pg_temp.i('A'), pg_temp.i('CV')), 'título');
 reset role;

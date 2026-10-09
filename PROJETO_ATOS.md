@@ -971,6 +971,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 061_portal_chamados | origem/solicitante/equipe nas OS, anexos do cliente (bucket privado portal-anexos), também me afeta, preferências, avisos enviados, funções do portal (abrir, listar, obter, parecidos, datas, preferências), configuração de abertura, info do chamado para a equipe | OK | Pendente | Sim |
 | 062_portal_avisos_email | gatilho (pg_net + Vault) que chama portal-avisos ao abrir/mudar a situação do chamado — **URL do DEV escrita** | OK | Pendente | Sim |
 | 063_portal_convite_celular | portal_convites.celular: o celular do "Solicitar acesso" acompanha o convite até a tela de criar senha e o cadastro da pessoa | OK | Pendente | Sim |
+| 064_email_unico | índice único por e-mail (sem diferenciar caixa) em users e portal_pessoas + travas entre equipe interna e portal (nenhum e-mail existe nos dois lados) | OK | Pendente | Sim |
+| 065_portal_tipos_independentes | o tipo de chamado do portal depende só da configuração da empresa; assunto obrigatório só quando há categorias visíveis para o tipo (portal_abertura_config e portal_abrir_chamado) | OK | Pendente | Sim |
 
 ---
 
@@ -1346,7 +1348,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 4. **E6:** painel do Supervisor, acréscimos no painel F7, PWA, auditoria, regressão completa.
 5. **Ordem até o PRD (mantida):** escalas + notificação diária → Conexões de WhatsApp (item 3, antes da F8) → F8 planos/pagamento → painel do Super Admin → segurança essencial + responsividade → limpeza de dados de teste + troca de credenciais → PRD. Depois do PRD: Portal Etapas 2–3, F12 (app nas lojas), F9 (GLPI), F10 completa, F11 (manual).
 6. **Pontos abertos de desenho:** domínio próprio da gestão/técnicos (hoje o mesmo host da plataforma); botão de remover endereço do portal e limpeza de endereços antigos após 90 dias; varredura no servidor de anexos órfãos do `portal-anexos`.
-7. **Antes do PRD:** limites de domínios e uso comercial do plano Vercel (Hobby); URL do DEV escrita nos gatilhos das migrations 030 e 062; migrations 001–063 e republicação das Edge Functions (`portal-endereco`, `portal-acesso`, `portal-avisos`, `criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`); segredos `TURNSTILE_SECRET` e `SITE_URL`.
+7. **Antes do PRD:** limites de domínios e uso comercial do plano Vercel (Hobby); URL do DEV escrita nos gatilhos das migrations 030 e 062; migrations 001–065 e republicação das Edge Functions (`portal-endereco`, `portal-acesso`, `portal-avisos`, `criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`); segredos `TURNSTILE_SECRET` e `SITE_URL`.
 8. **Só no FIM do MVP:** limpar dados de teste (OS-0018 em diante, grupos Central N1 / Redes N2 / Campo Interior, usuários `atendente.teste` e `portal.teste`, resíduos de e-mails `e3.*`/`e4.*`) e **trocar credenciais**: token do Supabase, `cfut_` da Cloudflare, `vcp_` da Vercel, segredo do Turnstile, senhas de teste, PAT do GitHub, senha do Zoho, chave do LocationIQ.
 
 ---
@@ -2230,7 +2232,7 @@ Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 2, 3, 4 e 6).
   - **Funções da empresa:** `salvar_portal_abertura`, `portal_info_chamado`. A `listar_os` ganhou o filtro de origem.
   - **062:** gatilho `fn_orders_avisar_portal` (pg_net + chave do Vault) chama a Edge Function `portal-avisos`.
 - **Regras (todas no servidor):**
-  - **Abrir:**
+  - **Abrir** (**regra dos tipos mudou em 2026-10-10 — ver "3º retorno do usuário" abaixo: o tipo aparece sempre que a empresa o ativa; o assunto só é obrigatório se existirem categorias visíveis para o tipo.** Texto original mantido como histórico):
     - o chamado vira OS, **sem técnico**; o grupo vem do catálogo (E2);
     - exige vínculo ativo, portal da empresa e do cliente ligados e **termos de uso e privacidade aceitos**;
     - o tipo precisa estar ativo e a categoria visível no portal para aquele tipo (**subcategoria só aparece se a principal também aparecer**);
@@ -2314,6 +2316,17 @@ O usuário aprovou o próprio pedido e criou a conta pelo convite real (e-mail v
 5. **Onde abrir o portal (pergunta do usuário):** hoje só em **Configurações › Portal de atendimento › "Abrir o portal"** (abre a prévia da equipe) e pelo endereço direto `https://atendimento.infoxtec.dev.vluma.com.br`. Não existe item no menu lateral — fica difícil de achar. **Proposta ao usuário:** item "Portal do cliente" no menu do administrador (aguardando resposta).
 - **Testes:** `e2e/portal_ajustes.mjs` (15 verificações na URL pública: celular do pedido ao convite e ao cadastro, olho de senha nos dois campos sem interferir um no outro, rodapé no fim em 3 telas e no celular, sem rolagem horizontal). Os testes do convite não deixam resíduo (`e5aj.*` limpos pelo roteiro).
 
+### Portal — 3º retorno do usuário (2026-10-10): menu, tipos de chamado e e-mail único
+Respostas do usuário: (1) item de menu "Portal do cliente" — de acordo; (2) **os tipos de chamado devem ser escolhidos no painel de configuração, não atrelados à categoria habilitada**; (3) a aba Solicitações dentro de Usuários atende; (4) **garantir que não é possível cadastrar usuário com e-mail já existente na base**.
+- **Menu "Portal do cliente"** (administrador e gestor; só quando a empresa tem portal): abre o portal (prévia da equipe) em outra aba. O Atendente não vê.
+- **Tipos independentes de categoria (migration 065):** o cartão do tipo aparece sempre que a empresa o **ativou** em Configurações › Abertura de chamados. O campo **Assunto** só aparece (e só é exigido) quando existem categorias visíveis no portal para aquele tipo; sem nenhuma, o chamado entra **sem assunto, sem grupo, na fila de entrada** (o N1 classifica). Com categorias, continua obrigatório e a categoria precisa valer para o tipo. Tipo desativado continua indisponível (no servidor também). Na configuração, o aviso por tipo virou informativo ("sem categoria: o cliente abre sem assunto e cai na fila de entrada") e passou a respeitar a regra do pai oculto.
+- **E-mail único (migration 064 + `e2e/email_unico.mjs`):**
+  - Já estava garantido pelo Auth (`auth.users`, único) e pelas funções (`criar-tecnico` → "Já existe um usuário cadastrado com este e-mail", em qualquer caixa; convite/pedido do portal recusam e-mail da equipe interna; quem já tem conta do portal é reaproveitado, sem conta duplicada; cadastro público fechado).
+  - **Lacuna achada:** as tabelas do app (`users`, `portal_pessoas`) não tinham unicidade própria — uma escrita direta aceitava e-mail repetido e o mesmo e-mail nos dois lados (3 verificações falharam antes da correção). A 064 cria índice único por `lower(email)` nas duas e travas entre equipe interna e portal. Não havia duplicados na base.
+  - Observação: "e-mail com espaços" é recusado como inválido (o formulário já faz trim).
+- **Testes:** `email_unico.mjs` (19 verificações), `portal_tipos.mjs` (17 verificações na URL pública), `portal_chamados.sql` agora com **73** verificações (validado com falha plantada; o check antigo "só os tipos com categoria visível" foi substituído pela regra nova). Regressão de contas (e2_usuarios, inativo, e4_avisos, e4_ui, e3_api, e3_ui) e `e4_interno` OK após 064/065.
+- **Decisões a confirmar:** chamado sem categoria cai na fila de entrada (N1 classifica) — vale também para incidente em modo matriz (sem sugestão de impacto/urgência do catálogo); e-mail com maiúsculas é tratado como o mesmo e-mail.
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -2333,7 +2346,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–063 em ordem (**062: trocar a URL do projeto no gatilho**) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–065 em ordem (**062: trocar a URL do projeto no gatilho**) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
