@@ -18,6 +18,8 @@ export interface PortalIdentidade {
   motivo?: 'nao_encontrado' | 'indisponivel'
   redirecionar?: string
   previa?: boolean
+  interno?: boolean
+  host_oficial?: string | null
   tenant_id?: string
   slug?: string
   nome?: string

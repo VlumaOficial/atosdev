@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { Loader2, SearchX } from 'lucide-react'
-import { resolverPortal, basePortal, urlLogoPortal, temaDaCor, type PortalIdentidade } from '@/lib/portal'
+import { resolverPortal, basePortal, hostEhPortal, urlLogoPortal, temaDaCor, type PortalIdentidade } from '@/lib/portal'
 import { PortalContext, type PortalCtx } from './PortalContext'
 import { PortalEntrar, PortalEsqueciSenha, PortalRedefinirSenha } from './PortalAuthPages'
 import PortalTermoPage from './PortalTermoPage'
@@ -11,7 +11,7 @@ import PortalInicio from './PortalInicio'
 //   * na raiz, quando o site é aberto por um host de portal (hostEhPortal)
 //   * em /portal/:slug/*, no domínio do painel (teste e contingência)
 export default function PortalApp() {
-  const { slug } = useParams()
+  const { slug, '*': resto } = useParams()
   const [id, setId] = useState<PortalIdentidade | null>(null)
   const [erro, setErro] = useState(false)
 
@@ -44,6 +44,20 @@ export default function PortalApp() {
     return () => { document.title = 'ATOS — Gestão de Campo' }
   }, [ctx])
 
+  // O cliente do cliente só entra pelo endereço oficial do portal. O caminho
+  // /portal/<nome> (e um endereço antigo, depois de trocar o nome curto) levam
+  // até lá; só a equipe interna da empresa pode usar o caminho como prévia.
+  const destinoOficial = useMemo(() => {
+    if (!id?.disponivel || !id.host_oficial) return null
+    const naHost = hostEhPortal()
+    if (naHost && window.location.hostname === id.host_oficial) return null
+    if (!naHost && id.interno) return null
+    const caminho = naHost ? window.location.pathname : '/' + (resto ?? '')
+    return `https://${id.host_oficial}${caminho}${window.location.search}${window.location.hash}`
+  }, [id, resto])
+  useEffect(() => { if (destinoOficial) window.location.replace(destinoOficial) }, [destinoOficial])
+
+  if (destinoOficial) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
   if (erro) return <Aviso titulo="Não foi possível abrir o portal" texto="Verifique sua conexão e tente de novo." />
   if (!id) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
   if (!ctx) return <Aviso titulo="Portal não encontrado" texto="Confira o endereço com a empresa que atende você." />

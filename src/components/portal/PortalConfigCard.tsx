@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 import { urlLogoEmpresa } from '@/lib/uploadLogo'
 import { publicarLogoPortal, temaDaCor, TIPOS_TERMO, type TipoTermo } from '@/lib/portal'
+import EnderecosPortal from './EnderecosPortal'
 import { useTermos, TermoEditorModal, TermoLeituraModal, type TermoLinha } from './TermoEditor'
 
 // Configurações › Portal de atendimento (E1). Só o admin da empresa; o
@@ -32,7 +33,6 @@ export default function PortalConfigCard() {
   const [checando, setChecando] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null)
-  const [plataforma, setPlataforma] = useState<{ dominio_base: string | null; prefixo: string } | null>(null)
   const [editor, setEditor] = useState<{ tipo: TipoTermo; base: { titulo: string; texto: string } | null } | null>(null)
   const [lendo, setLendo] = useState<TermoLinha | null>(null)
   const termos = useTermos()
@@ -49,10 +49,6 @@ export default function PortalConfigCard() {
     setAtivo(!!tenant.portal_ativo)
   }, [tenant]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    supabase.rpc('portal_config_plataforma').then(({ data }) => setPlataforma(data as any))
-  }, [])
-
   // disponibilidade do nome curto enquanto digita
   useEffect(() => {
     if (!tenant?.portal_habilitado) return
@@ -67,7 +63,6 @@ export default function PortalConfigCard() {
   }, [slug, tenant?.portal_habilitado])
 
   const linkInterno = slug ? `${window.location.origin}/portal/${slug}` : ''
-  const subdominio = plataforma?.dominio_base && slug ? `https://${plataforma.prefixo}.${slug}.${plataforma.dominio_base}` : null
   const mudou = useMemo(() => {
     if (!tenant) return false
     const c = tenant.portal_contatos ?? {}
@@ -134,12 +129,7 @@ export default function PortalConfigCard() {
             {tenant.portal_slug && slug !== tenant.portal_slug && (
               <p className="text-[11px] text-amber-300 inline-flex items-start gap-1"><AlertTriangle size={11} className="mt-0.5 flex-shrink-0" /> O endereço antigo continua levando ao novo por 90 dias. Avise seus clientes.</p>
             )}
-            <div className="mt-2 space-y-1 text-[11px] text-muted-foreground">
-              <p>Endereço do portal: {subdominio
-                ? <span className="text-foreground">{subdominio}</span>
-                : <span>atendimento.{slug || 'nome'}.vluma.com.br <span className="italic">(criado automaticamente — em configuração pela VLUMA)</span></span>}</p>
-              {linkInterno && <p>Endereço interno (teste): <a href={linkInterno} target="_blank" rel="noreferrer" className="text-primary hover:underline">{linkInterno}</a></p>}
-            </div>
+            <EnderecosPortal tenantId={tenant.id} slug={tenant.portal_slug} linkInterno={linkInterno || `${window.location.origin}/portal/<nome>`} />
           </div>
 
           {/* identidade */}
