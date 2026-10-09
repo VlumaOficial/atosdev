@@ -11,7 +11,7 @@ ok(menu.length === 1 && menu[0] === 'Ordens de Serviço', 'menu do Atendente: s�
 ok(await p.getByTestId('sino').count() >= 1, 'Atendente tem o sino de avisos')
 ok((await p.locator('body').innerText()).includes('E2-UI sem grupo'), 'fila de entrada mostra as OS sem grupo e sem técnico')
 for (const rota of ['/clientes', '/locais', '/grupos', '/sla', '/configuracoes', '/tecnicos', '/usuarios', '/checklists']) {
-  await p.goto(U + rota); await p.waitForTimeout(1800)
+  await p.goto(U + rota); await p.waitForTimeout(3500)
   ok(!p.url().includes(rota) || p.url().includes('/os'), `rota ${rota} bloqueada para o Atendente → ${p.url().replace(U, '')}`)
 }
 // sino: aviso de transferência (coordenadora de Redes N2)

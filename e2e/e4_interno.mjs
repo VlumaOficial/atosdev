@@ -7,6 +7,8 @@ const MARIA = sql(`select user_id from portal_pessoas where email='portal.teste@
 const gN1 = sql(`select id from grupos_atendimento where nome='Central N1'`)[0].id
 sql(`delete from orders where title like 'E4IN %'; delete from os_categorias where nome like 'E4IN %'; update tenants set portal_abertura='{}' where id='${T}'; update clients set portal_ativo=true where name='Cliente Trigger Teste'`)
 sql(`update portal_pessoas set celular='71988887777' where user_id='${MARIA}'`)
+// o teste não pode depender de resíduo de outros testes: nenhuma outra categoria pode abrir 'preventiva'
+sql(`update os_categorias set tipos_portal = array_remove(tipos_portal, 'preventiva') where tenant_id = '${T}' and nome <> 'E4IN Rede'`)
 sql(`insert into os_categorias (tenant_id, nome, visivel_portal, tipos_portal, grupo_padrao_id) values ('${T}','E4IN Rede', true, '{incidente,visita}', '${gN1}')`)
 const cat = sql(`select id from os_categorias where nome='E4IN Rede'`)[0].id
 const loc = sql(`select id from locations where client_id='${CLI}' limit 1`)[0].id

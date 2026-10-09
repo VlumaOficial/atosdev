@@ -1,5 +1,6 @@
 import { chromium, devices } from 'playwright'
 import { N, U, T, cred, sql, ok, resumo, entrar } from './lib.mjs'
+const tokenOk = pg => pg.waitForFunction(() => (document.querySelector('[name="cf-turnstile-response"]') || {}).value, null, { timeout: 25000 }).catch(() => {})
 const PH = 'https://atendimento.infoxtec.dev.vluma.com.br'
 const CLI = sql(`select id from clients where name='Cliente Trigger Teste'`)[0].id
 const linkTeste = () => sql(`select detalhe->>'link_teste' l from portal_auditoria where detalhe->>'link_teste' is not null order by id desc limit 1`)[0]?.l
@@ -84,7 +85,7 @@ await vis.getByTestId('link-solicitar').click(); await vis.waitForSelector('[dat
 await vis.getByTestId('solicitar-enviar').click(); await vis.waitForTimeout(500)
 ok(await vis.locator('text=Informe o seu nome e um e-mail válido').count() > 0, 'pedido sem dados é recusado na tela')
 await vis.fill('#sa-nome', 'E3UI Solicitante'); await vis.fill('#sa-email', 'e3ui.solicitante@example.com'); await vis.fill('#sa-cli', 'cliente trigger teste'); await vis.fill('#sa-msg', 'Preciso abrir chamados')
-await vis.getByTestId('solicitar-enviar').click(); await vis.waitForSelector('[data-testid=solicitacao-enviada]', { timeout: 15000 })
+await tokenOk(vis); await vis.getByTestId('solicitar-enviar').click(); await vis.waitForSelector('[data-testid=solicitacao-enviada]', { timeout: 15000 })
 ok(true, 'pedido de acesso enviado (resposta genérica)')
 await mar.reload(); await mar.waitForSelector('[data-testid=gestao-portal]', { timeout: 15000 })
 ok(await mar.locator('[data-solicitacao="e3ui.solicitante@example.com"]').count() === 1, 'o pedido aparece para a Supervisora do cliente reconhecido')
@@ -92,7 +93,7 @@ await mar.locator('[data-solicitacao="e3ui.solicitante@example.com"] [data-testi
 ok(sql(`select situacao from portal_solicitacoes_acesso where email='e3ui.solicitante@example.com'`)[0].situacao === 'aprovada', 'Supervisora aprova → o convite é enviado ao solicitante')
 // sem cliente reconhecido → empresa
 const v2 = await nova(); await v2.goto(PH + '/solicitar-acesso'); await v2.waitForSelector('[data-testid=form-solicitar]')
-await v2.fill('#sa-nome', 'E3UI Sem Cliente'); await v2.fill('#sa-email', 'e3ui.semcliente@example.com'); await v2.fill('#sa-cli', 'Empresa Misteriosa'); await v2.getByTestId('solicitar-enviar').click(); await v2.waitForSelector('[data-testid=solicitacao-enviada]')
+await v2.fill('#sa-nome', 'E3UI Sem Cliente'); await v2.fill('#sa-email', 'e3ui.semcliente@example.com'); await v2.fill('#sa-cli', 'Empresa Misteriosa'); await tokenOk(v2); await v2.getByTestId('solicitar-enviar').click(); await v2.waitForSelector('[data-testid=solicitacao-enviada]')
 await ad.goto(U + '/configuracoes'); await ad.waitForTimeout(3000)
 await ad.getByTestId('sino').first().click(); await ad.waitForSelector('[data-testid=sino-painel]')
 ok(/Pedido de acesso ao portal — E3UI Sem Cliente/.test(await ad.locator('[data-testid=sino-painel]').innerText()), 'sino da empresa: "Pedido de acesso ao portal"')
