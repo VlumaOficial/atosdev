@@ -9,7 +9,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [loading, setLoading] = useState(true)
 
-  async function loadUserProfile(userId: string) {
+  // 'inativo': usuário desativado pelo administrador — perde o acesso (migration 059)
+  async function loadUserProfile(userId: string): Promise<'ok' | 'sem_perfil' | 'inativo'> {
     const { data: profile, error } = await supabase
       .from('users')
       .select('*, tenants(*)')
@@ -19,12 +20,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error || !profile) {
       setUser(null)
       setTenant(null)
-      return
+      return 'sem_perfil'
+    }
+    if (profile.active === false) {
+      await supabase.auth.signOut()
+      setUser(null)
+      setTenant(null)
+      return 'inativo'
     }
 
     const { tenants: tenantData, ...userData } = profile
     setUser(userData as AppUser)
     setTenant(tenantData as Tenant | null)
+    return 'ok'
   }
 
   useEffect(() => {
@@ -55,7 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error
     // Carrega o perfil imediatamente com a sessão já ativa (evita corrida com o listener)
     if (data.user) {
-      await loadUserProfile(data.user.id)
+      const estado = await loadUserProfile(data.user.id)
+      if (estado === 'inativo') throw new Error('USUARIO_INATIVO')
     }
   }
 

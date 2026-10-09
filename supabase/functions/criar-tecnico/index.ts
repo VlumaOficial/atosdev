@@ -54,7 +54,8 @@ Deno.serve(async (req) => {
       .from('users')
       .select('role, tenant_id')
       .eq('id', caller.id)
-      .single()
+      .eq('active', true)
+      .maybeSingle()
 
     if (profileErr || !callerProfile) {
       return new Response(

@@ -17,6 +17,7 @@
 --      portal_tem_vinculo) ou está na lista revisada abaixo. Função nova
 --      sem checagem quebra o teste até ser revisada.
 --   5. As funções do portal não deixam a pessoa do portal ver outra empresa.
+--   6. Usuário desativado perde o acesso (papel 'nenhum', sem empresa, sem ler nada).
 -- Uso: sql.sh supabase/tests/seguranca_isolamento.sql
 -- ============================================================
 
@@ -99,6 +100,19 @@ exception when others then
   if sqlerrm not like '%Sem permiss%' and sqlerrm not like '%Acesso%' then
     insert into _falhas values ('funções do portal', sqlerrm);
   end if;
+end $$;
+reset role;
+
+-- 6: usuário DESATIVADO perde o acesso na hora (migration 059)
+update public.users set active = false where email = 'atendente.teste@infoxtec.com.br';
+select set_config('request.jwt.claims', json_build_object('sub', (select id from public.users where email = 'atendente.teste@infoxtec.com.br'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$ begin
+  if public.get_meu_role() <> 'nenhum' then insert into _falhas values ('usuário desativado', 'ainda tem papel: ' || public.get_meu_role()); end if;
+  if public.get_meu_tenant() is not null then insert into _falhas values ('usuário desativado', 'ainda tem empresa'); end if;
+  if (select count(*) from public.orders) > 0 then insert into _falhas values ('usuário desativado', 'ainda lê OS'); end if;
+  if (select count(*) from public.clients) > 0 then insert into _falhas values ('usuário desativado', 'ainda lê clientes'); end if;
+  if (select count(*) from public.grupos_atendimento) > 0 then insert into _falhas values ('usuário desativado', 'ainda lê grupos'); end if;
 end $$;
 reset role;
 

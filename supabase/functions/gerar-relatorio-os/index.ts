@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
     const caller = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: auth } } })
     const { data: { user } } = await caller.auth.getUser()
     if (!user) return json({ erro: 'Não autenticado' }, 401)
-    const { data: perfil } = await admin.from('users').select('tenant_id, role').eq('id', user.id).single()
+    const { data: perfil } = await admin.from('users').select('tenant_id, role').eq('id', user.id).eq('active', true).maybeSingle()
     if (!perfil || (perfil.role !== 'super_admin' && perfil.tenant_id !== os.tenant_id)) return json({ erro: 'Sem permissão' }, 403)
   }
   if (os.status !== 'concluida') return json({ erro: 'Relatório só é gerado para OS concluída' }, 409)

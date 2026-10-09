@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
   const { data: { user } } = await caller.auth.getUser()
   if (!user) return json({ endereco: null, fonte: 'nao_autenticado' }, 401)
-  const { data: perfil } = await admin.from('users').select('tenant_id, role').eq('id', user.id).single()
+  const { data: perfil } = await admin.from('users').select('tenant_id, role').eq('id', user.id).eq('active', true).maybeSingle()
 
   const corpo = await req.json().catch(() => ({}))
 

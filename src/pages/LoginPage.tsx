@@ -24,8 +24,10 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await signIn(email, password)
-    } catch {
-      setError('E-mail ou senha incorretos. Verifique seus dados.')
+    } catch (e) {
+      setError((e as Error)?.message === 'USUARIO_INATIVO'
+        ? 'Seu acesso está desativado. Fale com o administrador da sua empresa.'
+        : 'E-mail ou senha incorretos. Verifique seus dados.')
     } finally {
       setLoading(false)
     }

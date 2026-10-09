@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   const caller = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
   const { data: { user } } = await caller.auth.getUser()
   if (!user) return json({ erro: 'Não autenticado' }, 401)
-  const { data: eu } = await admin.from('users').select('id, name, role, tenant_id').eq('id', user.id).single()
+  const { data: eu } = await admin.from('users').select('id, name, role, tenant_id').eq('id', user.id).eq('active', true).maybeSingle()
   if (!eu?.tenant_id) return json({ erro: 'Usuário sem empresa' }, 403)
 
   const corpo = await req.json().catch(() => ({}))

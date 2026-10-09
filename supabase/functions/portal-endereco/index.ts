@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     })
     const { data: { user }, error: uerr } = await caller.auth.getUser()
     if (uerr || !user) return json({ error: 'Não autenticado.' }, 401)
-    const { data: perfil } = await admin.from('users').select('role, tenant_id').eq('id', user.id).maybeSingle()
+    const { data: perfil } = await admin.from('users').select('role, tenant_id').eq('id', user.id).eq('active', true).maybeSingle()
     if (!perfil) return json({ error: 'Sem permissão.' }, 403)
 
     let tenantId: string
