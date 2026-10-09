@@ -1973,6 +1973,11 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
   - já existe `evo.vluma.com.br` (servidor da Evolution, 31.97.86.173) — útil quando chegarmos às Conexões de WhatsApp.
 - **Como o portal vai usar:** por empresa, um CNAME `atendimento.<empresa>` (e `atendimento.<empresa>.dev` no HML) **somente DNS**, para o alvo da Vercel do projeto + o domínio cadastrado no projeto da Vercel por API (certificado automático). O mesmo padrão já usado nos outros subdomínios da zona.
 
+### Vercel — plano atual (2026-10-09)
+- O projeto atosdev está no time **"VLUMA's projects" (vlumas-projects-48debc88), plano Hobby**.
+- **Antes da produção/F8:** conferir (a) o **limite de domínios por projeto** do Hobby, já que cada empresa com portal ativo ocupa um endereço (`atendimento.<empresa>…`) e cada domínio próprio, outro; (b) os termos de **uso comercial** do plano Hobby (o produto será vendido). Se o limite ou os termos não servirem, o plano Pro entra na conta de custos da F8.
+- O token da Vercel é criado em **Account Settings › Tokens** (não em Team Settings).
+
 ### Portal de atendimento — Etapa 1 · E1 Fundação (2026-10-09) — CONSTRUÍDA E TESTADA, exceto o subdomínio automático (aguardando tokens da Cloudflare e da Vercel)
 - **Migration 051 (banco do portal):**
   - **empresa:** `tenants.portal_*` — habilitado (Super Admin), ativo, nome curto, nome, cor, boas-vindas, contatos, termos próprios, versão da logo;
