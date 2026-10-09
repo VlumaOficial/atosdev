@@ -968,6 +968,8 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 058_lista_os_filas | listar_os com filtro/coluna de grupo e contagem "novos sem grupo" | OK | Pendente | Sim |
 | 059_usuario_inativo_sem_acesso | get_meu_role()/get_meu_tenant() tratam usuário desativado como sem perfil | OK | Pendente | Sim |
 | 060_portal_clientes | portal por cliente, equipes, convites (hash do token), pedidos de acesso, papel no cliente, gestão de pessoas, LGPD (exportar), chave do anti-robô, avisos com destino | OK | Pendente | Sim |
+| 061_portal_chamados | origem/solicitante/equipe nas OS, anexos do cliente (bucket privado portal-anexos), também me afeta, preferências, avisos enviados, funções do portal (abrir, listar, obter, parecidos, datas, preferências), configuração de abertura, info do chamado para a equipe | OK | Pendente | Sim |
+| 062_portal_avisos_email | gatilho (pg_net + Vault) que chama portal-avisos ao abrir/mudar a situação do chamado — **URL do DEV escrita** | OK | Pendente | Sim |
 
 ---
 
@@ -1323,6 +1325,28 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
   oferecer (Evolution / API oficial / as duas, e em qual plano) fica
   para a discussão de planos. Pendente do usuário: URL, chave global e
   versão da Evolution
+
+---
+
+## 🔚 Estado ao encerrar a sessão de 2026-10-10 (RETOMAR POR AQUI)
+
+**Frente atual: Portal de atendimento — Etapa 1.** E1 (fundação e endereços), E2 (catálogo, grupos, Atendente, filas), E3 (clientes no portal, convites, equipes, pedidos de acesso, LGPD) e **E4 (abrir e acompanhar chamado)** estão **concluídas e testadas na URL pública**. Próxima: **E5 (ciclo do chamado)**, depois E6.
+
+**Migrations da frente do portal (047–062): todas aplicadas no DEV (vgkiddqahubznlzkxfgb); PRD (zeejmwdyqrbjnkhwtdsu) segue pendente — esperado até a promoção do MVP.** Tabela na seção 6; checklist do PRD acima ("001–062").
+
+**Pasta `e2e/` (nova):** roteiros Playwright e de banco usados nos testes, com README (arquivos que precisam existir no scratchpad: `.tk`, `.anon`, `.srk`, `.cred.json`, `foto1.png`, `foto2.png`). Sem segredos reais. Rodam contra a URL pública, nunca `npm run dev`. Também: `supabase/tests/seguranca_isolamento.sql`, `grupos_atendimento.sql` (41), `portal_chamados.sql` (71).
+
+**Teste que envelheceu (não é falha do app):** com o anti-robô real ativo (`TURNSTILE_SECRET`), o pedido de acesso público sem token volta 400 — certo. `e3_api`/`e3_ui` precisam enviar o token de teste da Cloudflare (chave secreta de teste `1x0000000000000000000000000000000AA` na função, token `XXXX.DUMMY.TOKEN.XXXX`) e restaurar o segredo real ao fim.
+
+### Pendências abertas ao fechar a sessão de 2026-10-10
+1. **Usuário validar E2, E3 e E4** e confirmar as decisões listadas em cada seção (E2: decisões 1–5; E3; E4: decisões 1–5, além das regras de limite — 10 chamados/hora por pessoa, 5 arquivos ≤10 MB, áudio ≤120 s, "também me afeta" ainda não eleva a prioridade, avisos de e-mail só para aberto/agendado/em atendimento/resolvido/cancelado, termos de uso e privacidade obrigatórios para abrir chamado, WhatsApp automático mostrado como indisponível).
+2. **Anti-robô no navegador real:** a Cloudflare bloqueia clique automático; o usuário precisa concluir o widget uma vez no teste E2E (servidor já provado: sem token → 400, token falso → 400, token de teste válido → aceito). Testar também **e-mail real** (convite, aviso de chamado, pedido de acesso) — os testes usaram só domínios reservados.
+3. **E5 — ciclo do chamado:** Responder ao cliente / Nota interna; confirmação e reclassificação pelo N1 com motivo; matriz de pausa e "Aguardando você" com retomada; Resolvido → Fechado com reabrir e novo chamado ligado; assinatura como confirmação; níveis de transparência; prazo explicado; confirmação da data pedida pelo cliente.
+4. **E6:** painel do Supervisor, acréscimos no painel F7, PWA, auditoria, regressão completa.
+5. **Ordem até o PRD (mantida):** escalas + notificação diária → Conexões de WhatsApp (item 3, antes da F8) → F8 planos/pagamento → painel do Super Admin → segurança essencial + responsividade → limpeza de dados de teste + troca de credenciais → PRD. Depois do PRD: Portal Etapas 2–3, F12 (app nas lojas), F9 (GLPI), F10 completa, F11 (manual).
+6. **Pontos abertos de desenho:** domínio próprio da gestão/técnicos (hoje o mesmo host da plataforma); botão de remover endereço do portal e limpeza de endereços antigos após 90 dias; varredura no servidor de anexos órfãos do `portal-anexos`.
+7. **Antes do PRD:** limites de domínios e uso comercial do plano Vercel (Hobby); URL do DEV escrita nos gatilhos das migrations 030 e 062; migrations 001–062 e republicação das Edge Functions (`portal-endereco`, `portal-acesso`, `portal-avisos`, `criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`); segredos `TURNSTILE_SECRET` e `SITE_URL`.
+8. **Só no FIM do MVP:** limpar dados de teste (OS-0018 em diante, grupos Central N1 / Redes N2 / Campo Interior, usuários `atendente.teste` e `portal.teste`, resíduos de e-mails `e3.*`/`e4.*`) e **trocar credenciais**: token do Supabase, `cfut_` da Cloudflare, `vcp_` da Vercel, segredo do Turnstile, senhas de teste, PAT do GitHub, senha do Zoho, chave do LocationIQ.
 
 ---
 
@@ -2190,6 +2214,86 @@ Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 2, 6 e 10).
   - concluir o widget do Turnstile num navegador real e ver o pedido de acesso ser aceito;
   - convite e pedido de acesso **com e-mail real** (os de `example.com` não são enviados), conferindo o texto, o remetente e o link recebidos.
 
+### Portal de atendimento — Etapa 1 · E4 Abrir e acompanhar chamado (2026-10-10) — CONCLUÍDA E TESTADA
+Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 2, 3, 4 e 6).
+- **Migrations 061 e 062:**
+  - **OS:** `origem` (interno/portal/whatsapp/email), `solicitante_id`, `equipe_id`, `compartilhado_equipe`, `prioridade_informada`, `preferencia_agendamento`.
+  - **Tabelas novas:** `os_anexos_cliente`, `os_tambem_afeta`, `portal_preferencias`, `portal_avisos`.
+  - **Empresa:** `tenants.portal_abertura` (tipos, prioridade e canais configuráveis).
+  - **Armazenamento:** bucket **privado `portal-anexos`** (JPEG/PNG/WebP e áudio, até 10 MB). Cada pessoa grava só na própria pasta `<empresa>/<cliente>/<pessoa>/`; lê quem enxerga o chamado (dono, equipe, Supervisor), a equipe interna e o técnico responsável.
+  - **Funções do portal:**
+    - `portal_abertura_config`, `portal_abrir_chamado`, `portal_listar_chamados`, `portal_obter_chamado`;
+    - `portal_chamados_parecidos`, `portal_tambem_afeta`, `portal_avisos_data`;
+    - `portal_minhas_preferencias`, `portal_salvar_preferencias`;
+    - de apoio: `portal_perfil_no_cliente`, `portal_ve_chamado`, `portal_termos_aceitos`.
+  - **Funções da empresa:** `salvar_portal_abertura`, `portal_info_chamado`. A `listar_os` ganhou o filtro de origem.
+  - **062:** gatilho `fn_orders_avisar_portal` (pg_net + chave do Vault) chama a Edge Function `portal-avisos`.
+- **Regras (todas no servidor):**
+  - **Abrir:**
+    - o chamado vira OS, **sem técnico**; o grupo vem do catálogo (E2);
+    - exige vínculo ativo, portal da empresa e do cliente ligados e **termos de uso e privacidade aceitos**;
+    - o tipo precisa estar ativo e a categoria visível no portal para aquele tipo (**subcategoria só aparece se a principal também aparecer**);
+    - a unidade é do cliente e da equipe;
+    - título de 3 a 120 e descrição de 10 a 4000 caracteres;
+    - até 5 anexos, só da própria pasta e realmente enviados;
+    - limite de 10 chamados por pessoa por hora.
+  - **Prioridade (só Incidente):**
+    - modo **matriz**: 2 perguntas ("Quem é afetado?" e "Quanto atrapalha?") e a prioridade sai da matriz do catálogo;
+    - modo **simples**: 3 níveis, com texto editável pela empresa;
+    - a informada fica guardada (`prioridade_informada`) e o N1 ajusta (a UI de reclassificação com motivo é da E5);
+    - com "o cliente informa a prioridade" desligado, o chamado entra sem prioridade e usa a sugestão do catálogo;
+    - Requisição e Preventiva têm nível próprio; Visita não tem SLA.
+  - **Datas (Visita, Requisição, Preventiva):** até 3 opções, futuras, com **aviso do calendário da unidade** (feriado, fim de semana, unidade fechada).
+  - **Quem vê:** o próprio chamado; os da equipe (se "compartilhar" estiver marcado); quem marcou "também me afeta"; o Supervisor vê todos do cliente. Só campos seguros saem: sem notas internas, transferências, e-mails ou celulares de terceiros; do técnico só o nome.
+  - **Chamado parecido:** mesmo cliente, unidade e assunto, em aberto nos últimos 30 dias. Avisa sem revelar quem abriu; "também me afeta" faz a pessoa acompanhar e soma +1 afetado.
+- **Avisos por e-mail** (função `portal-avisos`):
+  - **Eventos:** aberto, agendado, em atendimento, resolvido e cancelado.
+  - **Condições:** só com o **consentimento de comunicação** (LGPD) ativo, o e-mail liberado pela empresa e não desligado pela pessoa. Um aviso por chamado e evento; remarcar a data gera aviso novo.
+  - **Remetente:** o e-mail próprio da empresa, ou "<Empresa> via ATOS".
+  - **Nunca** envia para domínios de teste (example.com, .test, .invalid…): grava o texto em `portal_avisos.detalhe`.
+  - WhatsApp automático **não existe** (depende das Conexões de WhatsApp): nas preferências aparece como "indisponível", sem prometer o que não há.
+- **Telas do portal** (celular primeiro, sem rolagem horizontal):
+  - **Menu:** Início, Chamados, Preferências (e Usuários e equipes para o Supervisor).
+  - **Início:** botão grande "Abrir chamado", contadores (abertos e resolvidos no mês) e os chamados em andamento.
+  - **Abrir chamado:**
+    - cartões de tipo em linguagem do cliente;
+    - assunto ("pai › filha", com descrição);
+    - unidade filtrada pela equipe;
+    - aviso de chamado parecido (com "também me afeta" ou "é outro problema");
+    - título e descrição;
+    - **fotos** (câmera ou galeria, reduzidas no navegador) e **áudio gravado** (até 2 minutos);
+    - prioridade em linguagem simples ou datas preferidas;
+    - "compartilhar com a minha equipe".
+    - Ao final: número do chamado e botão de WhatsApp da empresa.
+  - **Chamados:** abas Abertos / Resolvidos / Todos, busca por número ou título, paginação.
+  - **Chamado:** 4 etapas (Recebido → Agendado → Em atendimento → Resolvido), data agendada, nome do técnico, dados, fotos e áudio (endereços assinados), "também me afeta", marcos do andamento e WhatsApp.
+  - **Preferências:** consentimento de comunicação (dado e retirado aqui), canal de e-mail (só se a empresa liberou) e celular.
+  - As páginas internas do portal **só abrem com os termos aceitos** (direto pela barra de endereço, volta ao aceite).
+- **Telas internas:**
+  - **Configurações › Abertura de chamados pelo portal** (admin):
+    - tipos ativos, nome e descrição de cada um (com aviso quando o tipo não tem nenhuma categoria visível);
+    - "o cliente informa a prioridade" e o texto de cada nível;
+    - canal de e-mail.
+  - **Detalhe da OS:** cartão "Aberto pelo portal" com solicitante (com contato para a equipe interna), equipe, afetados, prioridade informada e a atual (alerta se divergirem), datas pedidas (**"Agendar nesta data"** abre o agendamento já preenchido e "a pedido do cliente"), fotos e áudio, e **"Avisar o cliente pelo WhatsApp"** com mensagem pronta e o link do chamado.
+  - **Lista de OS:** filtro de origem e selo "Portal".
+  - **Sino:** "novo chamado do portal" vai ao coordenador do grupo (sem grupo ou coordenador, aos administradores, gestores e atendentes).
+  - **App do técnico:** vê só o nome do solicitante e as fotos/áudio, sem contato nem botões.
+- **Testes na URL pública:**
+  - **SQL, `supabase/tests/portal_chamados.sql`, 71 verificações:** categorias, termos, visibilidade, duplicados, anexos, preferências, limites, configuração e isolamento. Provado com um vazamento de visibilidade plantado (5 falhas acusadas).
+  - **Avisos, 9 verificações:** eventos, consentimento, canal da pessoa e da empresa, OS interna sem aviso, sem duplicar.
+  - **Telas do cliente** (computador e celular, com fotos e áudio reais), **telas internas** e o app do técnico.
+  - **Falhas encontradas e corrigidas nos testes:**
+    - duas comparações com NULL no SQL deixavam passar um pai de categoria oculto e uma prioridade em branco;
+    - imagem ilegível mostrava mensagem técnica em inglês (agora, texto amigável);
+    - o aviso de novo chamado vai ao coordenador do grupo (era expectativa errada do teste).
+- **Decisões do PO/Engenheiro (a confirmar):**
+  1. O aviso de "novo chamado" vai ao **coordenador do grupo**; só sem grupo ou sem coordenador vai a admin, gestor e atendente.
+  2. O Supervisor vê **todas** as OS do cliente, inclusive as abertas pela equipe interna.
+  3. Fotos são reduzidas a 1600 px no navegador; no máximo 5 arquivos e 1 áudio por chamado.
+  4. **Rascunhos órfãos:** arquivo enviado e não usado (a abertura falhou e a limpeza também) fica no bucket; há limpeza automática no cliente, mas não uma varredura no servidor (backlog).
+  5. A confirmação do atendimento sobre a **data** que o cliente pediu e a conversa entram na **E5**.
+- **PRD:** o gatilho da 062 tem a URL do projeto DEV escrita (como a 030): trocar pelo ref do PRD.
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -2209,7 +2313,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–060 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–062 em ordem (**062: trocar a URL do projeto no gatilho**) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
@@ -2219,6 +2323,7 @@ sessão, nunca no git).
   gatilho `fn_orders_relatorio_ao_concluir` tem a URL do projeto DEV
   (`vgkiddqahubznlzkxfgb`) escrita — trocar pelo ref do PRD
 - **Portal — endereços (PRD):** (a) publicar `portal-endereco` (verify_jwt true) e definir seus 5 segredos (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`) com o projeto da Vercel do PRD; (b) `portal_plataforma.dominio_base = 'vluma.com.br'` (no DEV é `dev.vluma.com.br`); (c) adicionar `atos.vluma.com.br` ao projeto da Vercel e a `VITE_PAINEL_HOSTS`, se mudar; (d) conferir os limites de domínios/uso comercial do plano Vercel (ver "Vercel — plano atual"); (e) links permitidos de recuperação de senha no Auth
+- **Portal — chamados (E4):** publicar `portal-avisos` (verify_jwt true; é chamada pelo banco com a chave de serviço do Vault); o bucket `portal-anexos` nasce na migration 061; conferir que o segredo `atos_service_role_key` existe no Vault do PRD
 - **Portal — acesso (E3):** publicar `portal-acesso` (verify_jwt true); segredo `SITE_URL` com o domínio do PRD; **anti-robô:** criar o widget do Turnstile na Cloudflare (nomes de host: o domínio base da plataforma), salvar a chave pública no Super Admin e o segredo `TURNSTILE_SECRET` na função
 - **Funções alteradas na E2:** republicar `criar-tecnico` (aceita o perfil; ignora usuário inativo), `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os` e `portal-endereco` (ignoram usuário inativo)
 - Publicar as Edge Functions: `criar-tecnico` (verify_jwt true),

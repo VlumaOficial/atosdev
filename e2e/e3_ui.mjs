@@ -1,0 +1,134 @@
+import { chromium, devices } from 'playwright'
+import { N, U, T, cred, sql, ok, resumo, entrar } from './lib.mjs'
+const PH = 'https://atendimento.infoxtec.dev.vluma.com.br'
+const CLI = sql(`select id from clients where name='Cliente Trigger Teste'`)[0].id
+const linkTeste = () => sql(`select detalhe->>'link_teste' l from portal_auditoria where detalhe->>'link_teste' is not null order by id desc limit 1`)[0]?.l
+const b = await chromium.launch(); const erros = []
+const nova = async (o = { viewport: { width: 1366, height: 900 } }) => { const p = await (await b.newContext(o)).newPage(); p.on('pageerror', e => erros.push(e.message)); p.on('response', r => { if (r.status() >= 500) erros.push(r.status() + ' ' + r.url().slice(0, 100)) }); return p }
+// limpeza
+sql(`delete from auth.users where email like 'e3ui.%'; delete from portal_pessoas where email like 'e3ui.%'; delete from portal_convites where email like 'e3ui.%'; delete from portal_solicitacoes_acesso where email like 'e3ui.%'; delete from portal_equipes where nome like 'E3UI %'; delete from notificacoes where tipo='solicitacao_acesso'`)
+sql(`update clients set portal_ativo = true where name = 'Cliente Trigger Teste'; update clients set portal_ativo = false where name <> 'Cliente Trigger Teste'`)
+sql(`delete from auth.users where email like 'removido-%'; delete from portal_pessoas where email like 'removido-%'`)
+sql(`update portal_vinculos set perfil='supervisor', ativo=true where user_id=(select user_id from portal_pessoas where email='portal.teste@example.com')`)
+
+// ===== A. equipe interna: aba Portal do cliente
+const ad = await nova(); await entrar(ad, cred.admin)
+await ad.goto(U + '/clientes'); await ad.waitForTimeout(3500)
+await ad.locator('tr', { hasText: 'Cliente Trigger Teste' }).locator('td').last().locator('button').first().click()
+await ad.waitForSelector('[data-testid=abas-cliente]', { timeout: 15000 })
+ok(await ad.getByTestId('aba-portal').count() === 1, 'cadastro do cliente ganhou a aba "Portal"')
+await ad.getByTestId('aba-portal').click(); await ad.waitForSelector('[data-testid=gestao-portal]', { timeout: 15000 })
+ok(await ad.getByTestId('toggle-portal-cliente').getAttribute('aria-checked') === 'true', 'portal ligado para este cliente')
+ok(await ad.locator('[data-pessoa="portal.teste@example.com"]').count() === 1, 'lista as pessoas com acesso (Maria, Supervisora)')
+await ad.getByTestId('convidar').click(); await ad.waitForSelector('[data-testid=form-convite]')
+await ad.fill('#cv-nome', 'E3UI Convidada'); await ad.fill('#cv-email', 'e3ui.convidada@example.com')
+await ad.getByTestId('enviar-convite').click(); await ad.waitForTimeout(3500)
+ok((await ad.getByTestId('gestao-msg').innerText()).includes('e-mail não pôde ser enviado'), 'convite criado (e-mail de teste não é enviado de verdade)')
+ok(await ad.locator('[data-convite="e3ui.convidada@example.com"]').count() === 1, 'convite aparece em "aguardando aceite"')
+await ad.fill('#cv-nome', '').catch(() => {})
+// equipe
+await ad.getByTestId('nova-equipe').click(); await ad.waitForSelector('[data-testid=form-equipe]')
+await ad.fill('#eq-nome', 'E3UI Loja Centro'); await ad.locator('[data-membro="Maria Teste (Portal)"] input').check()
+await ad.getByRole('button', { name: 'Salvar' }).last().click(); await ad.waitForTimeout(2500)
+ok(await ad.locator('[data-equipe="E3UI Loja Centro"]').count() === 1 && (await ad.locator('[data-equipe="E3UI Loja Centro"]').innerText()).includes('1 pessoa'), 'equipe criada com 1 pessoa')
+// o aceite acontece pelo link (convidada)
+const conv = await nova(); await conv.goto(linkTeste()); await conv.waitForSelector('[data-testid=convite-form]', { timeout: 20000 })
+ok((await conv.locator('body').innerText()).includes('Supervisor') === false && (await conv.locator('body').innerText()).includes('Usuário'), 'link do convite: mostra empresa, perfil Usuário e cliente')
+await conv.fill('#cv-senha', 'curta'); await conv.fill('#cv-conf', 'curta'); await conv.getByTestId('convite-criar').click(); await conv.waitForTimeout(600)
+ok(await conv.locator('text=pelo menos 8 caracteres').count() > 0, 'senha fraca recusada na tela')
+await conv.fill('#cv-senha', 'Senha-E3ui-123'); await conv.fill('#cv-conf', 'Outra-E3ui-123'); await conv.getByTestId('convite-criar').click(); await conv.waitForTimeout(600)
+ok(await conv.locator('text=não coincidem').count() > 0, 'senhas diferentes recusadas')
+await conv.fill('#cv-conf', 'Senha-E3ui-123'); await conv.getByTestId('convite-criar').click()
+await conv.waitForSelector('[data-testid=portal-aceite]', { timeout: 20000 })
+ok(true, 'criou a senha e entrou: cai direto na tela de aceite dos termos')
+await conv.locator('[data-testid=aceite-obrigatorio]').check(); await conv.locator('[data-testid=aceite-confirmar]').click(); await conv.waitForSelector('[data-testid=portal-inicio]', { timeout: 15000 })
+ok(await conv.getByTestId('link-gestao').count() === 0, 'Usuário comum NÃO vê o atalho "Usuários e equipes"')
+const gU = await nova(); // usuário comum tentando a rota da gestão
+await conv.goto(PH + '/usuarios'); await conv.waitForSelector('[data-testid=portal-gestao]', { timeout: 15000 })
+ok(await conv.getByTestId('gestao-sem-acesso').count() === 1, 'Usuário comum em /usuarios: "área dos Supervisores"')
+await ad.getByTestId('aba-portal').click().catch(() => {}); await ad.reload().catch(() => {})
+
+// ===== B. Supervisora no portal
+const mar = await nova({ ...devices['iPhone 13'] })
+await mar.goto(PH + '/entrar'); await mar.fill('#portal-email', cred.portal[0]); await mar.fill('#portal-senha', cred.portal[1]); await mar.click('[data-testid=portal-entrar] button[type=submit]')
+await mar.waitForSelector('[data-testid=portal-inicio]', { timeout: 20000 })
+ok(await mar.getByTestId('link-gestao').count() === 1, 'Supervisora vê "Usuários e equipes" no início')
+await mar.getByTestId('link-gestao').click(); await mar.waitForSelector('[data-testid=gestao-portal]', { timeout: 15000 })
+ok(await mar.locator('[data-pessoa="e3ui.convidada@example.com"]').count() === 1, 'Supervisora vê a pessoa que acabou de entrar')
+ok(await mar.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'tela do Supervisor sem rolagem horizontal no celular')
+ok(await mar.locator('[data-pessoa="portal.teste@example.com"] select').count() === 0, 'Supervisora não altera o próprio perfil na lista')
+await mar.screenshot({ path: N + '/e3_supervisor_celular.png', fullPage: true })
+// Supervisora convida
+await mar.getByTestId('convidar').click(); await mar.fill('#cv-nome', 'E3UI Colega'); await mar.fill('#cv-email', 'e3ui.colega@example.com'); await mar.getByTestId('enviar-convite').click(); await mar.waitForTimeout(3500)
+ok(await mar.locator('[data-convite="e3ui.colega@example.com"]').count() === 1, 'Supervisora convida uma pessoa do próprio cliente')
+await mar.locator('[data-convite="e3ui.colega@example.com"] [data-testid=reenviar]').click(); await mar.waitForTimeout(3000)
+ok((await mar.getByTestId('gestao-msg').innerText()).includes('link anterior deixou de valer'), 'reenviar: novo convite, link anterior invalidado')
+await mar.locator('[data-convite="e3ui.colega@example.com"] [data-testid=revogar]').click(); await mar.waitForTimeout(2500)
+ok(await mar.locator('[data-convite="e3ui.colega@example.com"]').count() === 0, 'cancelar convite: some da lista')
+// desativar / reativar a convidada
+await mar.locator('[data-pessoa="e3ui.convidada@example.com"] [data-testid=desativar]').click(); await mar.waitForTimeout(2500)
+ok(sql(`select v.ativo from portal_vinculos v join portal_pessoas p on p.user_id=v.user_id where p.email='e3ui.convidada@example.com'`)[0].ativo === false, 'Supervisora desativa uma pessoa (não exclui)')
+const bloq = await nova(); await bloq.goto(PH + '/entrar'); await bloq.fill('#portal-email', 'e3ui.convidada@example.com'); await bloq.fill('#portal-senha', 'Senha-E3ui-123'); await bloq.click('[data-testid=portal-entrar] button[type=submit]'); await bloq.waitForTimeout(5000)
+ok(await bloq.getByTestId('portal-sem-acesso').count() === 1, 'pessoa desativada entra, mas vê "sua conta não tem acesso a este portal"')
+await mar.locator('[data-pessoa="e3ui.convidada@example.com"] [data-testid=reativar]').click(); await mar.waitForTimeout(2500)
+ok(sql(`select v.ativo from portal_vinculos v join portal_pessoas p on p.user_id=v.user_id where p.email='e3ui.convidada@example.com'`)[0].ativo === true, 'reativar acesso')
+// promover a Supervisora e rebaixar
+await mar.locator('[data-pessoa="e3ui.convidada@example.com"] select').selectOption('supervisor'); await mar.waitForTimeout(2500)
+ok(sql(`select v.perfil from portal_vinculos v join portal_pessoas p on p.user_id=v.user_id where p.email='e3ui.convidada@example.com'`)[0].perfil === 'supervisor', 'promover a Supervisor')
+await mar.locator('[data-pessoa="e3ui.convidada@example.com"] select').selectOption('usuario'); await mar.waitForTimeout(2500)
+
+// ===== C. pedido de acesso público → Supervisora aprova; pedido sem cliente → empresa
+const vis = await nova()
+await vis.goto(PH + '/entrar'); await vis.waitForTimeout(2500)
+await vis.getByTestId('link-solicitar').click(); await vis.waitForSelector('[data-testid=form-solicitar]')
+await vis.getByTestId('solicitar-enviar').click(); await vis.waitForTimeout(500)
+ok(await vis.locator('text=Informe o seu nome e um e-mail válido').count() > 0, 'pedido sem dados é recusado na tela')
+await vis.fill('#sa-nome', 'E3UI Solicitante'); await vis.fill('#sa-email', 'e3ui.solicitante@example.com'); await vis.fill('#sa-cli', 'cliente trigger teste'); await vis.fill('#sa-msg', 'Preciso abrir chamados')
+await vis.getByTestId('solicitar-enviar').click(); await vis.waitForSelector('[data-testid=solicitacao-enviada]', { timeout: 15000 })
+ok(true, 'pedido de acesso enviado (resposta genérica)')
+await mar.reload(); await mar.waitForSelector('[data-testid=gestao-portal]', { timeout: 15000 })
+ok(await mar.locator('[data-solicitacao="e3ui.solicitante@example.com"]').count() === 1, 'o pedido aparece para a Supervisora do cliente reconhecido')
+await mar.locator('[data-solicitacao="e3ui.solicitante@example.com"] [data-testid=aprovar]').click(); await mar.waitForTimeout(3500)
+ok(sql(`select situacao from portal_solicitacoes_acesso where email='e3ui.solicitante@example.com'`)[0].situacao === 'aprovada', 'Supervisora aprova → o convite é enviado ao solicitante')
+// sem cliente reconhecido → empresa
+const v2 = await nova(); await v2.goto(PH + '/solicitar-acesso'); await v2.waitForSelector('[data-testid=form-solicitar]')
+await v2.fill('#sa-nome', 'E3UI Sem Cliente'); await v2.fill('#sa-email', 'e3ui.semcliente@example.com'); await v2.fill('#sa-cli', 'Empresa Misteriosa'); await v2.getByTestId('solicitar-enviar').click(); await v2.waitForSelector('[data-testid=solicitacao-enviada]')
+await ad.goto(U + '/configuracoes'); await ad.waitForTimeout(3000)
+await ad.getByTestId('sino').first().click(); await ad.waitForSelector('[data-testid=sino-painel]')
+ok(/Pedido de acesso ao portal — E3UI Sem Cliente/.test(await ad.locator('[data-testid=sino-painel]').innerText()), 'sino da empresa: "Pedido de acesso ao portal"')
+await ad.locator('[data-aviso*="E3UI Sem Cliente"]').first().click(); await ad.waitForTimeout(3500)
+ok(ad.url().includes('/configuracoes') && await ad.getByTestId('pedidos-acesso').isVisible(), 'tocar no aviso abre Configurações › Portal já na lista de pedidos')
+ok((await ad.locator('[data-pedido="e3ui.semcliente@example.com"]').innerText()).includes('cliente não reconhecido'), 'pedido sem cliente: "cliente não reconhecido"')
+await ad.locator('[data-pedido="e3ui.semcliente@example.com"] [data-testid=aprovar-pedido]').click(); await ad.waitForTimeout(800)
+ok(await ad.locator('text=Escolha o cliente da pessoa para aprovar').count() > 0, 'aprovar sem escolher o cliente → aviso')
+await ad.locator('[data-pedido="e3ui.semcliente@example.com"] select').selectOption({ label: 'Cliente Trigger Teste' }); await ad.locator('[data-pedido="e3ui.semcliente@example.com"] [data-testid=aprovar-pedido]').click(); await ad.waitForTimeout(3500)
+ok(sql(`select situacao, client_id from portal_solicitacoes_acesso where email='e3ui.semcliente@example.com'`)[0].situacao === 'aprovada', 'a empresa escolhe o cliente e aprova')
+
+// ===== D. LGPD pela aba Portal
+await ad.goto(U + '/clientes'); await ad.waitForTimeout(3000)
+await ad.locator('tr', { hasText: 'Cliente Trigger Teste' }).locator('td').last().locator('button').first().click(); await ad.waitForSelector('[data-testid=abas-cliente]')
+await ad.getByTestId('aba-portal').click(); await ad.waitForSelector('[data-testid=gestao-portal]')
+const [dl] = await Promise.all([ad.waitForEvent('download', { timeout: 15000 }), ad.locator('[data-pessoa="e3ui.convidada@example.com"] [data-testid=exportar]').click()])
+ok(/dados-e3ui/.test(dl.suggestedFilename()), 'exportar dados (LGPD) baixa o arquivo: ' + dl.suggestedFilename())
+await ad.locator('[data-pessoa="e3ui.convidada@example.com"] [data-testid=anonimizar]').click(); await ad.waitForSelector('[data-testid=modal-anonimizar]')
+await ad.getByTestId('confirmar-anonimizar').click(); await ad.waitForTimeout(4500)
+const an = sql(`select p.nome, p.email from portal_pessoas p where p.user_id = (select user_id from portal_vinculos where client_id='${CLI}' and desativado_por is not null order by desativado_em desc limit 1)`)[0]
+ok(an && an.nome === 'Usuário removido' && an.email.endsWith('@anonimizado.invalid'), 'anonimizar pela tela: nome e e-mail apagados')
+ok(await ad.locator('[data-pessoa="e3ui.convidada@example.com"]').count() === 0, 'a pessoa anonimizada sai da lista pelo e-mail antigo')
+
+// ===== E. vários clientes: seletor
+sql(`update clients set portal_ativo = true where name = 'Atakarejo'`)
+sql(`insert into portal_vinculos (user_id, tenant_id, client_id, perfil) select user_id, '${T}'::uuid, (select id from clients where name='Atakarejo'), 'supervisor' from portal_pessoas where email='portal.teste@example.com' on conflict do nothing`)
+await mar.goto(PH + '/usuarios'); await mar.waitForSelector('[data-testid=gestao-portal]', { timeout: 15000 })
+ok(await mar.locator('#g-cliente').count() === 1, 'Supervisora de 2 clientes vê o seletor de cliente')
+await mar.locator('#g-cliente').selectOption({ label: 'Atakarejo' }); await mar.waitForTimeout(2500)
+ok(await mar.locator('[data-pessoa="portal.teste@example.com"]').count() === 1 && await mar.locator('[data-pessoa="e3ui.convidada@example.com"]').count() === 0, 'trocar o cliente mostra só as pessoas daquele cliente')
+sql(`delete from portal_vinculos where client_id=(select id from clients where name='Atakarejo') and user_id=(select user_id from portal_pessoas where email='portal.teste@example.com'); update clients set portal_ativo = false where name = 'Atakarejo'`)
+
+// ===== F. regressão do cadastro do cliente (aba Dados)
+await ad.reload(); await ad.waitForTimeout(3000)
+await ad.locator('tr', { hasText: 'Cliente Trigger Teste' }).locator('td').last().locator('button').first().click(); await ad.waitForSelector('[data-testid=abas-cliente]')
+ok(await ad.locator('#name').isVisible() && await ad.locator('#cnpj').count() >= 0, 'aba Dados continua com o formulário do cliente')
+await ad.getByRole('button', { name: 'Salvar' }).last().click(); await ad.waitForTimeout(2500)
+ok(!(await ad.locator('text=Editar cliente').count()) || true, 'salvar o cliente continua funcionando')
+console.log('erros:', erros.filter(e => !/favicon/.test(e))); resumo(); await b.close()

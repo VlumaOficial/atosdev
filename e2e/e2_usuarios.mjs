@@ -1,0 +1,40 @@
+import { chromium } from 'playwright'
+import { N, U, T, SB, anon, cred, sql, ok, resumo, entrar, token } from './lib.mjs'
+const b = await chromium.launch(); const erros = []
+const p = await (await b.newContext({ viewport: { width: 1366, height: 900 } })).newPage()
+p.on('pageerror', e => erros.push(e.message))
+sql(`delete from auth.users where email like 'e2ui.%'`)
+await entrar(p, cred.admin)
+await p.goto(U + '/usuarios'); await p.waitForSelector('[data-testid=lista-usuarios]', { timeout: 15000 })
+ok(await p.locator('[data-usuario="atendente.teste@infoxtec.com.br"]').count() === 1, 'tela Usuários lista a equipe interna (inclui o Atendente)')
+await p.getByTestId('novo-usuario').click(); await p.waitForSelector('[data-testid=form-usuario]')
+ok(await p.getByTestId('perfil-atendente').isChecked(), 'novo usuário: perfil Atendente por padrão, com a descrição do que ele pode')
+await p.fill('#u-nome', 'E2UI Atendente'); await p.fill('#u-email', 'e2ui.atendente@example.com'); await p.fill('#u-senha', 'curta')
+await p.getByRole('button', { name: 'Criar usuário' }).click(); await p.waitForTimeout(600)
+ok(await p.locator('text=pelo menos 8 caracteres').count() > 0, 'senha curta é recusada')
+await p.fill('#u-senha', 'Senha-E2ui-123'); await p.getByRole('button', { name: 'Criar usuário' }).click(); await p.waitForTimeout(4000)
+const u = sql(`select role, tenant_id, active from users where email='e2ui.atendente@example.com'`)[0]
+ok(u && u.role === 'atendente' && u.tenant_id === T && u.active, 'Atendente criado pela tela: perfil atendente, na empresa certa')
+ok(await p.locator('[data-usuario="e2ui.atendente@example.com"]').count() === 1, 'aparece na lista')
+await p.locator('[data-usuario="e2ui.atendente@example.com"] button[title="Desativar"]').click(); await p.waitForTimeout(1500)
+ok(sql(`select active from users where email='e2ui.atendente@example.com'`)[0].active === false, 'desativar pela tela')
+// o novo Atendente consegue entrar e cai na fila
+const q = await (await b.newContext({ viewport: { width: 1366, height: 900 } })).newPage()
+sql(`update users set active=true where email='e2ui.atendente@example.com'`)
+await entrar(q, ['e2ui.atendente@example.com', 'Senha-E2ui-123'])
+ok(q.url().includes('/os') && q.url().includes('gru=sem'), 'o novo Atendente entra e cai na fila de entrada')
+// regressão: criar-tecnico sem perfil continua criando técnico; gestor não cria atendente
+const tokAdm = await token(cred.admin)
+const chamar = async (tok, body) => { const r = await fetch(SB + '/functions/v1/criar-tecnico', { method: 'POST', headers: { apikey: anon, Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return { s: r.status, j: await r.json() } }
+const r1 = await chamar(tokAdm, { name: 'E2UI Tecnico', email: 'e2ui.tecnico@example.com', password: 'Senha-E2ui-123' })
+ok(r1.s === 200 && sql(`select role from users where email='e2ui.tecnico@example.com'`)[0].role === 'tecnico', 'regressão: criar técnico (sem perfil informado) continua criando técnico')
+const r2 = await chamar(tokAdm, { name: 'E2UI Gestor', email: 'e2ui.gestor@example.com', password: 'Senha-E2ui-123', role: 'gestor' })
+ok(r2.s === 200 && sql(`select role from users where email='e2ui.gestor@example.com'`)[0].role === 'gestor', 'admin cria gestor pela função')
+const tokGestor = await token(['e2ui.gestor@example.com', 'Senha-E2ui-123'])
+const r3 = await chamar(tokGestor, { name: 'E2UI Intruso', email: 'e2ui.intruso@example.com', password: 'Senha-E2ui-123', role: 'atendente' })
+ok(r3.s === 403, 'gestor NÃO cria atendente (403): ' + r3.j.error)
+const r4 = await chamar(tokGestor, { name: 'E2UI Tec Gestor', email: 'e2ui.tecg@example.com', password: 'Senha-E2ui-123' })
+ok(r4.s === 200, 'gestor continua criando técnico')
+const r5 = await chamar(tokAdm, { name: 'X', email: 'e2ui.x@example.com', password: 'Senha-E2ui-123', role: 'super_admin' })
+ok(r5.s === 400, 'perfil inválido (super_admin) é recusado: ' + r5.j.error)
+console.log('erros:', erros.filter(e => !/favicon/.test(e))); resumo(); await b.close()
