@@ -970,6 +970,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 060_portal_clientes | portal por cliente, equipes, convites (hash do token), pedidos de acesso, papel no cliente, gestão de pessoas, LGPD (exportar), chave do anti-robô, avisos com destino | OK | Pendente | Sim |
 | 061_portal_chamados | origem/solicitante/equipe nas OS, anexos do cliente (bucket privado portal-anexos), também me afeta, preferências, avisos enviados, funções do portal (abrir, listar, obter, parecidos, datas, preferências), configuração de abertura, info do chamado para a equipe | OK | Pendente | Sim |
 | 062_portal_avisos_email | gatilho (pg_net + Vault) que chama portal-avisos ao abrir/mudar a situação do chamado — **URL do DEV escrita** | OK | Pendente | Sim |
+| 063_portal_convite_celular | portal_convites.celular: o celular do "Solicitar acesso" acompanha o convite até a tela de criar senha e o cadastro da pessoa | OK | Pendente | Sim |
 
 ---
 
@@ -1345,7 +1346,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 4. **E6:** painel do Supervisor, acréscimos no painel F7, PWA, auditoria, regressão completa.
 5. **Ordem até o PRD (mantida):** escalas + notificação diária → Conexões de WhatsApp (item 3, antes da F8) → F8 planos/pagamento → painel do Super Admin → segurança essencial + responsividade → limpeza de dados de teste + troca de credenciais → PRD. Depois do PRD: Portal Etapas 2–3, F12 (app nas lojas), F9 (GLPI), F10 completa, F11 (manual).
 6. **Pontos abertos de desenho:** domínio próprio da gestão/técnicos (hoje o mesmo host da plataforma); botão de remover endereço do portal e limpeza de endereços antigos após 90 dias; varredura no servidor de anexos órfãos do `portal-anexos`.
-7. **Antes do PRD:** limites de domínios e uso comercial do plano Vercel (Hobby); URL do DEV escrita nos gatilhos das migrations 030 e 062; migrations 001–062 e republicação das Edge Functions (`portal-endereco`, `portal-acesso`, `portal-avisos`, `criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`); segredos `TURNSTILE_SECRET` e `SITE_URL`.
+7. **Antes do PRD:** limites de domínios e uso comercial do plano Vercel (Hobby); URL do DEV escrita nos gatilhos das migrations 030 e 062; migrations 001–063 e republicação das Edge Functions (`portal-endereco`, `portal-acesso`, `portal-avisos`, `criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`); segredos `TURNSTILE_SECRET` e `SITE_URL`.
 8. **Só no FIM do MVP:** limpar dados de teste (OS-0018 em diante, grupos Central N1 / Redes N2 / Campo Interior, usuários `atendente.teste` e `portal.teste`, resíduos de e-mails `e3.*`/`e4.*`) e **trocar credenciais**: token do Supabase, `cfut_` da Cloudflare, `vcp_` da Vercel, segredo do Turnstile, senhas de teste, PAT do GitHub, senha do Zoho, chave do LocationIQ.
 
 ---
@@ -2304,6 +2305,15 @@ O usuário testou o "Solicitar acesso" no navegador real (com e-mail e celular d
 - **Testes:** `e2e/e3_ui.mjs` atualizado (aviso → Usuários › Solicitações, contagem na aba, cliente com portal desligado) e dois checks vazios antigos trocados por verificações reais.
 - **Resíduo de teste:** o pedido real do usuário (Sergio Teste, sergio.dorea2624@gmail.com, "Atakarejo") continua pendente de propósito; os resíduos `e3ui.*` são limpos pelo próprio roteiro.
 
+### Portal — 2º teste manual do usuário (2026-10-10): convite, celular, rodapé e tipos de chamado
+O usuário aprovou o próprio pedido e criou a conta pelo convite real (e-mail verdadeiro). Achados:
+1. **"Repita a senha" sem o olho de mostrar:** corrigido. Novo componente `src/portal/CampoSenha.tsx` (botão mostrar/ocultar) usado em criar senha (os 2 campos) e em "Criar nova senha" (os 2 campos). O login já tinha.
+2. **Celular do pedido se perdia (bug):** o `portal_solicitacoes_acesso.celular` não passava para o convite; a tela de criar senha abria em branco e a pessoa ficava sem celular (Preferências vazio). **Migration 063** (`portal_convites.celular`, aplicada no DEV); a função `portal-acesso` (republicada) grava o celular no convite ao aprovar, devolve em `consultar` e o cadastro usa `celular do formulário ?? celular do convite`; a tela já abre preenchida. Quem já tinha conta antes do ajuste (o próprio usuário) preenche em Preferências.
+3. **Rodapé "Termos de uso · Privacidade · Tecnologia ATOS · VLUMA" no meio da tela:** as telas curtas deixavam o rodapé logo abaixo do conteúdo. Agora ele fica **colado no fim da janela** (início, abrir, chamados, preferências, usuários) — computador e celular.
+4. **Só 2 tipos de chamado em "Abrir chamado" (Relatar um problema e Solicitar visita técnica) — comportamento esperado, não defeito:** o cartão de um tipo só aparece se existir ao menos uma categoria **visível no portal** para aquele tipo. Hoje as categorias reais do catálogo ("Câmera sem imagem") estão dentro de **CFTV, que está oculta no portal**; só a categoria de teste "E2-UI Categoria" (incidente e visita) aparece. Ao ocultar a categoria pai, as filhas somem do portal (regra da E4). Para mostrar Requisição e Preventiva: em Catálogo e SLA, deixar visível a categoria (e a pai) e marcar esses tipos.
+5. **Onde abrir o portal (pergunta do usuário):** hoje só em **Configurações › Portal de atendimento › "Abrir o portal"** (abre a prévia da equipe) e pelo endereço direto `https://atendimento.infoxtec.dev.vluma.com.br`. Não existe item no menu lateral — fica difícil de achar. **Proposta ao usuário:** item "Portal do cliente" no menu do administrador (aguardando resposta).
+- **Testes:** `e2e/portal_ajustes.mjs` (15 verificações na URL pública: celular do pedido ao convite e ao cadastro, olho de senha nos dois campos sem interferir um no outro, rodapé no fim em 3 telas e no celular, sem rolagem horizontal). Os testes do convite não deixam resíduo (`e5aj.*` limpos pelo roteiro).
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -2323,7 +2333,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–062 em ordem (**062: trocar a URL do projeto no gatilho**) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–063 em ordem (**062: trocar a URL do projeto no gatilho**) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código

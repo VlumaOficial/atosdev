@@ -34,3 +34,5 @@ falha plantada (um tratador EXCEPTION no bloco externo já deixou checagens vazi
 - **Ordem:** `e2_admin` cria a massa que `e2_atendente` e `e2_tecnico` consomem (o Atendente transfere a OS "E2-UI sem grupo"). Rode sempre nesta ordem; `e2_atendente` sozinho, duas vezes seguidas, falha por falta de massa — não é bug do app.
 - **Anti-robô:** com `TURNSTILE_SECRET` real na função `portal-acesso`, o pedido público sem token volta 400 (correto). Para rodar `e3_api`/`e3_ui`, troque temporariamente o segredo da função por `1x0000000000000000000000000000000AA` e a chave pública (`portal_plataforma.turnstile_site_key`) por `1x00000000000000000000AA` (token de teste `XXXX.DUMMY.TOKEN.XXXX`) e **restaure as reais ao final**.
 - `e4_interno` zera `preventiva` nas outras categorias antes de checar o aviso de "tipo sem categoria visível".
+
+- `portal_ajustes.mjs`: celular do pedido → convite → cadastro, olho de mostrar senha e rodapé no fim da tela (ajustes do teste manual de 2026-10-10).
