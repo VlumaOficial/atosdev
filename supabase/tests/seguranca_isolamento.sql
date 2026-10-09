@@ -168,7 +168,7 @@ from pg_proc p join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public' and p.prosecdef
   and has_function_privilege('authenticated', p.oid, 'execute')
   and p.prorettype <> 'trigger'::regtype
-  and p.prosrc !~ 'get_meu_tenant|get_meu_role|auth\.uid|pode_ver|portal_tem_vinculo|portal_papel_no_cliente'
+  and p.prosrc !~ 'get_meu_tenant|get_meu_role|auth\.uid|pode_ver|portal_tem_vinculo|portal_papel_no_cliente|portal_perfil_no_cliente|portal_ve_chamado'
   and p.proname not in (
     'provedor_geocodificacao',   -- devolve só o nome do provedor de mapas (usado na tela do técnico)
     'previa_liberar_espaco',     -- delega para arquivos_para_liberar/os_para_liberar, que checam papel
