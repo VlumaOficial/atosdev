@@ -13,6 +13,8 @@ import DadosEmpresaForm from '@/components/DadosEmpresaForm'
 import LiberarEspacoCard from '@/components/LiberarEspacoCard'
 import EnvioRelatorioCard from '@/components/EnvioRelatorioCard'
 import FusoHorarioCard from '@/components/FusoHorarioCard'
+import PortalConfigCard from '@/components/portal/PortalConfigCard'
+import PortalPlataformaCard from '@/components/portal/PortalPlataformaCard'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
 export default function ConfiguracoesPage() {
@@ -73,6 +75,8 @@ export default function ConfiguracoesPage() {
       <div className="space-y-4 max-w-2xl">
         <ArmazenamentoCard />
         {user?.role === 'super_admin' && <GeocodificacaoPlataformaCard />}
+        {user?.role === 'super_admin' && <PortalPlataformaCard />}
+        {tenant && user?.role === 'admin' && <PortalConfigCard />}
         {tenant && <FusoHorarioCard />}
         {tenant && <EnvioRelatorioCard />}
         {tenant && <ExportacaoFotosCard />}

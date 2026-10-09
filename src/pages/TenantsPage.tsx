@@ -14,7 +14,7 @@ import { nomeCidade, ufDoIbge } from '@/lib/calendario'
 // opção B), com consulta à Receita (BrasilAPI) e histórico. O restante
 // da gestão de tenants (planos, status, limites) vem na F8.
 
-interface Tenant { id: string; name: string; trade_name: string | null; cnpj: string | null; status: string; plan: string | null; envio_nivel: string; sede_cidade: string | null; sede_cidade_ibge: string | null }
+interface Tenant { id: string; name: string; trade_name: string | null; cnpj: string | null; status: string; plan: string | null; envio_nivel: string; sede_cidade: string | null; sede_cidade_ibge: string | null; portal_habilitado: boolean; portal_ativo: boolean; portal_slug: string | null }
 interface Hist { id: string; alterado_em: string; cnpj_anterior: string | null; razao_anterior: string | null; cnpj_novo: string | null; razao_nova: string | null; fonte: string }
 
 export default function TenantsPage() {
@@ -31,7 +31,7 @@ export default function TenantsPage() {
   const [historico, setHistorico] = useState<Hist[]>([])
 
   async function carregar() {
-    const { data } = await supabase.from('tenants').select('id, name, trade_name, cnpj, status, plan, envio_nivel, sede_cidade, sede_cidade_ibge').order('name')
+    const { data } = await supabase.from('tenants').select('id, name, trade_name, cnpj, status, plan, envio_nivel, sede_cidade, sede_cidade_ibge, portal_habilitado, portal_ativo, portal_slug').order('name')
     setTenants((data as Tenant[]) ?? []); setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
@@ -88,6 +88,13 @@ export default function TenantsPage() {
                 <option value="basico">Envio: Básico</option>
                 <option value="intermediario">Envio: Intermediário</option>
                 <option value="avancado">Envio: Avançado</option>
+              </select>
+              <select aria-label={'Portal de atendimento ' + (t.trade_name || t.name)} value={t.portal_habilitado ? 'sim' : 'nao'}
+                onChange={async e => { const { error } = await supabase.rpc('definir_portal_habilitado', { p_tenant: t.id, p_habilitado: e.target.value === 'sim' }); if (error) alert(error.message); carregar() }}
+                className="px-2 py-2 rounded-md bg-input border border-border text-xs text-foreground"
+                title={t.portal_habilitado ? (t.portal_ativo ? `Portal ativo: ${t.portal_slug}` : 'Habilitado — a empresa ainda não ativou') : 'A empresa só configura o portal depois de habilitado (até a F8, definido aqui)'}>
+                <option value="nao">Portal: desabilitado</option>
+                <option value="sim">Portal: habilitado{t.portal_habilitado ? (t.portal_ativo ? ' · ativo' : ' · não ativado') : ''}</option>
               </select>
               <Button type="button" variant="outline" onClick={() => abrir(t)}><ShieldCheck size={14} /> Identidade legal</Button>
             </div>

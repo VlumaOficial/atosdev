@@ -58,6 +58,12 @@ export async function uploadLogoEmpresa(file: File): Promise<UploadLogoResult> {
     .upload(caminho, redimensionada, { contentType: 'image/png', upsert: true })
 
   if (error) return { erro: error.message }
+  // cópia pública para o portal de atendimento (só quando habilitado)
+  const { data: t } = await supabase.from('tenants').select('portal_habilitado').eq('id', tenantId).single()
+  if (t?.portal_habilitado) {
+    const { publicarLogoPortal } = await import('@/lib/portal')
+    await publicarLogoPortal(tenantId, redimensionada)
+  }
   return {}
 }
 

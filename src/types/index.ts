@@ -41,6 +41,16 @@ export interface Tenant {
   prioridade_modo?: 'matriz' | 'simples'
   prioridade_matriz?: Record<string, Record<string, string>>
   sla_por_cliente?: boolean
+  // Portal de atendimento (migration 051)
+  portal_habilitado?: boolean
+  portal_ativo?: boolean
+  portal_slug?: string | null
+  portal_nome?: string | null
+  portal_cor?: string | null
+  portal_boas_vindas?: string | null
+  portal_contatos?: { email?: string; telefone?: string; whatsapp?: string; site?: string }
+  portal_termos_proprios?: string[]
+  portal_logo_versao?: number | null
   created_at: string
   updated_at: string
 }

@@ -78,7 +78,7 @@ begin
     insert into _falhas values ('portal_meu_contexto', 'deu acesso a outra empresa');
   end if;
   begin
-    perform public.portal_aceitar_termos(a.outra, (select array_agg(id) from public.termos where tenant_id is null));
+    perform public.portal_aceitar_termos(a.outra, (select array_agg(id) from public.termos where tenant_id is null), '{}');
     insert into _falhas values ('portal_aceitar_termos', 'aceitou termos em outra empresa');
   exception when others then null;
   end;

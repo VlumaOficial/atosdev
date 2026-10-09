@@ -27,6 +27,8 @@ import MyOrdersPage from '@/pages/field/MyOrdersPage'
 import FieldOrderPage from '@/pages/field/FieldOrderPage'
 import MyChecklistsPage from '@/pages/field/MyChecklistsPage'
 import FieldChecklistPage from '@/pages/field/FieldChecklistPage'
+import PortalApp from '@/portal/PortalApp'
+import { hostEhPortal } from '@/lib/portal'
 
 // Placeholders para fases futuras
 function PlaceholderPage({ title }: { title: string }) {
@@ -46,6 +48,18 @@ function HomeRedirect() {
 }
 
 export default function App() {
+  // Portal de atendimento aberto pelo próprio endereço (subdomínio VLUMA ou
+  // domínio da empresa): o site inteiro é o portal
+  if (hostEhPortal()) {
+    return (
+      <BrowserRouter>
+        <AtualizacaoApp />
+        <Routes>
+          <Route path="/*" element={<PortalApp />} />
+        </Routes>
+      </BrowserRouter>
+    )
+  }
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -58,6 +72,9 @@ export default function App() {
           <Route path="/privacidade" element={<AvisoPrivacidadePage />} />
           <Route path="/verificar" element={<VerificarFotoPage />} />
           <Route path="/verificar/:codigo" element={<VerificarFotoPage />} />
+
+          {/* Portal de atendimento pelo caminho interno (teste e contingência) */}
+          <Route path="/portal/:slug/*" element={<PortalApp />} />
 
           {/* Rotas protegidas */}
           <Route
