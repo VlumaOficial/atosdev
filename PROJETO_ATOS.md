@@ -1964,6 +1964,15 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
 - **Estrutura oficial de endereços (Super Admin, clientes ATOS e portal, PRD e HML) registrada em VISAO_ATOS.md 9.1 em 2026-10-09.**
 - **Pendente de decisão do usuário:** o caminho `/portal/<nome>` fica só como prévia da equipe interna (combinado no ponto 1: "só interno: teste e contingência"). Hoje ele ainda aceita a entrada de clientes, e a restrição será feita junto do subdomínio automático.
 
+### Cloudflare — acesso validado e DNS atual da zona (2026-10-09)
+- Token válido (`/user/tokens/verify` = ativo). **Zone ID de vluma.com.br: `56085f864e0c103590c760bdff42d014`** (descoberto pela API; o ID da zona não é secreto).
+- **Estado do DNS (só leitura):**
+  - o `atosdev.vluma.com.br` é um CNAME (somente DNS, sem o proxy laranja) para `9b2821f907a6be06.vercel-dns-017.com`, que é o alvo do projeto atosdev na Vercel;
+  - não existe nenhum registro `atendimento*` nem curinga (`*.vluma.com.br`), então não há conflito;
+  - e-mail em Zoho (MX/SPF) e Brevo (DKIM): **não serão tocados**;
+  - já existe `evo.vluma.com.br` (servidor da Evolution, 31.97.86.173) — útil quando chegarmos às Conexões de WhatsApp.
+- **Como o portal vai usar:** por empresa, um CNAME `atendimento.<empresa>` (e `atendimento.<empresa>.dev` no HML) **somente DNS**, para o alvo da Vercel do projeto + o domínio cadastrado no projeto da Vercel por API (certificado automático). O mesmo padrão já usado nos outros subdomínios da zona.
+
 ### Portal de atendimento — Etapa 1 · E1 Fundação (2026-10-09) — CONSTRUÍDA E TESTADA, exceto o subdomínio automático (aguardando tokens da Cloudflare e da Vercel)
 - **Migration 051 (banco do portal):**
   - **empresa:** `tenants.portal_*` — habilitado (Super Admin), ativo, nome curto, nome, cor, boas-vindas, contatos, termos próprios, versão da logo;
@@ -2053,6 +2062,7 @@ noreply@vluma.com.br (segredo `SMTP_PADRAO_SENHA`), chave do LocationIQ
 teste (Super Admin, admin Infoxtec, técnico atendimento@) foram enviados
 pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
+**2026-10-09:** token da **Cloudflare** (conta adm@vluma.com.br, token de usuário `cfut_…`, permissão só "Editar DNS" na zona vluma.com.br) enviado pelo chat para o subdomínio automático do portal — guardado só no scratchpad; **trocar no fim do MVP** (e revogar o atual na Cloudflare). Em seguida virá o token da Vercel, com o mesmo tratamento.
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
