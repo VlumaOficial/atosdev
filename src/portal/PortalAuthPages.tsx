@@ -75,6 +75,9 @@ export function PortalEntrar() {
         <p className="text-center">
           <Link to={`${base}/esqueci-senha`} className="text-sm text-primary hover:underline">Esqueci minha senha</Link>
         </p>
+        <p className="text-center text-sm text-muted-foreground pt-1">
+          Ainda não tem acesso? <Link to={`${base}/solicitar-acesso`} className="text-primary hover:underline" data-testid="link-solicitar">Solicitar acesso</Link>
+        </p>
       </form>
     </Moldura>
   )

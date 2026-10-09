@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
+import ClientePortalAba from '@/components/portal/ClientePortalAba'
+import { useAuth } from '@/hooks/useAuth'
 import { EmptyState } from '@/components/ui/empty-state'
 import { DataListView, type Column } from '@/components/ui/data-list-view'
 import { Building2, Plus, Pencil, Trash2, MapPin, Power } from 'lucide-react'
@@ -63,6 +65,8 @@ export default function ClientsPage() {
   const [formError, setFormError] = useState('')
   const [formActive, setFormActive] = useState(true)
   const [chip, setChip] = useState('all')
+  const { tenant } = useAuth()
+  const [aba, setAba] = useState<'dados' | 'portal'>('dados')
   const [endereco, setEndereco] = useState<Endereco>({ ...ENDERECO_VAZIO })
   const [principal, setPrincipal] = useState<string>(NOVA_UNIDADE)
 
@@ -77,6 +81,7 @@ export default function ClientsPage() {
   }
 
   function openNew() {
+    setAba('dados')
     setEditing(null)
     setFormActive(true)
     setForm(emptyForm)
@@ -87,6 +92,7 @@ export default function ClientsPage() {
   }
 
   function openEdit(c: Client) {
+    setAba('dados')
     setEditing(c)
     setFormActive(c.active)
     setForm({ name: c.name, cnpj: c.cnpj ?? '', email: c.email, phone: c.phone, address: c.address })
@@ -321,11 +327,20 @@ export default function ClientsPage() {
         open={modalOpen}
         onOpenChange={setModalOpen}
         title={editing ? 'Editar cliente' : 'Novo cliente'}
-        className="max-w-lg"
+        className={aba === 'portal' ? 'max-w-3xl' : 'max-w-lg'}
         fecharAoClicarFora={false}
         description={editing ? 'Atualize os dados do cliente' : 'Cadastre uma empresa ou pessoa atendida'}
       >
-        <form onSubmit={handleSave} className="space-y-4">
+        {editing && tenant?.portal_habilitado && (
+          <div className="flex gap-1 border-b border-border mb-4" role="tablist" data-testid="abas-cliente">
+            {([['dados', 'Dados'], ['portal', 'Portal']] as const).map(([k, r]) => (
+              <button key={k} type="button" role="tab" aria-selected={aba === k} onClick={() => setAba(k)} data-testid={'aba-' + k}
+                className={'px-3 py-2 text-sm -mb-px border-b-2 transition ' + (aba === k ? 'border-primary text-foreground font-medium' : 'border-transparent text-muted-foreground hover:text-foreground')}>{r}</button>
+            ))}
+          </div>
+        )}
+        {editing && aba === 'portal' && <ClientePortalAba clientId={editing.id} nomeCliente={editing.name} />}
+        <form onSubmit={handleSave} className={'space-y-4 ' + (editing && aba === 'portal' ? 'hidden' : '')}>
           <div>
             <Label htmlFor="name">Nome *</Label>
             <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nome da empresa ou da pessoa" />

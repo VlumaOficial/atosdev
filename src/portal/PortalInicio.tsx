@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Navigate, Link } from 'react-router-dom'
-import { Loader2, LogOut, ShieldCheck, Building2, ChevronDown, Ticket } from 'lucide-react'
+import { Loader2, LogOut, ShieldCheck, Building2, ChevronDown, Ticket, Users2 } from 'lucide-react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { PortalContexto, TermoPendente } from '@/lib/portal'
@@ -59,7 +59,7 @@ async function sair() {
   await supabase.auth.signOut()
 }
 
-function Topo() {
+export function Topo() {
   return (
     <header className="border-b border-border bg-card/60 backdrop-blur sticky top-0 z-10">
       <AvisoPrevia />
@@ -207,6 +207,17 @@ function Inicio({ ctx }: { ctx: PortalContexto }) {
             <p className="text-sm text-muted-foreground mt-0.5">A abertura e o acompanhamento de chamados por aqui chegam na próxima etapa. Enquanto isso, fale com a {id.empresa} pelos contatos abaixo.</p>
           </div>
         </div>
+
+        {(ctx.vinculos ?? []).some(v => v.perfil === 'supervisor') && (
+          <Link to={`${base}/usuarios`} data-testid="link-gestao"
+            className="vluma-card p-5 mt-4 flex items-start gap-3 hover:border-primary/40 transition">
+            <div className="w-10 h-10 rounded-md bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0"><Users2 size={18} className="text-primary" /></div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Usuários e equipes</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Convide pessoas, crie equipes e responda aos pedidos de acesso do seu cliente.</p>
+            </div>
+          </Link>
+        )}
 
         <div className="vluma-card p-5 mt-4">
           <p className="text-sm font-medium text-foreground mb-3">Seu acesso</p>

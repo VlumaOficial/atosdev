@@ -7,6 +7,7 @@ import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 import { urlLogoEmpresa } from '@/lib/uploadLogo'
 import { publicarLogoPortal, temaDaCor, TIPOS_TERMO, type TipoTermo } from '@/lib/portal'
 import EnderecosPortal from './EnderecosPortal'
+import PedidosAcessoEmpresa from './PedidosAcessoEmpresa'
 import { useTermos, TermoEditorModal, TermoLeituraModal, type TermoLinha } from './TermoEditor'
 
 // Configurações › Portal de atendimento (E1). Só o admin da empresa; o
@@ -208,6 +209,9 @@ export default function PortalConfigCard() {
               })}
             </div>
           </div>
+
+          {/* pedidos de acesso (E3) */}
+          {tenant.portal_ativo && <PedidosAcessoEmpresa />}
 
           {/* ativação */}
           <label className="flex items-start gap-2 text-sm cursor-pointer">

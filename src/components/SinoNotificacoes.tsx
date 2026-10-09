@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Bell, AlertTriangle, Clock, CheckCheck, ArrowRightLeft } from 'lucide-react'
+import { Bell, AlertTriangle, Clock, CheckCheck, ArrowRightLeft, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // Avisos de SLA (migration 045) para admin/gestor: "em risco" e "vencido".
 // Tempo real pela publicação do Supabase; tocar abre a OS e marca como lido.
 
-interface Notificacao { id: string; tipo: 'sla_em_risco' | 'sla_vencido' | 'transferida' | 'pingue_pongue'; order_id: string | null; titulo: string; corpo: string | null; criada_em: string; lida_em: string | null }
+interface Notificacao { id: string; tipo: 'sla_em_risco' | 'sla_vencido' | 'transferida' | 'pingue_pongue' | 'solicitacao_acesso'; order_id: string | null; link: string | null; titulo: string; corpo: string | null; criada_em: string; lida_em: string | null }
 
 export function useNotificacoes() {
   const { user } = useAuth()
@@ -17,7 +17,7 @@ export function useNotificacoes() {
   const canal = useRef('notificacoes-' + Math.random().toString(36).slice(2))   // um canal por instância (menu desktop e celular)
   const recarregar = useCallback(async () => {
     if (!ativo) return
-    const { data } = await supabase.from('notificacoes').select('id, tipo, order_id, titulo, corpo, criada_em, lida_em')
+    const { data } = await supabase.from('notificacoes').select('id, tipo, order_id, link, titulo, corpo, criada_em, lida_em')
       .order('criada_em', { ascending: false }).limit(30)
     setItens((data ?? []) as Notificacao[])
   }, [ativo])
@@ -63,6 +63,7 @@ export default function SinoNotificacoes({ onNavegar }: { onNavegar?: () => void
     setAberto(false)
     onNavegar?.()
     if (n.order_id) navigate('/os/' + n.order_id)
+    else if (n.link) navigate(n.link)
   }
 
   return (
@@ -93,6 +94,8 @@ export default function SinoNotificacoes({ onNavegar }: { onNavegar?: () => void
                   ? <AlertTriangle size={15} className="text-red-400 flex-shrink-0 mt-0.5" />
                   : n.tipo === 'transferida'
                     ? <ArrowRightLeft size={15} className="text-primary flex-shrink-0 mt-0.5" />
+                    : n.tipo === 'solicitacao_acesso'
+                      ? <UserPlus size={15} className="text-primary flex-shrink-0 mt-0.5" />
                     : <Clock size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />}
                 <span className="min-w-0">
                   <span className={cn('block text-xs', n.lida_em ? 'text-muted-foreground' : 'text-foreground font-medium')}>{n.titulo}</span>

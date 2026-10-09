@@ -64,6 +64,8 @@ export default function PortalPlataformaCard() {
           </div>
         </div>
 
+        <ChaveAntiRobo />
+
         <div>
           <p className="text-xs font-medium mb-2">Termos padrão VLUMA</p>
           <div className="divide-y divide-border border border-border rounded-md">
@@ -86,5 +88,33 @@ export default function PortalPlataformaCard() {
       {editor && <TermoEditorModal aberto onFechar={() => setEditor(null)} tipo={editor.tipo} padrao base={editor.base} onPublicado={termos.recarregar} />}
       <TermoLeituraModal termo={lendo} onFechar={() => setLendo(null)} />
     </SecaoRecolhivel>
+  )
+}
+
+// Anti-robô (Cloudflare Turnstile) do "Solicitar acesso": a chave PÚBLICA fica aqui;
+// a chave SECRETA é um segredo da função portal-acesso (TURNSTILE_SECRET), nunca no navegador.
+function ChaveAntiRobo() {
+  const [chave, setChave] = useState('')
+  const [salva, setSalva] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null)
+  useEffect(() => {
+    supabase.rpc('portal_config_plataforma').then(({ data }) => { const k = (data as any)?.turnstile_site_key ?? ''; setChave(k); setSalva(k) })
+  }, [])
+  async function salvar() {
+    setMsg(null)
+    const { error } = await supabase.rpc('definir_turnstile', { p_site_key: chave.trim() || null })
+    if (error) { setMsg({ ok: false, texto: error.message }); return }
+    setSalva(chave.trim()); setMsg({ ok: true, texto: 'Salvo.' })
+  }
+  return (
+    <div>
+      <label htmlFor="plat-turnstile" className="block text-xs font-medium mb-1">Anti-robô do "Solicitar acesso" — chave do site (Turnstile)</label>
+      <div className="flex flex-wrap items-center gap-2">
+        <input id="plat-turnstile" value={chave} onChange={e => setChave(e.target.value)} placeholder="0x4AAAAAAA…" className="flex-1 min-w-[240px] px-3 py-2 rounded-md bg-input border border-border text-sm" />
+        <Button variant="cta" size="sm" onClick={salvar} disabled={chave.trim() === (salva ?? '')}>Salvar</Button>
+        {msg && <span className={'text-xs ' + (msg.ok ? 'text-green-400' : 'text-red-400')}>{msg.texto}</span>}
+      </div>
+      <p className="text-[11px] text-muted-foreground mt-1">{salva ? 'Ativo: o formulário mostra a verificação.' : 'Sem chave: o formulário funciona só com o limite de pedidos por origem.'} A chave secreta é configurada na função do servidor.</p>
+    </div>
   )
 }

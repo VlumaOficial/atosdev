@@ -18,6 +18,8 @@ import PortalPlataformaCard from '@/components/portal/PortalPlataformaCard'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
 export default function ConfiguracoesPage() {
+  // vindo de um aviso do sino (?secao=portal): abre a seção já aberta
+  try { if (new URLSearchParams(window.location.search).get('secao') === 'portal') localStorage.setItem('atos_secao_portal', '1') } catch { /* sem storage */ }
   const { user, tenant, refreshTenant } = useAuth()
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState('')

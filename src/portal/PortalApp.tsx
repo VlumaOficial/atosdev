@@ -6,6 +6,9 @@ import { PortalContext, type PortalCtx } from './PortalContext'
 import { PortalEntrar, PortalEsqueciSenha, PortalRedefinirSenha } from './PortalAuthPages'
 import PortalTermoPage from './PortalTermoPage'
 import PortalInicio from './PortalInicio'
+import PortalConvite from './PortalConvite'
+import PortalSolicitarAcesso from './PortalSolicitarAcesso'
+import PortalGestao from './PortalGestao'
 
 // Portal de atendimento (Etapa 1). Montado:
 //   * na raiz, quando o site é aberto por um host de portal (hostEhPortal)
@@ -71,6 +74,9 @@ export default function PortalApp() {
           <Route path="esqueci-senha" element={<PortalEsqueciSenha />} />
           <Route path="redefinir-senha" element={<PortalRedefinirSenha />} />
           <Route path="termos/:tipo" element={<PortalTermoPage />} />
+          <Route path="convite/:token" element={<PortalConvite />} />
+          <Route path="solicitar-acesso" element={<PortalSolicitarAcesso />} />
+          <Route path="usuarios" element={<PortalGestao />} />
           <Route path="*" element={<Navigate to={ctx.base || '/'} replace />} />
         </Routes>
       </div>
