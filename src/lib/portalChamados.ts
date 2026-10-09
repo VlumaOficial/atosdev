@@ -69,7 +69,8 @@ export interface AnexoLocal { id: string; nome: string; tipo: 'foto' | 'audio'; 
 
 export async function prepararFoto(file: File): Promise<AnexoLocal> {
   if (!file.type.startsWith('image/')) throw new Error('Escolha um arquivo de imagem.')
-  const blob = await reduzirFoto(file)
+  let blob: Blob
+  try { blob = await reduzirFoto(file) } catch { throw new Error('Não foi possível ler esta imagem. Tente outra foto.') }
   return { id: crypto.randomUUID(), nome: file.name.replace(/\.[^.]+$/, '') + '.jpg', tipo: 'foto', blob, mime: 'image/jpeg', url: URL.createObjectURL(blob) }
 }
 export function prepararAudio(blob: Blob, nome = 'audio'): AnexoLocal {
