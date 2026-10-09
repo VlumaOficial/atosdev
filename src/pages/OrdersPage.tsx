@@ -8,6 +8,8 @@ import { DataListView, type Column } from '@/components/ui/data-list-view'
 import FiltrosLista from '@/components/FiltrosLista'
 import { intervaloDoPeriodo, type ChavePeriodo } from '@/lib/periodo'
 import { hojeNoFuso } from '@/lib/recorrencia'
+import { useGrupos } from '@/hooks/useGrupos'
+import { ROTULO_NIVEL_GRUPO, ehEquipeInterna } from '@/lib/grupos'
 import { useClients } from '@/hooks/useClients'
 import { useTechnicians } from '@/hooks/useTechnicians'
 import { useChecklistTemplates } from '@/hooks/useChecklistTemplates'
@@ -25,7 +27,7 @@ import { useCategorias } from '@/hooks/useCatalogoSla'
 import { SeloSla, TipoNivel } from '@/components/SlaOS'
 import { TIPOS, IMPACTOS, URGENCIAS, NIVEIS, NIVEIS_INCIDENTE, ROTULO_NIVEL, ESTILO_NIVEL, nivelDaOS, dataHora, type Matriz, type TipoOS } from '@/lib/sla'
 
-const emptyForm: OrderInput = { client_id: '', location_id: '', technician_id: '', title: '', description: '', priority: 'baixo', require_signature: null, tipo: 'incidente', categoria_id: '', impacto: '', urgencia: '' }
+const emptyForm: OrderInput = { client_id: '', location_id: '', technician_id: '', title: '', description: '', priority: 'baixo', require_signature: null, tipo: 'incidente', categoria_id: '', impacto: '', urgencia: '', grupo_id: '' }
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
@@ -78,14 +80,14 @@ export default function OrdersPage() {
   const hoje = hojeNoFuso(tenant?.fuso_horario)
   // filtros + página na URL (voltar da OS mantém a lista como estava)
   const { valores: f, definir, limpar } = useFiltrosUrl({
-    sit: 'em_aberto', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', pri: '', tipo: '', cat: '', sla: '', por: '', pag: '1', tam: '25',
+    sit: 'em_aberto', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', pri: '', tipo: '', cat: '', sla: '', gru: '', por: '', pag: '1', tam: '25',
   })
   const periodo = intervaloDoPeriodo(f.per as ChavePeriodo, hoje, f.de, f.ate)
   const pagina = Math.max(1, parseInt(f.pag) || 1)
   const tamanho = parseInt(f.tam) || 25
   const { itens, total, contagens, loading, error, recarregar } = useListaOS({
     situacao: f.sit, q: f.q, de: periodo.de, ate: periodo.ate, cliente: f.cli, unidade: f.uni, tecnico: f.tec, prioridade: f.pri,
-    tipo: f.tipo, categoria: f.cat, sla: f.sla, periodo_por: f.por,
+    tipo: f.tipo, categoria: f.cat, sla: f.sla, periodo_por: f.por, grupo: f.gru,
   }, pagina, tamanho)
   const { opcoes: categoriasOp, categorias } = useCategorias()
   const { locations: todasUnidades } = useLocations()
@@ -99,6 +101,8 @@ export default function OrdersPage() {
   const { templates: checklistTemplates } = useChecklistTemplates()
   const { clients } = useClients()
   const { technicians } = useTechnicians()
+  const { grupos, ativos: gruposAtivos } = useGrupos()
+  const { user } = useAuth()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Order | null>(null)
@@ -145,6 +149,7 @@ export default function OrdersPage() {
   const camposFiltro = [
     { chave: 'cli', rotulo: 'Cliente', opcoes: clientOptions, vazio: 'Todos os clientes' },
     { chave: 'uni', rotulo: 'Unidade', opcoes: unidadesFiltro, vazio: 'Todas as unidades' },
+    { chave: 'gru', rotulo: 'Grupo', opcoes: [{ value: 'sem', label: 'Sem grupo' }, ...grupos.map(g => ({ value: g.id, label: g.nome }))], vazio: 'Todos os grupos' },
     { chave: 'tec', rotulo: 'Técnico', opcoes: [{ value: 'sem', label: 'Sem técnico (backlog)' }, ...technicians.map(t => ({ value: t.id, label: t.name }))], vazio: 'Todos os técnicos' },
     { chave: 'tipo', rotulo: 'Tipo', opcoes: TIPOS.map(t => ({ value: t.value, label: t.label })), vazio: 'Todos os tipos' },
     { chave: 'pri', rotulo: 'Prioridade', opcoes: [{ value: 'critico,alto', label: 'Crítico e Alto' }, ...NIVEIS.map(n => ({ value: n.value, label: n.label }))], vazio: 'Todas as prioridades' },
@@ -175,6 +180,7 @@ export default function OrdersPage() {
       categoria_id: o.categoria_id ?? '',
       impacto: o.impacto ?? '',
       urgencia: o.urgencia ?? '',
+      grupo_id: o.grupo_id ?? '',
     })
     // carrega o checklist atual da OS (um por OS) e pre-seleciona no campo
     const { data: inst } = await supabase
@@ -259,6 +265,7 @@ export default function OrdersPage() {
     { key: 'numero', header: 'OS', render: o => <span className="font-mono text-xs text-primary whitespace-nowrap" data-os={o.number}>{o.number}</span> },
     { key: 'titulo', header: 'Título', render: o => <span className="text-foreground">{o.title}</span> },
     { key: 'cliente', header: 'Cliente', render: o => <span className="text-muted-foreground">{o.client?.name ?? '—'}</span> },
+    { key: 'grupo', header: 'Grupo', render: o => <span className="text-muted-foreground" data-grupo-os>{o.grupo?.nome ?? '—'}</span> },
     { key: 'tecnico', header: 'Técnico', render: o => <span className="text-muted-foreground">{o.technician?.name ?? 'Sem técnico'}</span> },
     { key: 'prioridade', header: 'Tipo / prioridade', render: o => <TipoNivel tipo={o.tipo} nivel={o.priority} /> },
     { key: 'sla', header: 'SLA', render: o => <SeloSla o={o} comTexto /> },
@@ -282,7 +289,7 @@ export default function OrdersPage() {
         <div className="mt-3 space-y-1 text-xs text-muted-foreground">
           <p className="flex items-center gap-1.5"><Building2 size={12} /> {o.client?.name ?? '—'}</p>
           {o.location?.name && <p className="flex items-center gap-1.5"><MapPin size={12} /> {o.location.name}</p>}
-          <p className="flex items-center gap-1.5"><Wrench size={12} /> {o.technician?.name ?? 'Sem técnico'}</p>
+          <p className="flex items-center gap-1.5"><Wrench size={12} /> {o.technician?.name ?? 'Sem técnico'}{o.grupo?.nome ? ` · ${o.grupo.nome}` : ''}</p>
         </div>
         <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center gap-2"><StatusBadge status={o.status} /><SeloSla o={o} comTexto /></div>
       </Card>
@@ -301,8 +308,23 @@ export default function OrdersPage() {
         }
       />
 
+      {ehEquipeInterna(user?.role) && gruposAtivos.length + 1 > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-3" data-testid="filas">
+          <span className="text-xs text-muted-foreground">Filas:</span>
+          <ChipFila ativo={f.gru === 'sem' && f.tec === 'sem'} testid="fila-novos"
+            onClick={() => definir({ gru: 'sem', tec: 'sem', sit: 'em_aberto', pag: '1' })}>
+            Novos sem grupo{contagens ? ` (${(contagens as any).novos_sem_grupo ?? 0})` : ''}
+          </ChipFila>
+          {gruposAtivos.map(g => (
+            <ChipFila key={g.id} ativo={f.gru === g.id && f.tec === 'sem'} testid={'fila-' + g.nome}
+              onClick={() => definir({ gru: g.id, tec: 'sem', sit: 'em_aberto', pag: '1' })}>Fila: {g.nome}</ChipFila>
+          ))}
+          {(f.gru || f.tec === 'sem') && <button className="text-xs text-primary hover:underline" onClick={() => definir({ gru: '', tec: '', pag: '1' })}>Ver todas</button>}
+        </div>
+      )}
+
       <FiltrosLista campos={camposFiltro}
-        valores={{ cli: f.cli, uni: f.uni, tec: f.tec, pri: f.pri, tipo: f.tipo, cat: f.cat, sla: f.sla }}
+        valores={{ cli: f.cli, uni: f.uni, gru: f.gru, tec: f.tec, pri: f.pri, tipo: f.tipo, cat: f.cat, sla: f.sla }}
         onChange={(k, v) => definir(k === 'cli' ? { cli: v, uni: '' } : { [k]: v })}
         periodo={{ rotulo: f.por === 'conclusao' ? 'Concluída em' : 'Aberta em', valor: f.per as ChavePeriodo, de: f.de, ate: f.ate, onChange: (per, de, ate) => definir({ per, por: per ? f.por : '', de: per === 'personalizado' ? (de ?? '') : '', ate: per === 'personalizado' ? (ate ?? '') : '' }) }}
         onLimpar={() => limpar()} />
@@ -363,6 +385,11 @@ export default function OrdersPage() {
             <div>
               <Label htmlFor="technician">Técnico responsável</Label>
               <Combobox id="technician" options={technicianOptions} value={form.technician_id ?? ''} onChange={v => setForm({ ...form, technician_id: v })} placeholder="Sem técnico (backlog)" searchPlaceholder="Buscar técnico..." emptyText="Nenhum técnico encontrado." />
+            </div>
+            <div>
+              <Label htmlFor="grupo-os">Grupo de atendimento</Label>
+              <Combobox id="grupo-os" options={[{ value: '', label: editing ? 'Sem grupo' : 'Automático pelo catálogo (ou sem grupo)' }, ...gruposAtivos.map(g => ({ value: g.id, label: `${g.nome} (${ROTULO_NIVEL_GRUPO[g.nivel]})` }))]}
+                value={form.grupo_id ?? ''} onChange={v => setForm({ ...form, grupo_id: v })} placeholder="Automático pelo catálogo" searchPlaceholder="Buscar grupo..." emptyText="Nenhum grupo." />
             </div>
             <div>
               <Label htmlFor="require-signature">Assinatura obrigatória</Label>
@@ -471,5 +498,14 @@ function ClassificacaoOS({ form, setForm, categoriasOp, categorias, editando }: 
           : <span className="text-muted-foreground">{nivel === 'visita' ? 'Visita não tem SLA' : 'Sem meta de SLA para este nível (Catálogo e SLA)'}</span>)}
       </div>
     </div>
+  )
+}
+
+function ChipFila({ ativo, onClick, children, testid }: { ativo: boolean; onClick: () => void; children: React.ReactNode; testid?: string }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={ativo} data-testid={testid}
+      className={'px-3 py-1 rounded-full text-xs border transition ' + (ativo ? 'bg-primary/15 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-secondary')}>
+      {children}
+    </button>
   )
 }

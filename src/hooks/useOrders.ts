@@ -60,6 +60,10 @@ export interface Order {
   sla_politica_id?: string | null
   sla_sit?: string
   categoria?: { id: string; nome: string; pai: string | null } | null
+  // Grupos de atendimento (migration 057)
+  grupo_id?: string | null
+  grupo?: { id: string; nome: string; nivel: string } | null
+  transferencias?: number
 }
 
 export interface OrderInput {
@@ -74,6 +78,7 @@ export interface OrderInput {
   categoria_id?: string | null
   impacto?: string | null
   urgencia?: string | null
+  grupo_id?: string | null
 }
 
 
@@ -82,9 +87,10 @@ export interface FiltrosOS {
   situacao?: string; q?: string; de?: string | null; ate?: string | null
   cliente?: string; unidade?: string; tecnico?: string; prioridade?: string
   tipo?: string; categoria?: string; sla?: string
+  grupo?: string   // id do grupo, ou 'sem' (OS sem grupo)
   periodo_por?: string   // '' = abertura (padrão) · 'conclusao' (links do painel gerencial)
 }
-export type ContagensOS = Record<'todas' | 'em_aberto' | OrderStatus | 'sla_vencido' | 'sla_em_risco', number>
+export type ContagensOS = Record<'todas' | 'em_aberto' | OrderStatus | 'sla_vencido' | 'sla_em_risco' | 'novos_sem_grupo', number>
 
 export function useListaOS(filtros: FiltrosOS, pagina: number, tamanho: number) {
   const [itens, setItens] = useState<Order[]>([])
@@ -126,6 +132,7 @@ export function useOrders() {
       categoria_id: input.categoria_id || null,
       impacto: input.impacto || null,
       urgencia: input.urgencia || null,
+      grupo_id: input.grupo_id || null,   // vazio: o catálogo decide (grupo padrão da categoria)
     }
     const { data: created, error } = await supabase.from('orders').insert(payload).select('id').single()
     if (error) throw error
@@ -148,6 +155,7 @@ export function useOrders() {
     if (clean.categoria_id !== undefined) clean.categoria_id = clean.categoria_id || null
     if (clean.impacto !== undefined) clean.impacto = clean.impacto || null
     if (clean.urgencia !== undefined) clean.urgencia = clean.urgencia || null
+    if (clean.grupo_id !== undefined) clean.grupo_id = clean.grupo_id || null
     const { error } = await supabase.from('orders').update(clean).eq('id', id)
     if (error) throw error
 

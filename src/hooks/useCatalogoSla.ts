@@ -10,6 +10,10 @@ export interface Categoria {
   impacto: string | null
   urgencia: string | null
   ativo: boolean
+  descricao_portal: string | null
+  visivel_portal: boolean | null   // nulo = o admin ainda não decidiu (não aparece no portal)
+  tipos_portal: string[]
+  grupo_padrao_id: string | null
 }
 export interface MotivoPausa { id: string; nome: string; para_sla: boolean; ativo: boolean; ordem: number }
 export interface PoliticaSla {
@@ -28,7 +32,7 @@ export function useCategorias() {
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [carregando, setCarregando] = useState(true)
   const recarregar = useCallback(async () => {
-    const { data } = await supabase.from('os_categorias').select('id, pai_id, nome, impacto, urgencia, ativo').order('nome')
+    const { data } = await supabase.from('os_categorias').select('id, pai_id, nome, impacto, urgencia, ativo, descricao_portal, visivel_portal, tipos_portal, grupo_padrao_id').order('nome')
     setCategorias((data ?? []) as Categoria[])
     setCarregando(false)
   }, [])

@@ -7,7 +7,7 @@ import VlumaSignature from '@/components/brand/VlumaSignature'
 import type { UserRole } from '@/types'
 import {
   LayoutDashboard, ClipboardList, Users, Building2, MapPin,
-  Settings, LogOut, Menu, X, PenTool, ShieldCheck, Wrench, CheckSquare, ClipboardCheck, CalendarDays, Timer,
+  Settings, LogOut, Menu, X, PenTool, ShieldCheck, Wrench, CheckSquare, ClipboardCheck, CalendarDays, Timer, Users2,
 } from 'lucide-react'
 import AtribuicaoMapas from '@/components/AtribuicaoMapas'
 import { nomeEmpresa } from '@/lib/empresa'
@@ -22,22 +22,23 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: LayoutDashboard, roles: ['super_admin','admin','gestor','tecnico'] },
-  { label: 'Ordens de Serviço', to: '/os', icon: ClipboardList, roles: ['super_admin','admin','gestor','tecnico'] },
+  { label: 'Ordens de Serviço', to: '/os', icon: ClipboardList, roles: ['super_admin','admin','gestor','atendente','tecnico'] },
   { label: 'Checklists', to: '/checklists', icon: CheckSquare, roles: ['super_admin','admin','gestor'] },
   { label: 'Checklists avulsos', to: '/checklists/avulsos', icon: ClipboardCheck, roles: ['super_admin','admin','gestor'] },
   { label: 'Técnicos', to: '/tecnicos', icon: Wrench, roles: ['super_admin','admin','gestor'] },
   { label: 'Clientes', to: '/clientes', icon: Building2, roles: ['super_admin','admin','gestor'] },
   { label: 'Unidades', to: '/locais', icon: MapPin, roles: ['super_admin','admin','gestor'] },
   { label: 'Catálogo e SLA', to: '/sla', icon: Timer, roles: ['admin','gestor'] },
+  { label: 'Grupos de atendimento', to: '/grupos', icon: Users2, roles: ['admin','gestor'] },
   { label: 'Calendários', to: '/calendarios', icon: CalendarDays, roles: ['super_admin','admin','gestor'] },
-  { label: 'Usuários', to: '/usuarios', icon: Users, roles: ['super_admin','admin'] },
+  { label: 'Usuários', to: '/usuarios', icon: Users, roles: ['admin'] },
   { label: 'Empresas', to: '/tenants', icon: ShieldCheck, roles: ['super_admin'] },
   { label: 'Configurações', to: '/configuracoes', icon: Settings, roles: ['super_admin','admin'] },
 ]
 
 function roleLabel(role: UserRole): string {
   const labels: Record<UserRole, string> = {
-    super_admin: 'Super Admin', admin: 'Administrador', gestor: 'Gestor', tecnico: 'Técnico',
+    super_admin: 'Super Admin', admin: 'Administrador', gestor: 'Gestor', atendente: 'Atendente', tecnico: 'Técnico',
   }
   return labels[role]
 }

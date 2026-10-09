@@ -16,7 +16,9 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { Label } from '@/components/ui/input'
-import { ArrowLeft, Building2, MapPin, Navigation, FileText } from 'lucide-react'
+import { BotaoTransferir } from '@/components/orders/TransferirOS'
+import { supabase } from '@/lib/supabase'
+import { ArrowLeft, Building2, MapPin, Navigation, FileText, Users2, Hand } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
@@ -64,6 +66,17 @@ export default function FieldOrderPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { order, loading, error, changeStatus, fetchOrder } = useOrder(id)
+  // OS da fila do grupo (sem técnico): o técnico pode assumir quando o grupo permite
+  const [assumindo, setAssumindo] = useState(false)
+  const [erroAssumir, setErroAssumir] = useState('')
+  async function assumirOS() {
+    if (!order) return
+    setErroAssumir(''); setAssumindo(true)
+    const { error: e } = await supabase.rpc('assumir_os', { p_order: order.id })
+    setAssumindo(false)
+    if (e) { setErroAssumir(e.message); return }
+    await fetchOrder()
+  }
   const { tenant } = useAuth()
 
   const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean; date: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })
@@ -157,6 +170,7 @@ export default function FieldOrderPage() {
         <div className="space-y-2.5 text-sm">
           <div className="flex items-center gap-2 text-foreground"><Building2 size={15} className="text-muted-foreground flex-shrink-0" /> {order.client?.name ?? '—'}</div>
           {order.location?.name && <div className="flex items-center gap-2 text-foreground"><MapPin size={15} className="text-muted-foreground flex-shrink-0" /> {order.location.name}</div>}
+          {order.grupo && <div className="flex items-center gap-2 text-foreground" data-testid="os-grupo"><Users2 size={15} className="text-muted-foreground flex-shrink-0" /> Grupo: {order.grupo.nome}</div>}
           {enderecoTexto && <p className="text-xs text-muted-foreground pl-7">{enderecoTexto}</p>}
         </div>
         {mapsUrl && (
@@ -200,7 +214,18 @@ export default function FieldOrderPage() {
         </Card>
       )}
 
-      {actions.length > 0 && (
+      {!order.technician_id && !['concluida', 'cancelada'].includes(order.status) && (
+        <div className="space-y-2 mb-4" data-testid="os-na-fila">
+          <p className="text-xs text-muted-foreground">Esta OS está na fila do seu grupo, sem técnico.</p>
+          <button onClick={assumirOS} disabled={assumindo} data-testid="assumir-os"
+            className="w-full px-4 py-3 rounded-xl text-sm font-medium bg-primary text-primary-foreground border border-primary active:opacity-80 disabled:opacity-60 inline-flex items-center justify-center gap-2">
+            <Hand size={15} /> {assumindo ? 'Assumindo…' : 'Assumir esta OS'}
+          </button>
+          {erroAssumir && <p className="text-xs text-red-400" role="alert">{erroAssumir}</p>}
+        </div>
+      )}
+
+      {order.technician_id && actions.length > 0 && (
         <div className="space-y-2 mb-4">
           {actions.map(a => (
             <button
@@ -211,6 +236,13 @@ export default function FieldOrderPage() {
               {a.label}
             </button>
           ))}
+        </div>
+      )}
+
+      {order.technician_id && (
+        <div className="mb-4">
+          <BotaoTransferir order={order} onDone={() => navigate('/campo')}
+            className="w-full px-4 py-3 rounded-xl text-sm font-medium border border-cyan-500/30 text-cyan-300 active:opacity-80 inline-flex items-center justify-center gap-2" />
         </div>
       )}
 

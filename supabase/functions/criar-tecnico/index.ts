@@ -12,7 +12,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { name, email, password, phone } = await req.json()
+    const { name, email, password, phone, role: papelPedido } = await req.json()
+    // perfil do novo usuário: técnico (padrão), atendente ou gestor — os dois últimos só o administrador cria
+    const papel: string = papelPedido ?? 'tecnico'
+    if (!['tecnico', 'atendente', 'gestor'].includes(papel)) {
+      return new Response(JSON.stringify({ error: 'Perfil inválido.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
 
     if (!name || !email || !password) {
       return new Response(
@@ -58,10 +63,16 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Só admin ou gestor podem criar técnicos
+    // Só admin ou gestor podem criar técnicos; atendente e gestor, só o administrador
     if (!['admin', 'gestor', 'super_admin'].includes(callerProfile.role)) {
       return new Response(
         JSON.stringify({ error: 'Sem permissão para criar técnicos.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    if (papel !== 'tecnico' && !['admin', 'super_admin'].includes(callerProfile.role)) {
+      return new Response(
+        JSON.stringify({ error: 'Só o administrador cria atendentes e gestores.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -71,7 +82,7 @@ Deno.serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, role: 'tecnico' },
+      user_metadata: { name },
     })
 
     if (createErr || !created.user) {
@@ -94,7 +105,7 @@ Deno.serve(async (req) => {
     const { error: updateErr } = await supabaseAdmin
       .from('users')
       .update({
-        role: 'tecnico',
+        role: papel,
         tenant_id: callerProfile.tenant_id,
         name,
         phone: phone ?? null,

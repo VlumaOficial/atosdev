@@ -8,6 +8,8 @@ import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 import CalendariosPage from '@/pages/CalendariosPage'
 import CatalogoSlaPage from '@/pages/CatalogoSlaPage'
+import GruposPage from '@/pages/GruposPage'
+import UsuariosPage from '@/pages/UsuariosPage'
 import ClientsPage from '@/pages/ClientsPage'
 import LocationsPage from '@/pages/LocationsPage'
 import TechniciansPage from '@/pages/TechniciansPage'
@@ -45,6 +47,7 @@ function PlaceholderPage({ title }: { title: string }) {
 function HomeRedirect() {
   const { user } = useAuth()
   if (user?.role === 'tecnico') return <Navigate to="/campo" replace />
+  if (user?.role === 'atendente') return <Navigate to="/os?sit=em_aberto&gru=sem&tec=sem" replace />   // a fila de entrada é a tela inicial do atendimento
   return <DashboardPage />
 }
 
@@ -102,8 +105,8 @@ export default function App() {
             <Route path="minha-assinatura" element={<MinhaAssinaturaPage />} />
 
             {/* F5 — Checklists */}
-            <Route path="checklists" element={<ChecklistsPage />} />
-            <Route path="checklists/novo" element={<ChecklistEditorPage />} />
+            <Route path="checklists" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'gestor', 'tecnico']}><ChecklistsPage /></ProtectedRoute>} />
+            <Route path="checklists/novo" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'gestor', 'tecnico']}><ChecklistEditorPage /></ProtectedRoute>} />
             <Route
               path="checklists/avulsos"
               element={
@@ -112,11 +115,11 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="checklists/:id" element={<ChecklistEditorPage />} />
+            <Route path="checklists/:id" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'gestor', 'tecnico']}><ChecklistEditorPage /></ProtectedRoute>} />
 
             {/* F2 — Clientes e Locais */}
-            <Route path="clientes" element={<ClientsPage />} />
-            <Route path="locais" element={<LocationsPage />} />
+            <Route path="clientes" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'gestor', 'tecnico']}><ClientsPage /></ProtectedRoute>} />
+            <Route path="locais" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'gestor', 'tecnico']}><LocationsPage /></ProtectedRoute>} />
 
             {/* F1 — Usuários e Técnicos */}
             <Route
@@ -130,8 +133,8 @@ export default function App() {
             <Route
               path="usuarios"
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                  <PlaceholderPage title="Usuários" />
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <UsuariosPage />
                 </ProtectedRoute>
               }
             />
@@ -151,6 +154,15 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin', 'gestor']}>
                   <CatalogoSlaPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="grupos"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'gestor']}>
+                  <GruposPage />
                 </ProtectedRoute>
               }
             />

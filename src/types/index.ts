@@ -2,7 +2,7 @@
 // ATOS — Tipos globais
 // ============================================================
 
-export type UserRole = 'super_admin' | 'admin' | 'gestor' | 'tecnico'
+export type UserRole = 'super_admin' | 'admin' | 'gestor' | 'atendente' | 'tecnico'
 
 export type TenantStatus = 'active' | 'suspended' | 'trial'
 
@@ -51,6 +51,7 @@ export interface Tenant {
   portal_contatos?: { email?: string; telefone?: string; whatsapp?: string; site?: string }
   portal_termos_proprios?: string[]
   portal_logo_versao?: number | null
+  transferencias_limite?: number
   created_at: string
   updated_at: string
 }

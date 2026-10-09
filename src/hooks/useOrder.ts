@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import type { Order, OrderStatus } from '@/hooks/useOrders'
 import { registrarEvento } from '@/lib/orderEvents'
 
-const SELECT = '*, client:clients(id, name), location:locations(id, name, address, city, state), technician:users!orders_technician_id_fkey(id, name)'
+const SELECT = '*, client:clients(id, name), location:locations(id, name, address, city, state), technician:users!orders_technician_id_fkey(id, name), grupo:grupos_atendimento(id, nome, nivel)'
 
 export function useOrder(id: string | undefined) {
   const [order, setOrder] = useState<Order | null>(null)

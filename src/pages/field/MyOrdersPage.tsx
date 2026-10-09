@@ -6,6 +6,7 @@ import { SeloSla } from '@/components/SlaOS'
 import { useAuth } from '@/hooks/useAuth'
 import type { Order } from '@/hooks/useOrders'
 import { Card } from '@/components/ui/card'
+import FilaDoGrupo from '@/components/field/FilaDoGrupo'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ClipboardList, Building2, MapPin, ChevronRight, AlertTriangle, List, LayoutGrid } from 'lucide-react'
 
@@ -123,6 +124,8 @@ export default function MyOrdersPage() {
         <h1 className="text-xl font-semibold text-foreground">{saudacao()}{primeiroNome(user?.name) ? `, ${primeiroNome(user?.name)}` : ''} 👋</h1>
         <p className="text-sm text-muted-foreground">Vamos organizar os atendimentos de hoje?</p>
       </div>
+
+      <FilaDoGrupo />
 
       <div className="grid grid-cols-3 gap-2 mb-4">
         <button

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useOrderEvents } from '@/hooks/useOrderEvents'
-import { Clock, Play, Pause, RotateCcw, Calendar, CheckCircle2, XCircle, RefreshCw, UserCheck, PlusCircle, ChevronDown, ChevronUp, PenTool, AlertTriangle, Send } from 'lucide-react'
+import { DIRECOES } from '@/lib/grupos'
+import { Hand, Clock, Play, Pause, RotateCcw, Calendar, CheckCircle2, XCircle, RefreshCw, UserCheck, PlusCircle, ChevronDown, ChevronUp, PenTool, AlertTriangle, Send } from 'lucide-react'
 
 function fmt(dt: string): string {
   return new Date(dt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -16,6 +17,7 @@ const EVENT_CONFIG: Record<string, { label: string; icon: any; color: string }> 
   cancelled: { label: 'Cancelada', icon: XCircle, color: 'text-red-400' },
   reopened: { label: 'Reaberta', icon: RefreshCw, color: 'text-blue-400' },
   transferred: { label: 'Transferida', icon: UserCheck, color: 'text-cyan-400' },
+  assumed: { label: 'Assumida da fila do grupo', icon: Hand, color: 'text-green-400' },
   signed: { label: 'Assinada', icon: PenTool, color: 'text-emerald-400' },
   signature_absent: { label: 'Concluída sem assinatura do cliente', icon: AlertTriangle, color: 'text-amber-400' },
   report_sent: { label: 'Relatório enviado', icon: Send, color: 'text-cyan-400' },
@@ -43,10 +45,21 @@ function EventRow({ e }: { e: any }) {
         {e.event_type === 'completed' && d.completion_notes && (
           <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">Relato: {String(d.completion_notes).trim()}</p>
         )}
-        {e.event_type === 'transferred' && (
+        {e.event_type === 'transferred' && (d.direcao ? (
+          <>
+            <p className="text-xs text-foreground mt-0.5" data-evento-transferencia>
+              {d.from_group_name ?? 'sem grupo'}{d.from_technician_name ? ` (${d.from_technician_name})` : ''} → {d.to_group_name ?? 'sem grupo'}{d.to_technician_name ? ` (${d.to_technician_name})` : ''}
+              <span className="ml-2 px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[10px]">{DIRECOES[d.direcao]?.rotulo ?? d.direcao}</span>
+            </p>
+            {d.motivo && <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">Motivo: {String(d.motivo).trim()}</p>}
+          </>
+        ) : (
           <p className="text-xs text-muted-foreground mt-0.5">
             {d.from_technician_name ? `De ${d.from_technician_name}` : 'Atribuída'} para novo técnico
           </p>
+        ))}
+        {e.event_type === 'assumed' && d.group_name && (
+          <p className="text-xs text-muted-foreground mt-0.5">Grupo: {d.group_name}</p>
         )}
         {e.event_type === 'report_sent' && (
           <p className="text-xs text-muted-foreground mt-0.5">Por {d.canal === 'whatsapp' ? 'WhatsApp' : 'e-mail'} para {d.destino}</p>

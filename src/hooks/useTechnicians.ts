@@ -17,6 +17,7 @@ export interface TechnicianInput {
   email: string
   password: string
   phone?: string | null
+  role?: 'tecnico' | 'atendente' | 'gestor'   // padrão: técnico (atendente e gestor só o administrador cria)
 }
 
 export function useTechnicians() {

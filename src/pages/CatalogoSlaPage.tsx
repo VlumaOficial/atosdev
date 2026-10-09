@@ -5,6 +5,8 @@ import { useFiltrosUrl } from '@/hooks/useFiltrosUrl'
 import { useCategorias, useMotivosPausa, usePoliticasSla, type Categoria, type PoliticaSla, type MotivoPausa } from '@/hooks/useCatalogoSla'
 import { useHorariosAtendimento } from '@/components/calendario/HorariosAtendimento'
 import { useClients } from '@/hooks/useClients'
+import { useGrupos } from '@/hooks/useGrupos'
+import { TIPOS_PORTAL } from '@/lib/grupos'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -58,20 +60,38 @@ function AbaCategorias({ podeEditar }: { podeEditar: boolean }) {
   const { categorias, carregando, recarregar } = useCategorias()
   const [aberto, setAberto] = useState(false)
   const [editando, setEditando] = useState<Categoria | null>(null)
-  const [form, setForm] = useState({ nome: '', pai_id: '', impacto: '', urgencia: '' })
+  type FormCat = { nome: string; pai_id: string; impacto: string; urgencia: string; visivel: '' | 'sim' | 'nao'; tipos: string[]; descricao: string; grupo: string }
+  const vazio: FormCat = { nome: '', pai_id: '', impacto: '', urgencia: '', visivel: '', tipos: [], descricao: '', grupo: '' }
+  const [form, setForm] = useState<FormCat>(vazio)
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
+  const [assistente, setAssistente] = useState(false)
+  const { ativos: gruposAtivos, grupos } = useGrupos()
+  const nomeGrupo = (id: string | null) => grupos.find(g => g.id === id)?.nome
   const pais = categorias.filter(c => !c.pai_id)
+  const semDecisao = categorias.filter(c => c.ativo && c.visivel_portal === null)
 
   function abrir(c: Categoria | null, pai?: string) {
     setEditando(c)
-    setForm(c ? { nome: c.nome, pai_id: c.pai_id ?? '', impacto: c.impacto ?? '', urgencia: c.urgencia ?? '' } : { nome: '', pai_id: pai ?? '', impacto: '', urgencia: '' })
+    setForm(c ? {
+      nome: c.nome, pai_id: c.pai_id ?? '', impacto: c.impacto ?? '', urgencia: c.urgencia ?? '',
+      visivel: c.visivel_portal === null ? '' : c.visivel_portal ? 'sim' : 'nao', tipos: c.tipos_portal ?? [],
+      descricao: c.descricao_portal ?? '', grupo: c.grupo_padrao_id ?? '',
+    } : { ...vazio, pai_id: pai ?? '' })
     setErro(''); setAberto(true)
   }
   async function salvar() {
     if (form.nome.trim().length < 2) { setErro('Informe o nome.'); return }
+    if (!editando && form.visivel === '') { setErro('Escolha se a categoria aparece no portal do cliente (Sim ou Não).'); return }
+    if (form.visivel === 'sim' && form.tipos.length === 0) { setErro('Escolha em quais tipos de chamado a categoria aparece no portal.'); return }
     setSalvando(true)
-    const dados = { nome: form.nome.trim(), pai_id: form.pai_id || null, impacto: form.impacto || null, urgencia: form.urgencia || null }
+    const dados = {
+      nome: form.nome.trim(), pai_id: form.pai_id || null, impacto: form.impacto || null, urgencia: form.urgencia || null,
+      visivel_portal: form.visivel === '' ? null : form.visivel === 'sim',
+      tipos_portal: form.visivel === 'sim' ? form.tipos : [],
+      descricao_portal: form.descricao.trim() || null,
+      grupo_padrao_id: form.grupo || null,
+    }
     const { error } = editando ? await supabase.from('os_categorias').update(dados).eq('id', editando.id) : await supabase.from('os_categorias').insert(dados)
     setSalvando(false)
     if (error) { setErro(error.code === '23505' ? 'Já existe uma categoria com esse nome aqui.' : error.message); return }
@@ -92,16 +112,25 @@ function AbaCategorias({ podeEditar }: { podeEditar: boolean }) {
         <p className="text-xs text-muted-foreground max-w-xl">O catálogo de serviços da sua empresa: categorias e subcategorias usadas para classificar as OS (ex.: "CFTV › Câmera sem imagem"). Cada categoria pode sugerir o impacto e a urgência de um Incidente.</p>
         {podeEditar && <Button variant="cta" size="sm" onClick={() => abrir(null)}><Plus size={14} /> Nova categoria</Button>}
       </div>
+      {podeEditar && semDecisao.length > 0 && (
+        <Card className="p-4 border-amber-500/40 bg-amber-500/5 flex flex-wrap items-center justify-between gap-3" data-testid="banner-portal">
+          <p className="text-sm text-foreground">
+            <b>{semDecisao.length}</b> {semDecisao.length === 1 ? 'categoria ainda não tem' : 'categorias ainda não têm'} a definição de aparecer ou não no portal do cliente.
+            <span className="block text-xs text-muted-foreground">Enquanto não for definido, nenhuma delas aparece para os seus clientes.</span>
+          </p>
+          <Button variant="cta" size="sm" onClick={() => setAssistente(true)}>Definir o que aparece no portal</Button>
+        </Card>
+      )}
       {pais.length === 0 ? (
         <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma categoria ainda. Crie as categorias dos serviços que a sua empresa atende.</Card>
       ) : (
         <Card className="divide-y divide-border">
           {pais.map(p => (
             <div key={p.id}>
-              <Linha c={p} sub={sugestao(p)} podeEditar={podeEditar} onEditar={() => abrir(p)} onAlternar={() => alternar(p)} onExcluir={() => excluir(p)}
+              <Linha c={p} sub={sugestao(p)} extraSub={infoPortal(p, nomeGrupo(p.grupo_padrao_id))} podeEditar={podeEditar} onEditar={() => abrir(p)} onAlternar={() => alternar(p)} onExcluir={() => excluir(p)}
                 extra={podeEditar ? <button title="Nova subcategoria" onClick={() => abrir(null, p.id)} className={btnIcone}><Plus size={14} /></button> : null} />
               {categorias.filter(f => f.pai_id === p.id).map(f => (
-                <Linha key={f.id} c={f} sub={sugestao(f)} filha podeEditar={podeEditar} onEditar={() => abrir(f)} onAlternar={() => alternar(f)} onExcluir={() => excluir(f)} />
+                <Linha key={f.id} c={f} sub={sugestao(f)} extraSub={infoPortal(f, nomeGrupo(f.grupo_padrao_id))} filha podeEditar={podeEditar} onEditar={() => abrir(f)} onAlternar={() => alternar(f)} onExcluir={() => excluir(f)} />
               ))}
             </div>
           ))}
@@ -127,16 +156,125 @@ function AbaCategorias({ podeEditar }: { podeEditar: boolean }) {
               </select></div>
           </div>
           <p className="text-[11px] text-muted-foreground">A sugestão só preenche o formulário de um Incidente — quem abre a OS pode mudar.</p>
+
+          <fieldset className="border border-border rounded-md p-3 space-y-3" data-testid="ficha-portal">
+            <legend className="text-xs font-medium text-foreground px-1">No portal do cliente</legend>
+            <div>
+              <p className="text-sm text-foreground mb-1.5">Aparece no portal do cliente? <span className="text-red-400">*</span></p>
+              <div className="flex gap-4">
+                {([['sim', 'Sim'], ['nao', 'Não']] as const).map(([v, r]) => (
+                  <label key={v} className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                    <input type="radio" name="cat-visivel" value={v} checked={form.visivel === v} onChange={() => setForm({ ...form, visivel: v })} data-testid={'visivel-' + v} /> {r}
+                  </label>
+                ))}
+              </div>
+              {form.visivel === '' && editando && <p className="text-[11px] text-amber-300 mt-1">Ainda não definido — por enquanto não aparece no portal.</p>}
+            </div>
+            {form.visivel === 'sim' && (<>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1.5">Em quais tipos de chamado aparece</p>
+                <div className="grid sm:grid-cols-2 gap-1.5">
+                  {TIPOS_PORTAL.map(t => (
+                    <label key={t.value} className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" checked={form.tipos.includes(t.value)} data-testid={'tipo-' + t.value}
+                        onChange={e => setForm({ ...form, tipos: e.target.checked ? [...form.tipos, t.value] : form.tipos.filter(x => x !== t.value) })} /> {t.rotulo}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="cat-desc">Descrição para o cliente <span className="text-muted-foreground font-normal">({form.descricao.length}/300)</span></Label>
+                <textarea id="cat-desc" rows={2} maxLength={300} value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })}
+                  placeholder="Ex.: Câmeras sem imagem, gravação parada ou acesso remoto fora do ar." className={campo} />
+              </div>
+              {form.pai_id && <p className="text-[11px] text-muted-foreground">Uma subcategoria só aparece no portal se a categoria principal também aparecer.</p>}
+            </>)}
+          </fieldset>
+
+          <div>
+            <Label htmlFor="cat-grupo">Grupo padrão (para onde o chamado vai)</Label>
+            <select id="cat-grupo" value={form.grupo} onChange={e => setForm({ ...form, grupo: e.target.value })} className={campo}>
+              <option value="">Nenhum — cai em "Novos sem grupo" para o N1 distribuir</option>
+              {gruposAtivos.map(g => <option key={g.id} value={g.id}>{g.nome}</option>)}
+            </select>
+            <p className="text-[11px] text-muted-foreground mt-1">Toda OS aberta com esta categoria já nasce na fila deste grupo.</p>
+          </div>
           {erro && <p className="text-sm text-red-400">{erro}</p>}
           <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setAberto(false)}>Cancelar</Button><Button variant="cta" loading={salvando} onClick={salvar}>Salvar</Button></div>
         </div>
       </Modal>
+      <AssistentePortal aberto={assistente} onFechar={() => setAssistente(false)} categorias={semDecisao} todas={categorias} onSalvo={recarregar} />
     </div>
   )
 }
 
-function Linha({ c, sub, filha, podeEditar, onEditar, onAlternar, onExcluir, extra }: {
-  c: Categoria; sub: string; filha?: boolean; podeEditar: boolean; onEditar: () => void; onAlternar: () => void; onExcluir: () => void; extra?: React.ReactNode
+function infoPortal(c: Categoria, grupo?: string): string {
+  const portal = c.visivel_portal === null ? 'Portal: não definido' : c.visivel_portal ? `No portal (${(c.tipos_portal ?? []).length} ${(c.tipos_portal ?? []).length === 1 ? 'tipo' : 'tipos'})` : 'Fora do portal'
+  return `${portal}${grupo ? ' · Grupo: ' + grupo : ''}`
+}
+
+// Assistente da ativação do portal: o admin decide, de uma vez, o que o cliente pode ver
+function AssistentePortal({ aberto, onFechar, categorias, todas, onSalvo }: { aberto: boolean; onFechar: () => void; categorias: Categoria[]; todas: Categoria[]; onSalvo: () => void }) {
+  const [escolhas, setEscolhas] = useState<Record<string, boolean>>({})
+  const [tipos, setTipos] = useState<string[]>(TIPOS_PORTAL.map(t => t.value))
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState('')
+  useEffect(() => { if (aberto) { setEscolhas({}); setErro(''); setTipos(TIPOS_PORTAL.map(t => t.value)) } }, [aberto])
+  const nome = (c: Categoria) => { const pai = todas.find(x => x.id === c.pai_id); return pai ? `${pai.nome} › ${c.nome}` : c.nome }
+  const decididas = Object.keys(escolhas).length
+  function marcarTodas(v: boolean) { setEscolhas(Object.fromEntries(categorias.map(c => [c.id, v]))) }
+  async function salvar() {
+    if (Object.values(escolhas).some(v => v) && tipos.length === 0) { setErro('Escolha em quais tipos de chamado as categorias aparecem.'); return }
+    setSalvando(true)
+    const { error } = await supabase.rpc('definir_visibilidade_categorias', {
+      p_itens: Object.entries(escolhas).map(([id, visivel]) => ({ id, visivel, tipos: visivel ? tipos : [] })),
+    })
+    setSalvando(false)
+    if (error) { setErro(error.message); return }
+    onSalvo(); onFechar()
+  }
+  return (
+    <Modal open={aberto} onOpenChange={o => { if (!o) onFechar() }} title="O que aparece no portal do cliente?" fecharAoClicarFora={false} className="max-w-2xl"
+      description="Marque as categorias que os seus clientes podem escolher ao abrir um chamado. As que ficarem sem resposta continuam fora do portal.">
+      <div className="space-y-4" data-testid="assistente-portal">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <Button variant="outline" size="sm" onClick={() => marcarTodas(true)}>Todas aparecem</Button>
+          <Button variant="outline" size="sm" onClick={() => marcarTodas(false)}>Nenhuma aparece</Button>
+          <span className="text-muted-foreground ml-auto">{decididas} de {categorias.length} definidas</span>
+        </div>
+        <div className="max-h-72 overflow-y-auto divide-y divide-border border border-border rounded-md">
+          {categorias.map(c => (
+            <div key={c.id} className="flex items-center justify-between gap-3 px-3 py-2" data-assist-cat={c.nome}>
+              <span className="text-sm text-foreground min-w-0 truncate">{nome(c)}</span>
+              <div className="flex gap-1 flex-shrink-0">
+                {([[true, 'Sim'], [false, 'Não']] as const).map(([v, r]) => (
+                  <button key={r} type="button" onClick={() => setEscolhas(e => ({ ...e, [c.id]: v }))} aria-pressed={escolhas[c.id] === v}
+                    className={cn('px-3 py-1 rounded-md text-xs border', escolhas[c.id] === v ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground')}>{r}</button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-1.5">As categorias marcadas com "Sim" aparecem em quais tipos de chamado</p>
+          <div className="grid sm:grid-cols-2 gap-1.5">
+            {TIPOS_PORTAL.map(t => (
+              <label key={t.value} className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" checked={tipos.includes(t.value)} onChange={e => setTipos(e.target.checked ? [...tipos, t.value] : tipos.filter(x => x !== t.value))} /> {t.rotulo}
+              </label>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">Você pode ajustar os tipos de cada categoria depois, na ficha dela.</p>
+        </div>
+        {erro && <p className="text-sm text-red-400">{erro}</p>}
+        <div className="flex justify-end gap-2"><Button variant="ghost" onClick={onFechar}>Fechar</Button><Button variant="cta" loading={salvando} disabled={decididas === 0} onClick={salvar}>Salvar {decididas > 0 ? `(${decididas})` : ''}</Button></div>
+      </div>
+    </Modal>
+  )
+}
+
+function Linha({ c, sub, extraSub, filha, podeEditar, onEditar, onAlternar, onExcluir, extra }: {
+  c: Categoria; sub: string; extraSub?: string; filha?: boolean; podeEditar: boolean; onEditar: () => void; onAlternar: () => void; onExcluir: () => void; extra?: React.ReactNode
 }) {
   return (
     <div className={cn('flex items-center gap-3 px-4 py-2.5', filha && 'pl-10', !c.ativo && 'opacity-50')} data-categoria={c.nome}>
@@ -144,6 +282,7 @@ function Linha({ c, sub, filha, podeEditar, onEditar, onAlternar, onExcluir, ext
       <div className="flex-1 min-w-0">
         <p className={cn('text-sm text-foreground', !filha && 'font-medium')}>{c.nome}{!c.ativo && <span className="text-[10px] ml-2 text-muted-foreground">inativa</span>}</p>
         {sub && <p className="text-[11px] text-muted-foreground">{sub}</p>}
+        {extraSub && <p className={cn('text-[11px]', c.visivel_portal === null ? 'text-amber-300' : 'text-muted-foreground')} data-info-portal>{extraSub}</p>}
       </div>
       {podeEditar && (<div className="flex items-center gap-1">
         {extra}

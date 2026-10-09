@@ -2,18 +2,18 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Bell, AlertTriangle, Clock, CheckCheck } from 'lucide-react'
+import { Bell, AlertTriangle, Clock, CheckCheck, ArrowRightLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // Avisos de SLA (migration 045) para admin/gestor: "em risco" e "vencido".
 // Tempo real pela publicação do Supabase; tocar abre a OS e marca como lido.
 
-interface Notificacao { id: string; tipo: 'sla_em_risco' | 'sla_vencido'; order_id: string | null; titulo: string; corpo: string | null; criada_em: string; lida_em: string | null }
+interface Notificacao { id: string; tipo: 'sla_em_risco' | 'sla_vencido' | 'transferida' | 'pingue_pongue'; order_id: string | null; titulo: string; corpo: string | null; criada_em: string; lida_em: string | null }
 
 export function useNotificacoes() {
   const { user } = useAuth()
   const [itens, setItens] = useState<Notificacao[]>([])
-  const ativo = user?.role === 'admin' || user?.role === 'gestor'
+  const ativo = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'atendente'
   const canal = useRef('notificacoes-' + Math.random().toString(36).slice(2))   // um canal por instância (menu desktop e celular)
   const recarregar = useCallback(async () => {
     if (!ativo) return
@@ -79,7 +79,7 @@ export default function SinoNotificacoes({ onNavegar }: { onNavegar?: () => void
       {aberto && (
         <div className="absolute left-0 top-9 z-50 w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-lg shadow-xl" data-testid="sino-painel">
           <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-            <p className="text-sm font-medium text-foreground">Avisos de SLA</p>
+            <p className="text-sm font-medium text-foreground">Avisos</p>
             {naoLidas > 0 && (
               <button onClick={() => marcar()} className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"><CheckCheck size={12} /> Marcar todos como lidos</button>
             )}
@@ -89,9 +89,11 @@ export default function SinoNotificacoes({ onNavegar }: { onNavegar?: () => void
             {itens.map(n => (
               <button key={n.id} onClick={() => abrir(n)} data-aviso={n.titulo}
                 className={cn('w-full text-left px-3 py-2.5 hover:bg-secondary/50 flex gap-2', !n.lida_em && 'bg-primary/5')}>
-                {n.tipo === 'sla_vencido'
+                {n.tipo === 'sla_vencido' || n.tipo === 'pingue_pongue'
                   ? <AlertTriangle size={15} className="text-red-400 flex-shrink-0 mt-0.5" />
-                  : <Clock size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />}
+                  : n.tipo === 'transferida'
+                    ? <ArrowRightLeft size={15} className="text-primary flex-shrink-0 mt-0.5" />
+                    : <Clock size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />}
                 <span className="min-w-0">
                   <span className={cn('block text-xs', n.lida_em ? 'text-muted-foreground' : 'text-foreground font-medium')}>{n.titulo}</span>
                   {n.corpo && <span className="block text-[11px] text-muted-foreground">{n.corpo}</span>}

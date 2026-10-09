@@ -18,7 +18,9 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { Label } from '@/components/ui/input'
-import { ArrowLeft, Building2, MapPin, Wrench, FileText } from 'lucide-react'
+import { BotaoTransferir, HistoricoTransferencias } from '@/components/orders/TransferirOS'
+import { ROTULO_NIVEL_GRUPO } from '@/lib/grupos'
+import { ArrowLeft, Building2, MapPin, Wrench, FileText, Users2 } from 'lucide-react'
 
 const STATUS_LABELS: Record<string, string> = {
   aberta: 'Aberta', agendada: 'Agendada', em_andamento: 'Em andamento',
@@ -177,6 +179,10 @@ export default function OrderDetailPage() {
               <div className="flex items-center gap-2 text-foreground"><Building2 size={15} className="text-muted-foreground" /> {order.client?.name ?? '—'}</div>
               {order.location?.name && <div className="flex items-center gap-2 text-foreground"><MapPin size={15} className="text-muted-foreground" /> {order.location.name}</div>}
               <div className="flex items-center gap-2 text-foreground"><Wrench size={15} className="text-muted-foreground" /> {order.technician?.name ?? 'Sem técnico (backlog)'}</div>
+              <div className="flex items-center gap-2 text-foreground" data-testid="os-grupo"><Users2 size={15} className="text-muted-foreground" />
+                {order.grupo ? <>{order.grupo.nome} <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">{ROTULO_NIVEL_GRUPO[order.grupo.nivel]}</span></> : <span className="text-muted-foreground">Sem grupo</span>}
+                {!!order.transferencias && <span className="text-[11px] text-muted-foreground">· {order.transferencias} {order.transferencias === 1 ? 'transferência' : 'transferências'}</span>}
+              </div>
             </div>
             {order.description && (
               <div className="mt-4 pt-4 border-t border-border">
@@ -191,6 +197,12 @@ export default function OrderDetailPage() {
             <p className="text-sm font-medium text-foreground mb-3">Linha do tempo</p>
             <OrderTimeline orderId={order.id} />
           </Card>
+          {!!order.transferencias && (
+            <Card className="p-5">
+              <p className="text-sm font-medium text-foreground mb-3">Transferências</p>
+              <HistoricoTransferencias orderId={order.id} criadaEm={order.created_at} grupoInicialId={order.grupo_id} />
+            </Card>
+          )}
           <Card className="p-5">
             <p className="text-sm font-medium text-foreground mb-3">Checklist</p>
             <OrderChecklist orderId={order.id} />
@@ -228,6 +240,7 @@ export default function OrderDetailPage() {
               <p className="text-xs text-muted-foreground">Esta OS está em um estado final.</p>
             ) : (
               <div className="flex flex-col gap-2">
+                <BotaoTransferir order={order} onDone={fetchOrder} />
                 {actions.map(action => (
                   <button
                     key={action.target}
