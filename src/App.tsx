@@ -28,7 +28,8 @@ import FieldOrderPage from '@/pages/field/FieldOrderPage'
 import MyChecklistsPage from '@/pages/field/MyChecklistsPage'
 import FieldChecklistPage from '@/pages/field/FieldChecklistPage'
 import PortalApp from '@/portal/PortalApp'
-import { hostEhPortal } from '@/lib/portal'
+import { tipoDoHost, confirmarHostPortal } from '@/lib/portal'
+import { useEffect, useState } from 'react'
 
 // Placeholders para fases futuras
 function PlaceholderPage({ title }: { title: string }) {
@@ -48,9 +49,17 @@ function HomeRedirect() {
 }
 
 export default function App() {
-  // Portal de atendimento aberto pelo próprio endereço (subdomínio VLUMA ou
-  // domínio da empresa): o site inteiro é o portal
-  if (hostEhPortal()) {
+  // O ATOS (gestão e técnicos) nunca é confundido com um portal de cliente:
+  // endereços do ATOS vão direto ao painel; "atendimento.*" é portal; qualquer
+  // outro endereço (domínio próprio de uma empresa) é conferido no banco.
+  const [tipo, setTipo] = useState(tipoDoHost())
+  useEffect(() => {
+    if (tipo !== 'desconhecido') return
+    confirmarHostPortal().then(ehPortal => setTipo(ehPortal ? 'portal' : 'painel'))
+      .catch(() => setTipo('painel'))
+  }, [tipo])
+  if (tipo === 'desconhecido') return <div className="min-h-screen" />
+  if (tipo === 'portal') {
     return (
       <BrowserRouter>
         <AtualizacaoApp />

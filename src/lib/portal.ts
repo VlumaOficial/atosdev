@@ -40,13 +40,37 @@ export interface PortalContexto {
   termos_pendentes?: TermoPendente[]
 }
 
-// Hosts que são o próprio ATOS (painel) — nunca são portal pelo host
-const HOSTS_DO_PAINEL = ['localhost', '127.0.0.1', 'atosdev.vercel.app']
+// Que tipo de endereço é este? O ATOS (painel da gestão e app dos técnicos)
+// NUNCA pode ser confundido com um portal de cliente:
+//   * 'painel'  — endereços conhecidos do próprio ATOS (DEV, produção, Vercel, local)
+//   * 'portal'  — "atendimento.<empresa>.<domínio>" (subdomínio VLUMA)
+//   * 'desconhecido' — qualquer outro (pode ser o domínio próprio de uma empresa):
+//     o banco decide (portal_resolver); se o endereço não está cadastrado como
+//     portal, é o ATOS
+// Endereços extras do ATOS podem ser acrescentados em VITE_PAINEL_HOSTS (vírgulas).
+const HOSTS_DO_PAINEL = ['localhost', '127.0.0.1', 'atosdev.vluma.com.br', 'atos.vluma.com.br',
+  ...((import.meta.env.VITE_PAINEL_HOSTS as string | undefined) ?? '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean)]
+
+export type TipoHost = 'painel' | 'portal' | 'desconhecido'
+let hostPortalConfirmado = false   // endereço desconhecido que o banco confirmou como portal
+
+export function tipoDoHost(host = window.location.hostname): TipoHost {
+  const h = host.toLowerCase()
+  if (HOSTS_DO_PAINEL.includes(h) || h.endsWith('.vercel.app')) return 'painel'
+  if (h.startsWith('atendimento.') && h.split('.').length >= 3) return 'portal'
+  return hostPortalConfirmado ? 'portal' : 'desconhecido'
+}
 
 export function hostEhPortal(host = window.location.hostname): boolean {
-  const h = host.toLowerCase()
-  if (HOSTS_DO_PAINEL.includes(h) || h.endsWith('.vercel.app')) return false
-  return true
+  return tipoDoHost(host) === 'portal'
+}
+
+// Endereço desconhecido: é portal de alguma empresa? (domínio próprio)
+export async function confirmarHostPortal(host = window.location.hostname): Promise<boolean> {
+  const { data } = await supabase.rpc('portal_resolver', { p_slug: null, p_host: host.toLowerCase() })
+  const r = data as PortalIdentidade | null
+  hostPortalConfirmado = !!r && (r.disponivel || r.motivo === 'indisponivel' || !!r.redirecionar)
+  return hostPortalConfirmado
 }
 
 // Base das rotas do portal: '' no host próprio, '/portal/<slug>' no caminho interno
