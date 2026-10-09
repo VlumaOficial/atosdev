@@ -25,6 +25,7 @@ await ad.getByTestId('convidar').click(); await ad.waitForSelector('[data-testid
 await ad.fill('#cv-nome', 'E3UI Convidada'); await ad.fill('#cv-email', 'e3ui.convidada@example.com')
 await ad.getByTestId('enviar-convite').click(); await ad.waitForTimeout(3500)
 ok((await ad.getByTestId('gestao-msg').innerText()).includes('e-mail não pôde ser enviado'), 'convite criado (e-mail de teste não é enviado de verdade)')
+await ad.waitForSelector('[data-convite="e3ui.convidada@example.com"]', { timeout: 10000 }).catch(() => {})
 ok(await ad.locator('[data-convite="e3ui.convidada@example.com"]').count() === 1, 'convite aparece em "aguardando aceite"')
 await ad.fill('#cv-nome', '').catch(() => {})
 // equipe
@@ -138,7 +139,7 @@ sql(`delete from portal_vinculos where client_id=(select id from clients where n
 // ===== F. regressão do cadastro do cliente (aba Dados)
 await ad.reload(); await ad.waitForTimeout(3000)
 await ad.locator('tr', { hasText: 'Cliente Trigger Teste' }).locator('td').last().locator('button').first().click(); await ad.waitForSelector('[data-testid=abas-cliente]')
-ok(await ad.locator('#name').isVisible() && await ad.locator('#cnpj').count() >= 0, 'aba Dados continua com o formulário do cliente')
+ok(await ad.locator('#name').isVisible() && await ad.locator('#cnpj').count() === 1, 'aba Dados continua com o formulário do cliente')
 await ad.getByRole('button', { name: 'Salvar' }).last().click(); await ad.waitForTimeout(2500)
-ok(!(await ad.locator('text=Editar cliente').count()) || true, 'salvar o cliente continua funcionando')
+ok((await ad.locator('#name').count()) === 0, 'salvar o cliente continua funcionando (o formulário fecha)')
 console.log('erros:', erros.filter(e => !/favicon/.test(e))); resumo(); await b.close()

@@ -2294,6 +2294,16 @@ Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 2, 3, 4 e 6).
   5. A confirmação do atendimento sobre a **data** que o cliente pediu e a conversa entram na **E5**.
 - **PRD:** o gatilho da 062 tem a URL do projeto DEV escrita (como a 030): trocar pelo ref do PRD.
 
+### Portal — ajustes do 1º teste manual do usuário (2026-10-10, após o fechamento da E4)
+O usuário testou o "Solicitar acesso" no navegador real (com e-mail e celular dele) e levantou 4 pontos:
+1. **Verificação "Sucesso!" aparece sozinha — está correto.** O widget do Turnstile está no modo Gerenciado: quando o navegador parece de pessoa, a Cloudflare conclui sem pedir clique. O aviso "siteverify não está sendo chamado" do painel da Cloudflare **não é falha**: a função `portal-acesso` chama o `siteverify` (provado: sem token e com token falso → 400); a Cloudflare só deixa de avisar depois de ver um token real validado. Os 44% "provavelmente humano" vêm dos testes automáticos. Não usar "Corrigir com o Spin".
+2. **O pedido só avisava no sino.** Agora há a aba **"Solicitações (n)" em Usuários** (ao lado de Técnicos; fica âmbar quando há pendentes) com a lista de pedidos; o sino abre direto essa aba (também para avisos antigos). O link gravado nos avisos novos mudou na função `portal-acesso` (republicada no DEV).
+2b. **Bloco fora dos termos:** os pedidos saíram do cartão "Portal de atendimento" (Configurações), onde ficavam junto dos termos.
+3. **"Escolhi Atakarejo e não trouxe o cliente":** o Atakarejo existe, mas está com **portal desligado** (o roteiro `e3_api` o desliga de propósito), e só clientes com portal ligado podem receber convite. A tela dizia só "cliente não reconhecido". Agora: (a) avisa "O cliente 'Atakarejo' existe, mas o portal dele está desligado — ligue na aba Portal do cliente"; (b) a lista mostra todos os clientes ativos, os desligados aparecem desabilitados com "— portal desligado".
+- **Ponto aberto:** a aba fica em Usuários, que só o administrador abre; o gestor também é avisado e a função aceita a decisão dele, mas não alcança a tela (já era assim em Configurações). Decidir: liberar a aba ao gestor ou avisar só administradores.
+- **Testes:** `e2e/e3_ui.mjs` atualizado (aviso → Usuários › Solicitações, contagem na aba, cliente com portal desligado) e dois checks vazios antigos trocados por verificações reais.
+- **Resíduo de teste:** o pedido real do usuário (Sergio Teste, sergio.dorea2624@gmail.com, "Atakarejo") continua pendente de propósito; os resíduos `e3ui.*` são limpos pelo próprio roteiro.
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
