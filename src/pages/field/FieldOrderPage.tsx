@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { Label } from '@/components/ui/input'
 import { BotaoTransferir } from '@/components/orders/TransferirOS'
+import PortalInfoOS from '@/components/portal/PortalInfoOS'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Building2, MapPin, Navigation, FileText, Users2, Hand } from 'lucide-react'
 
@@ -186,6 +187,8 @@ export default function FieldOrderPage() {
           <p className="text-sm text-foreground whitespace-pre-wrap">{order.description}</p>
         </Card>
       )}
+
+      <div className="mb-4 empty:hidden"><PortalInfoOS orderId={order.id} numero={order.number} titulo={order.title} compacto /></div>
 
       <Card className="p-4 mb-4">
         <p className="text-sm font-medium text-foreground mb-3">Linha do tempo</p>

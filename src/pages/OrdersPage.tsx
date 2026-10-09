@@ -80,14 +80,14 @@ export default function OrdersPage() {
   const hoje = hojeNoFuso(tenant?.fuso_horario)
   // filtros + página na URL (voltar da OS mantém a lista como estava)
   const { valores: f, definir, limpar } = useFiltrosUrl({
-    sit: 'em_aberto', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', pri: '', tipo: '', cat: '', sla: '', gru: '', por: '', pag: '1', tam: '25',
+    sit: 'em_aberto', q: '', per: '', de: '', ate: '', cli: '', uni: '', tec: '', pri: '', tipo: '', cat: '', sla: '', gru: '', ori: '', por: '', pag: '1', tam: '25',
   })
   const periodo = intervaloDoPeriodo(f.per as ChavePeriodo, hoje, f.de, f.ate)
   const pagina = Math.max(1, parseInt(f.pag) || 1)
   const tamanho = parseInt(f.tam) || 25
   const { itens, total, contagens, loading, error, recarregar } = useListaOS({
     situacao: f.sit, q: f.q, de: periodo.de, ate: periodo.ate, cliente: f.cli, unidade: f.uni, tecnico: f.tec, prioridade: f.pri,
-    tipo: f.tipo, categoria: f.cat, sla: f.sla, periodo_por: f.por, grupo: f.gru,
+    tipo: f.tipo, categoria: f.cat, sla: f.sla, periodo_por: f.por, grupo: f.gru, origem: f.ori,
   }, pagina, tamanho)
   const { opcoes: categoriasOp, categorias } = useCategorias()
   const { locations: todasUnidades } = useLocations()
@@ -150,6 +150,7 @@ export default function OrdersPage() {
     { chave: 'cli', rotulo: 'Cliente', opcoes: clientOptions, vazio: 'Todos os clientes' },
     { chave: 'uni', rotulo: 'Unidade', opcoes: unidadesFiltro, vazio: 'Todas as unidades' },
     { chave: 'gru', rotulo: 'Grupo', opcoes: [{ value: 'sem', label: 'Sem grupo' }, ...grupos.map(g => ({ value: g.id, label: g.nome }))], vazio: 'Todos os grupos' },
+    { chave: 'ori', rotulo: 'Origem', opcoes: [{ value: 'portal', label: 'Portal do cliente' }, { value: 'interno', label: 'Aberta pela equipe' }], vazio: 'Qualquer origem' },
     { chave: 'tec', rotulo: 'Técnico', opcoes: [{ value: 'sem', label: 'Sem técnico (backlog)' }, ...technicians.map(t => ({ value: t.id, label: t.name }))], vazio: 'Todos os técnicos' },
     { chave: 'tipo', rotulo: 'Tipo', opcoes: TIPOS.map(t => ({ value: t.value, label: t.label })), vazio: 'Todos os tipos' },
     { chave: 'pri', rotulo: 'Prioridade', opcoes: [{ value: 'critico,alto', label: 'Crítico e Alto' }, ...NIVEIS.map(n => ({ value: n.value, label: n.label }))], vazio: 'Todas as prioridades' },
@@ -263,7 +264,7 @@ export default function OrdersPage() {
 
   const colunas: Column<Order>[] = [
     { key: 'numero', header: 'OS', render: o => <span className="font-mono text-xs text-primary whitespace-nowrap" data-os={o.number}>{o.number}</span> },
-    { key: 'titulo', header: 'Título', render: o => <span className="text-foreground">{o.title}</span> },
+    { key: 'titulo', header: 'Título', render: o => <span className="text-foreground">{o.title}{o.origem === 'portal' && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 align-middle" data-origem-portal>Portal</span>}</span> },
     { key: 'cliente', header: 'Cliente', render: o => <span className="text-muted-foreground">{o.client?.name ?? '—'}</span> },
     { key: 'grupo', header: 'Grupo', render: o => <span className="text-muted-foreground" data-grupo-os>{o.grupo?.nome ?? '—'}</span> },
     { key: 'tecnico', header: 'Técnico', render: o => <span className="text-muted-foreground">{o.technician?.name ?? 'Sem técnico'}</span> },
@@ -324,7 +325,7 @@ export default function OrdersPage() {
       )}
 
       <FiltrosLista campos={camposFiltro}
-        valores={{ cli: f.cli, uni: f.uni, gru: f.gru, tec: f.tec, pri: f.pri, tipo: f.tipo, cat: f.cat, sla: f.sla }}
+        valores={{ cli: f.cli, uni: f.uni, gru: f.gru, ori: f.ori, tec: f.tec, pri: f.pri, tipo: f.tipo, cat: f.cat, sla: f.sla }}
         onChange={(k, v) => definir(k === 'cli' ? { cli: v, uni: '' } : { [k]: v })}
         periodo={{ rotulo: f.por === 'conclusao' ? 'Concluída em' : 'Aberta em', valor: f.per as ChavePeriodo, de: f.de, ate: f.ate, onChange: (per, de, ate) => definir({ per, por: per ? f.por : '', de: per === 'personalizado' ? (de ?? '') : '', ate: per === 'personalizado' ? (ate ?? '') : '' }) }}
         onLimpar={() => limpar()} />

@@ -64,6 +64,7 @@ export interface Order {
   grupo_id?: string | null
   grupo?: { id: string; nome: string; nivel: string } | null
   transferencias?: number
+  origem?: string
 }
 
 export interface OrderInput {
@@ -88,6 +89,7 @@ export interface FiltrosOS {
   cliente?: string; unidade?: string; tecnico?: string; prioridade?: string
   tipo?: string; categoria?: string; sla?: string
   grupo?: string   // id do grupo, ou 'sem' (OS sem grupo)
+  origem?: string  // 'interno' | 'portal'
   periodo_por?: string   // '' = abertura (padrão) · 'conclusao' (links do painel gerencial)
 }
 export type ContagensOS = Record<'todas' | 'em_aberto' | OrderStatus | 'sla_vencido' | 'sla_em_risco' | 'novos_sem_grupo', number>

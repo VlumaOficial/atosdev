@@ -19,6 +19,7 @@ import { Card } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { Label } from '@/components/ui/input'
 import { BotaoTransferir, HistoricoTransferencias } from '@/components/orders/TransferirOS'
+import PortalInfoOS from '@/components/portal/PortalInfoOS'
 import { ROTULO_NIVEL_GRUPO } from '@/lib/grupos'
 import { ArrowLeft, Building2, MapPin, Wrench, FileText, Users2 } from 'lucide-react'
 
@@ -95,6 +96,13 @@ export default function OrderDetailPage() {
     } else {
       applyStatusChange(action.target)
     }
+  }
+
+  // atalho do chamado do portal: abre o agendamento já com a data pedida e "a pedido do cliente"
+  function agendarComDataPedida(isoLocal: string) {
+    setReasonInput('Data pedida pelo cliente no portal'); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(true)
+    setDateInput(isoLocal); setNotesInput(''); setCompleteDateInput(''); setStatusError('')
+    setStatusModal({ open: true, target: 'agendada', needsReason: true, needsDate: true, needsNotes: false, needsCompleteDate: false })
   }
 
   async function applyStatusChange(target: string, extra?: any) {
@@ -193,6 +201,8 @@ export default function OrderDetailPage() {
           </Card>
 
           <CartaoSla o={order} />
+          <PortalInfoOS orderId={order.id} numero={order.number} titulo={order.title} prioridadeAtual={order.priority}
+            onAgendar={['aberta', 'agendada', 'pausada'].includes(order.status) ? agendarComDataPedida : undefined} />
           <Card className="p-5">
             <p className="text-sm font-medium text-foreground mb-3">Linha do tempo</p>
             <OrderTimeline orderId={order.id} />

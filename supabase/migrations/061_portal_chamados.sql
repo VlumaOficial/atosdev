@@ -545,7 +545,7 @@ begin
     'preferencias', o.preferencia_agendamento,
     'anexos', coalesce((select jsonb_agg(jsonb_build_object('id', a.id, 'path', a.path, 'nome', a.nome, 'tipo', a.tipo, 'mime', a.mime, 'bytes', a.bytes) order by a.criado_em)
                           from public.os_anexos_cliente a where a.order_id = o.id), '[]'::jsonb),
-    'portal', (select coalesce(nullif(portal_slug, ''), null) from public.tenants where id = o.tenant_id));
+    'portal_host', (select e.host from public.portal_enderecos e where e.tenant_id = o.tenant_id and e.situacao = 'ativo' and e.principal order by e.criado_em desc limit 1));
 end $$;
 revoke execute on function public.portal_info_chamado(uuid) from public, anon;
 grant execute on function public.portal_info_chamado(uuid) to authenticated;

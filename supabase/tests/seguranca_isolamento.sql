@@ -57,7 +57,9 @@ begin
     end;
   end loop;
   begin
-    execute 'select count(*) from storage.objects where bucket_id <> ''portal-publico''' into n;
+    -- portal-anexos: a pessoa do portal lê os arquivos dos chamados que ENXERGA (regra testada em portal_chamados.sql);
+    -- o visitante anônimo não lê nenhum
+    execute format('select count(*) from storage.objects where bucket_id <> ''portal-publico'' and not (%L = ''pessoa do portal'' and bucket_id = ''portal-anexos'')', p_papel) into n;
     if n > 0 then insert into _falhas values (p_papel || ' lê storage', n || ' arquivos'); end if;
   exception when insufficient_privilege then null;
   end;

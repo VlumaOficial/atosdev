@@ -15,6 +15,7 @@ import LiberarEspacoCard from '@/components/LiberarEspacoCard'
 import EnvioRelatorioCard from '@/components/EnvioRelatorioCard'
 import FusoHorarioCard from '@/components/FusoHorarioCard'
 import PortalConfigCard from '@/components/portal/PortalConfigCard'
+import PortalAberturaCard from '@/components/portal/PortalAberturaCard'
 import PortalPlataformaCard from '@/components/portal/PortalPlataformaCard'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
@@ -81,6 +82,7 @@ export default function ConfiguracoesPage() {
         {user?.role === 'super_admin' && <GeocodificacaoPlataformaCard />}
         {user?.role === 'super_admin' && <PortalPlataformaCard />}
         {tenant && user?.role === 'admin' && <PortalConfigCard abrir={abrirPortal} />}
+        {tenant && user?.role === 'admin' && <PortalAberturaCard />}
         {tenant && <FusoHorarioCard />}
         {tenant && <EnvioRelatorioCard />}
         {tenant && <ExportacaoFotosCard />}

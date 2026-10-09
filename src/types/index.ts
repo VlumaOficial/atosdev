@@ -51,6 +51,7 @@ export interface Tenant {
   portal_contatos?: { email?: string; telefone?: string; whatsapp?: string; site?: string }
   portal_termos_proprios?: string[]
   portal_logo_versao?: number | null
+  portal_abertura?: Record<string, any>
   transferencias_limite?: number
   created_at: string
   updated_at: string

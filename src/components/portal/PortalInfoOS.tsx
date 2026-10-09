@@ -1,0 +1,65 @@
+import { useEffect, useState } from 'react'
+import { Headset, Users2, MessageCircle, Calendar, Hand } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
+import { linkWhatsApp } from '@/lib/portal'
+import { ROTULO_PERIODO, dataBR, type AnexoChamado } from '@/lib/portalChamados'
+import AnexosCliente from './AnexosCliente'
+
+// "Aberto pelo portal": quem abriu, equipe, quantas pessoas são afetadas, o que o cliente informou
+// de prioridade, as datas que pediu, fotos e áudio. A equipe interna vê contato; o técnico, só o nome.
+interface Info {
+  origem: string
+  solicitante: { nome: string; email: string | null; celular: string | null } | null
+  equipe: string | null; compartilhado: boolean; prioridade_informada: string | null; afetados: number
+  preferencias: { data: string; periodo: string }[] | null
+  anexos: AnexoChamado[]
+  portal_host: string | null
+}
+const HORA: Record<string, string> = { manha: '09:00', tarde: '14:00', qualquer: '09:00' }
+
+export default function PortalInfoOS({ orderId, numero, titulo, prioridadeAtual, onAgendar, compacto = false }: {
+  orderId: string; numero: string; titulo: string; prioridadeAtual?: string; onAgendar?: (isoLocal: string) => void; compacto?: boolean
+}) {
+  const { tenant } = useAuth()
+  const [info, setInfo] = useState<Info | null>(null)
+  useEffect(() => {
+    supabase.rpc('portal_info_chamado', { p_order: orderId }).then(({ data }) => setInfo((data as Info) ?? null))
+  }, [orderId])
+  if (!info) return null
+
+  const empresa = (tenant?.trade_name || tenant?.name || '').replace(/\.$/, '')
+  const wa = info.solicitante?.celular
+    ? linkWhatsApp(info.solicitante.celular, `Olá, ${info.solicitante.nome.split(' ')[0]}! Aqui é da ${empresa}. Sobre o seu chamado ${numero} (${titulo}).${info.portal_host ? ` Acompanhe em https://${info.portal_host}/chamados/${orderId}` : ''}`) : null
+  const divergiu = info.prioridade_informada && prioridadeAtual && info.prioridade_informada !== prioridadeAtual
+
+  return (
+    <div className="rounded-md border border-primary/25 bg-primary/5 p-4 space-y-3" data-testid="info-portal">
+      <p className="text-sm font-medium text-foreground inline-flex items-center gap-2"><Headset size={15} className="text-primary" /> Aberto pelo portal do cliente</p>
+      <div className="text-sm space-y-1">
+        {info.solicitante && <p className="text-foreground" data-testid="solicitante-portal">{info.solicitante.nome}{info.solicitante.email ? <span className="text-xs text-muted-foreground"> · {info.solicitante.email}</span> : null}{info.solicitante.celular ? <span className="text-xs text-muted-foreground"> · {info.solicitante.celular}</span> : null}</p>}
+        {info.equipe && <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5"><Users2 size={12} /> Equipe {info.equipe} · {info.compartilhado ? 'compartilhado com a equipe' : 'não compartilhado'}</p>}
+        {info.afetados > 1 && <p className="text-xs text-amber-300" data-testid="afetados-portal">{info.afetados} pessoas afetadas (marcaram "também me afeta")</p>}
+        {info.prioridade_informada && !compacto && <p className="text-xs text-muted-foreground">Prioridade informada pelo cliente: <span className="text-foreground">{info.prioridade_informada}</span>{divergiu ? <span className="text-amber-300"> — diferente da atual ({prioridadeAtual}): confirme ou ajuste</span> : null}</p>}
+      </div>
+      {info.preferencias && info.preferencias.length > 0 && (
+        <div data-testid="preferencias-data">
+          <p className="text-xs text-muted-foreground mb-1 inline-flex items-center gap-1.5"><Calendar size={12} /> Datas que o cliente pediu</p>
+          <ul className="space-y-1">
+            {info.preferencias.map((p, i) => (
+              <li key={i} className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+                {dataBR(p.data)} — {ROTULO_PERIODO[p.periodo] ?? p.periodo}
+                {onAgendar && <button type="button" onClick={() => onAgendar(`${p.data}T${HORA[p.periodo] ?? '09:00'}`)} data-testid="agendar-data-pedida" className="text-xs px-2 py-0.5 rounded border border-primary/40 text-primary hover:bg-primary/10">Agendar nesta data</button>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {info.anexos.length > 0 && <div><p className="text-xs text-muted-foreground mb-1.5">Fotos e áudio do cliente</p><AnexosCliente anexos={info.anexos} /></div>}
+      {wa && (
+        <a href={wa} target="_blank" rel="noreferrer" data-testid="avisar-whatsapp" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-500 text-white text-xs font-medium"><MessageCircle size={13} /> Avisar o cliente pelo WhatsApp</a>
+      )}
+      {!compacto && info.solicitante?.celular === null && <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1"><Hand size={11} /> O cliente não informou celular.</p>}
+    </div>
+  )
+}

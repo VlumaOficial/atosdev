@@ -33,6 +33,7 @@ begin
       and (p->>'grupo' is null
            or (p->>'grupo' = 'sem' and o.grupo_id is null)
            or (p->>'grupo' <> 'sem' and o.grupo_id = (p->>'grupo')::uuid))
+      and (p->>'origem' is null or o.origem = p->>'origem')      -- interno | portal (E4)
       and (p->>'tipo' is null or o.tipo = p->>'tipo')
       and (p->>'categoria' is null or o.categoria_id = (p->>'categoria')::uuid
            or o.categoria_id in (select c.id from public.os_categorias c where c.pai_id = (p->>'categoria')::uuid))
