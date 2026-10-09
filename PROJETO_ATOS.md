@@ -963,6 +963,10 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 053_seguranca_papel_nulo | get_meu_role() devolve 'nenhum' para quem não tem perfil interno (guardas das funções); feriados da plataforma só para usuários internos | OK | Pendente | Sim |
 | 054_portal_termos_recusa | consentimento de comunicação opcional: portal_aceitar_termos(aceitos, recusados); pendente = versão sem nenhuma resposta | OK | Pendente | Sim |
 | 055_portal_endereco_oficial | portal_resolver devolve host_oficial e interno (cliente só entra pelo endereço oficial; caminho interno só prévia da equipe) | OK | Pendente | Sim |
+| 056_perfil_atendente | users.role aceita 'atendente'; Atendente abre/edita OS (não exclui) | OK | Pendente | Sim |
+| 057_grupos_atendimento | grupos de atendimento + membros, ficha do catálogo (portal/grupo padrão), OS com grupo e roteamento, transferir_os/assumir_os, histórico, alerta de pingue-pongue, alertas de SLA ao coordenador | OK | Pendente | Sim |
+| 058_lista_os_filas | listar_os com filtro/coluna de grupo e contagem "novos sem grupo" | OK | Pendente | Sim |
+| 059_usuario_inativo_sem_acesso | get_meu_role()/get_meu_tenant() tratam usuário desativado como sem perfil | OK | Pendente | Sim |
 
 ---
 
@@ -2075,10 +2079,50 @@ Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
     - endereços antigos continuam servindo e **não são limpos automaticamente** após os 90 dias (limpeza futura);
     - o **domínio próprio** da empresa (adicional pago) usa a mesma tabela e fica para a F8 / Etapa 3.
 
+### 🔴→✅ Segurança — usuário DESATIVADO continuava com acesso (2026-10-09, migration 059)
+- **Achado nos testes da tela Usuários (E2):** "desativar" só trocava `users.active`. A conta desativada continuava **entrando e lendo as OS da empresa** — valia também para técnicos desativados pela tela Técnicos (um ex-funcionário manteria o acesso). Era anterior à E2.
+- **Correção na raiz:** `get_meu_role()` e `get_meu_tenant()` (base de todas as regras de acesso e funções) tratam usuário inativo como **sem perfil** (papel `nenhum`, sem empresa). O bloqueio é imediato, mesmo com a sessão aberta. As Edge Functions que conferem o perfil (`criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`, `portal-endereco`) passaram a ignorar usuário inativo.
+- **App:** login de conta desativada mostra "Seu acesso está desativado. Fale com o administrador da sua empresa."; sessão aberta é derrubada ao recarregar.
+- **Impacto:** nenhum dado real (só a conta de teste e2ui estava inativa). O roteiro de segurança ganhou o item 6 (usuário desativado não lê nada).
+- **Testado na URL pública:** a API devolve 0 OS e 0 grupos para o desativado, mensagem de login, sessão derrubada, reativado entra, admin ativo normal.
+
+### Portal de atendimento — Etapa 1 · E2 Catálogo e grupos (2026-10-09) — CONCLUÍDA E TESTADA
+Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 3, 4, 6B e 7).
+- **Migration 056 — perfil Atendente** (`users.role = 'atendente'`): vê todas as OS, abre e edita, classifica, atribui, transfere e conversa. **Não** exclui OS e **não** mexe em cadastros, catálogo, SLA, calendários, grupos, usuários, configurações nem no painel gerencial. Menu só com "Ordens de Serviço"; ao entrar cai na fila **Novos sem grupo**; tem o sino de avisos. As telas de cadastro ficaram fechadas ao Atendente também pelo endereço.
+- **Migration 057 — grupos, ficha do catálogo, transferência:**
+  - `grupos_atendimento` (nível N1/N2/N3/Campo, **Assumir** desligado por padrão, ativo) e `grupo_membros` (coordenador). `salvar_grupo` (admin/gestor) valida: coordenador só Gestor, Atendente ou Administrador; nome único com mensagem amigável.
+  - **Ficha do catálogo** (`os_categorias`): `descricao_portal`, `visivel_portal` (**nulo = ainda não decidido, não aparece**), `tipos_portal`, `grupo_padrao_id` (= "categorias atendidas" do grupo, que se edita nas duas telas).
+  - `definir_visibilidade_categorias` (assistente).
+  - **OS:** `grupo_id` e `transferencias`. **Roteamento:** a OS nasce no grupo padrão da categoria (ou da categoria-mãe) quando nenhum grupo é informado.
+  - **Segurança do técnico preservada:** só vê as próprias OS; a única exceção é a **fila do grupo em que é membro e que liga o Assumir** (OS do grupo sem técnico). Não consegue passar a OS por UPDATE direto.
+  - `assumir_os`; `transferir_os`: para grupo e/ou técnico, **motivo obrigatório**, **direção automática pelo nível** (escalonamento/devolução/lateral/encaminhamento/reatribuição), o **SLA não reinicia**, OS em andamento/pausada volta para "aberta", histórico em `os_transferencias`, contador, evento na linha do tempo e **alerta de pingue-pongue** (`tenants.transferencias_limite`, padrão 3; avisa a partir de N transferências).
+  - **Alertas de SLA** (em risco e vencido) também para o **coordenador** do grupo da OS (não técnico); novos tipos de aviso "transferida" e "pingue_pongue".
+- **Migration 058:** `listar_os` com filtro de grupo, o grupo de cada OS e a contagem de **Novos sem grupo**.
+- **Telas:**
+  - **Grupos de atendimento** (admin/gestor): lista, cadastro (membros, coordenação, categorias atendidas, Assumir), limite do alerta de transferências.
+  - **Catálogo e SLA › Categorias:** ficha "No portal do cliente" (Aparece? Sim/Não **obrigatório e sem pré-marcação** na criação; tipos; descrição para o cliente; grupo padrão) e o **assistente** "O que aparece no portal do cliente?" para as categorias que já existiam (aviso no topo enquanto houver sem decisão).
+  - **Ordens de Serviço:** filas "Novos sem grupo (n)" e "Fila: <grupo>", filtro e coluna Grupo, campo "Grupo de atendimento" no formulário.
+  - **Detalhe da OS:** grupo, botão **Transferir** (motivo obrigatório, previsão da direção), histórico de transferências com o **tempo em cada grupo**, evento na linha do tempo.
+  - **App do técnico:** **"Fila do grupo"** só para membros de grupo com Assumir ligado (os demais não veem nada de novo); "Assumir" na OS da fila; "Transferir" para o técnico responsável.
+  - **Usuários** (admin): cria **Atendente** e **Gestor** (a função `criar-tecnico` aceita o perfil; só o administrador cria atendente/gestor), edita e desativa. O Super Admin deixou de ver o item "Usuários" (era um espaço reservado sem função).
+  - Sino: avisos de transferência e pingue-pongue.
+- **Roteiros automáticos:** `supabase/tests/grupos_atendimento.sql` (41 verificações: roteamento, quem vê a fila, assumir, transferir, pingue-pongue, SLA que não reinicia, direitos do Atendente, alertas ao coordenador) e o de isolamento (0 falhas). O de grupos foi conferido contra um erro plantado e não deixa resíduo.
+- **Testado na URL pública** (atosdev.vluma.com.br): administrador (grupos, catálogo, assistente, filas, transferência), Atendente (menu, rotas bloqueadas, sino, fila, encaminhar, editar o grupo), técnico no celular (fila do grupo, assumir, transferir, regressão: as mesmas 22 OS de antes), Usuários, desativação; mais teste de fumaça das 16 telas existentes (admin, Super Admin e técnico) sem erros, e as baterias da E1.
+- **Decisões do PO/Engenheiro nesta entrega (a confirmar pelo usuário):**
+  1. O coordenador de grupo não pode ser técnico (os alertas chegam pelo sino do painel; o app de campo não tem sino).
+  2. O técnico de destino de uma transferência **não recebe aviso** (não há canal): ele vê a OS na lista do app. O aviso virá com a notificação diária / PWA.
+  3. Alterar técnico ou grupo pelo **formulário de edição da OS** continua sendo ajuste direto (não conta como transferência e não pede motivo); a transferência auditada é o botão Transferir.
+  4. O Atendente não vê Clientes nem Unidades por enquanto.
+  5. Transferir "para um técnico" só aceita técnicos (não atendentes).
+  6. "Assumir" só vale para OS aberta ou agendada.
+  7. Subcategoria só aparecerá no portal se a categoria principal também aparecer (vale na E4).
+- **Pendente (já previsto):** roteamento por região e distribuição automática (Etapa 2 do portal); "exige aprovação" na ficha (Etapa 2).
+- **Massa de teste do DEV:** grupos "Central N1", "Redes N2" e "Campo Interior" (usados pelo roteiro de SQL), o usuário `atendente.teste@infoxtec.com.br` (senha no scratchpad). Os resíduos dos testes de tela foram apagados. Tudo entra na limpeza do fim do desenvolvimento.
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
-  Único Atrasado", OS-0018 a OS-0030, os técnicos sem empresa sdoreaestudo@gmail.com e sdoreaestudo1@gmail.com, a pessoa de teste do portal portal.teste@example.com e fotos de teste na OS-0010. Não
+  Único Atrasado", OS-0018 a OS-0030, o usuário atendente.teste@infoxtec.com.br, os grupos de teste (Central N1, Redes N2, Campo Interior), os técnicos sem empresa sdoreaestudo@gmail.com e sdoreaestudo1@gmail.com, a pessoa de teste do portal portal.teste@example.com e fotos de teste na OS-0010. Não
   apagar antes — servem de massa para testes e validação
 
 ### Credenciais a trocar no FIM do MVP (não antes — decisão do usuário)
@@ -2094,7 +2138,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–055 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–059 em ordem (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
@@ -2104,6 +2148,7 @@ sessão, nunca no git).
   gatilho `fn_orders_relatorio_ao_concluir` tem a URL do projeto DEV
   (`vgkiddqahubznlzkxfgb`) escrita — trocar pelo ref do PRD
 - **Portal — endereços (PRD):** (a) publicar `portal-endereco` (verify_jwt true) e definir seus 5 segredos (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`) com o projeto da Vercel do PRD; (b) `portal_plataforma.dominio_base = 'vluma.com.br'` (no DEV é `dev.vluma.com.br`); (c) adicionar `atos.vluma.com.br` ao projeto da Vercel e a `VITE_PAINEL_HOSTS`, se mudar; (d) conferir os limites de domínios/uso comercial do plano Vercel (ver "Vercel — plano atual"); (e) links permitidos de recuperação de senha no Auth
+- **Funções alteradas na E2:** republicar `criar-tecnico` (aceita o perfil; ignora usuário inativo), `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os` e `portal-endereco` (ignoram usuário inativo)
 - Publicar as Edge Functions: `criar-tecnico` (verify_jwt true),
   `verificar-foto` (false — pública), `geocodificar` (true),
   `gerar-relatorio-os` (true), `enviar-relatorio` (true)
