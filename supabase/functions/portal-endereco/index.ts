@@ -133,7 +133,11 @@ Deno.serve(async (req) => {
       const { data: existente } = await admin.from('portal_enderecos').select('id, tenant_id').eq('host', host).neq('situacao', 'removido').maybeSingle()
       if (existente && existente.tenant_id !== tenantId) return json({ ok: false, motivo: 'host_em_uso' })
 
-      if (!existente) {
+      if (existente) {
+        // voltou a um endereço que já existia (ex.: trocou o nome curto e desfez): ele volta a ser o principal
+        await admin.from('portal_enderecos').update({ principal: false }).eq('tenant_id', tenantId).neq('id', existente.id)
+        await admin.from('portal_enderecos').update({ principal: true }).eq('id', existente.id)
+      } else {
         // 1. Vercel: cadastra o domínio no projeto
         const add = await vc(`/v10/projects/${VC_PROJECT}/domains`, { method: 'POST', body: JSON.stringify({ name: host }) })
         if (!add.ok) {
