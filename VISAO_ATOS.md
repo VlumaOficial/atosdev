@@ -109,6 +109,11 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 >      - Só dependem da conexão automática: os avisos automáticos de situação pelo WhatsApp (melhoria opcional) e a **abertura automática pelo WhatsApp** (Portal Etapa 3).
 >      - **Proposta (aguardando):** mover "Conexões de WhatsApp" para **depois da produção, junto com a Portal Etapa 3**.
 >      - Atenção: a **notificação diária** das escalas não pode usar o modelo Aparelho (o sistema não envia sozinho) → canal a definir no refinamento das escalas (aviso no celular pelo PWA e/ou e-mail).
+>
+> **Decisão do usuário (2026-10-08): "vamos manter como estamos hoje sem alterar a ordem".**
+> - A sequência 1–8 acima fica **como está**, inclusive "Conexões de WhatsApp" no item 3, antes da F8.
+> - A tabela de fases **não é renumerada**: a ordem de execução é esta lista.
+> - Interpretação registrada e informada ao usuário para correção, se for o caso.
 > 4. **F8 Planos, pagamento (Asaas) e integrações**;
 > 5. **Painel do Super Admin completo**;
 > 6. **Segurança pré-produção** (essencial do OWASP, antecipado da F10, porque o portal abre o sistema a usuários externos) + responsividade do painel admin;
@@ -815,6 +820,27 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - Aguardando confirmação: PWA na Etapa 1.
 - ✅ **PONTO 9 FECHADO — confirmado pelo usuário em 2026-10-08:** mapa de telas, KPIs do Supervisor e lado da empresa aprovados; **PWA na Etapa 1**, com a web mantida igual.
   - O usuário pediu para **abrir um capítulo sobre app nas lojas** (App Store / Google Play), pensando em comercialização: o cliente escolhe usar pela web ou pelo app → registrado na seção **9.9**.
+- **Ponto 10 — segurança e dados: proposta levada em 2026-10-08, aguardando.**
+  - **Arquitetura:**
+    - **usuários do portal separados dos usuários internos**: ficam numa tabela de vínculos (pessoa, empresa, cliente, perfil, equipes) e **não** na de perfis internos;
+    - todas as regras de acesso atuais (que filtram por empresa) negam acesso a eles por padrão;
+    - acesso **só por funções próprias do portal**, que devolvem campos seguros: nada de notas internas, custos ou dados pessoais do técnico além do nome;
+    - empresa resolvida pelo endereço do portal + vínculos da pessoa;
+    - anexos do portal no armazenamento com regra própria.
+  - **Comentários:** na OS, **dois botões distintos — "Responder ao cliente" e "Nota interna"** (padrão Zendesk/Freshdesk), em vez de uma chave fácil de esquecer.
+  - **Proteções:**
+    - limite de tentativas de login e de abertura de chamados (anti-spam);
+    - **Cloudflare Turnstile** (verificação anti-robô sem quebra-cabeça) em "Solicitar acesso" e após falhas de login;
+    - sessão com expiração;
+    - limites de tipo e tamanho de anexo;
+    - verificação em duas etapas opcional para o Supervisor (Etapa 2).
+  - **Auditoria:** login, abertura, convites, aprovações, aceites e retiradas de aceite.
+  - **LGPD — direitos do titular:**
+    - ferramenta para o admin da empresa (a controladora) **exportar** os dados de um usuário do portal e **anonimizar** a pedido;
+    - desativado mantém os chamados (contrato/legítimo interesse) até um pedido de anonimização.
+  - **Testes:**
+    - personificação tabela a tabela (como na 043), entre empresas, entre clientes e entre equipes;
+    - **roteiro automático de regressão de segurança** rodado a cada mudança de banco.
 
 ### 9.2. Garantir estrutura de tenant pronta para SaaS
 Fundação multi-tenant já existe (F1: RLS, isolamento). Falta **auditar** o que está pronto vs o que falta para operar como SaaS comercial (limites por plano, contadores de uso, bloqueio suave, Super Admin comercial).
