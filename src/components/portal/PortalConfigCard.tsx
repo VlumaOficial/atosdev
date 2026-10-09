@@ -20,7 +20,7 @@ function slugDe(texto: string): string {
 
 const campo = 'w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
-export default function PortalConfigCard() {
+export default function PortalConfigCard({ abrir }: { abrir?: boolean }) {
   const { tenant, refreshTenant } = useAuth()
   const empresa = tenant?.trade_name || tenant?.name || ''
   const [slug, setSlug] = useState('')
@@ -108,7 +108,7 @@ export default function PortalConfigCard() {
   }
 
   return (
-    <SecaoRecolhivel id="portal" icone={<Headset size={16} className="text-primary" />}
+    <SecaoRecolhivel id="portal" abrir={abrir} icone={<Headset size={16} className="text-primary" />}
       titulo="Portal de atendimento"
       descricao="O endereço onde os seus clientes abrem e acompanham chamados, com a marca da sua empresa."
       resumo={resumo}>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { uploadLogoEmpresa, urlLogoEmpresa } from '@/lib/uploadLogo'
@@ -18,8 +19,9 @@ import PortalPlataformaCard from '@/components/portal/PortalPlataformaCard'
 import { SecaoRecolhivel } from '@/components/ui/secao-recolhivel'
 
 export default function ConfiguracoesPage() {
-  // vindo de um aviso do sino (?secao=portal): abre a seção já aberta
-  try { if (new URLSearchParams(window.location.search).get('secao') === 'portal') localStorage.setItem('atos_secao_portal', '1') } catch { /* sem storage */ }
+  // vindo de um aviso do sino (?secao=portal): abre a seção (mesmo já estando nesta tela)
+  const [params] = useSearchParams()
+  const abrirPortal = params.get('secao') === 'portal'
   const { user, tenant, refreshTenant } = useAuth()
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState('')
@@ -78,7 +80,7 @@ export default function ConfiguracoesPage() {
         <ArmazenamentoCard />
         {user?.role === 'super_admin' && <GeocodificacaoPlataformaCard />}
         {user?.role === 'super_admin' && <PortalPlataformaCard />}
-        {tenant && user?.role === 'admin' && <PortalConfigCard />}
+        {tenant && user?.role === 'admin' && <PortalConfigCard abrir={abrirPortal} />}
         {tenant && <FusoHorarioCard />}
         {tenant && <EnvioRelatorioCard />}
         {tenant && <ExportacaoFotosCard />}

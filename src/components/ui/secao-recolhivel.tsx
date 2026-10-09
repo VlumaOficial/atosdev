@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,7 @@ interface Props {
   titulo: string
   descricao?: string
   resumo?: React.ReactNode   // aparece no cabeçalho, à direita
+  abrir?: boolean            // quando vira verdadeiro, abre a seção (ex.: veio de um aviso do sino)
   children: React.ReactNode
 }
 
@@ -22,8 +23,9 @@ function lerAberto(id: string): boolean {
   try { return localStorage.getItem('atos_secao_' + id) === '1' } catch { return false }
 }
 
-export function SecaoRecolhivel({ id, icone, titulo, descricao, resumo, children }: Props) {
-  const [aberto, setAberto] = useState(() => lerAberto(id))
+export function SecaoRecolhivel({ id, icone, titulo, descricao, resumo, abrir, children }: Props) {
+  const [aberto, setAberto] = useState(() => lerAberto(id) || !!abrir)
+  useEffect(() => { if (abrir) setAberto(true) }, [abrir])
 
   function alternar() {
     setAberto(a => {
