@@ -16,8 +16,8 @@ export function MarcaPortal({ grande = false }: { grande?: boolean }) {
           </div>}
       {/* no topo estreito do celular, a logo já identifica a empresa: o nome some para não cortar */}
       <div className={'min-w-0' + (!grande && logo ? ' hidden sm:block' : '')}>
-        <p className={(grande ? 'text-lg' : 'text-sm') + ' font-semibold text-foreground leading-tight truncate'}>{id.nome}</p>
-        {grande && <p className="text-xs text-muted-foreground truncate">{id.empresa}</p>}
+        <p className={(grande ? 'text-lg' : 'text-sm truncate') + ' font-semibold text-foreground leading-tight'}>{id.nome}</p>
+        {grande && <p className="text-xs text-muted-foreground">{id.empresa}</p>}
       </div>
     </div>
   )

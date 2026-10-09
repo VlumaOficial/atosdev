@@ -40,14 +40,14 @@ export default function PortalSolicitarAcesso() {
           <div className="text-center" data-testid="solicitacao-enviada">
             <CheckCircle2 size={36} className="text-green-400 mx-auto mb-3" />
             <h1 className="text-lg font-bold">Pedido enviado</h1>
-            <p className="text-sm text-muted-foreground mt-2">Se os dados conferirem, você receberá um e-mail da {id.empresa} com o link para criar a sua senha. Pode levar um tempo: o pedido é analisado por uma pessoa.</p>
+            <p className="text-sm text-muted-foreground mt-2">Se os dados conferirem, você receberá um e-mail da {id.empresa.replace(/\.$/, '')} com o link para criar a sua senha. Pode levar um tempo: o pedido é analisado por uma pessoa.</p>
             <div className="mt-4 flex justify-center"><ContatosEmpresa /></div>
             <Link to={`${base}/entrar`} className="inline-block mt-6 text-sm text-primary hover:underline">Voltar para entrar</Link>
           </div>
         ) : (
           <>
             <h1 className="text-xl font-bold text-center">Solicitar acesso</h1>
-            <p className="text-sm text-muted-foreground text-center mt-1 mb-6">Preencha para pedir acesso ao portal da {id.empresa}. Você receberá a resposta por e-mail.</p>
+            <p className="text-sm text-muted-foreground text-center mt-1 mb-6">Preencha para pedir acesso ao portal da {id.empresa.replace(/\.$/, '')}. Você receberá a resposta por e-mail.</p>
             <form onSubmit={enviar} className="space-y-4" data-testid="form-solicitar">
               <div><label className="block text-sm font-medium mb-1.5" htmlFor="sa-nome">Seu nome *</label><input id="sa-nome" value={f.nome} onChange={e => set('nome', e.target.value)} className={campo} /></div>
               <div><label className="block text-sm font-medium mb-1.5" htmlFor="sa-email">E-mail *</label><input id="sa-email" type="email" value={f.email} onChange={e => set('email', e.target.value)} className={campo} /></div>

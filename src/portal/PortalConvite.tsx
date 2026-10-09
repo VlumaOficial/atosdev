@@ -63,7 +63,7 @@ export default function PortalConvite() {
               <div className="text-center">
                 <CheckCircle2 size={28} className="text-primary mx-auto mb-2" />
                 <h1 className="text-xl font-bold">Bem-vindo(a)!</h1>
-                <p className="text-sm text-muted-foreground mt-1">A <b>{info.empresa}</b> liberou o seu acesso como <b>{info.perfil === 'supervisor' ? 'Supervisor' : 'Usuário'}</b> de <b>{info.cliente}</b>. Crie a sua senha para entrar.</p>
+                <p className="text-sm text-muted-foreground mt-1">A <b>{String(info.empresa).replace(/\.$/, '')}</b> liberou o seu acesso como <b>{info.perfil === 'supervisor' ? 'Supervisor' : 'Usuário'}</b> de <b>{info.cliente}</b>. Crie a sua senha para entrar.</p>
               </div>
               <div><label className="block text-sm font-medium mb-1.5" htmlFor="cv-email">E-mail</label><input id="cv-email" value={info.email} disabled className={campo + ' opacity-70'} /></div>
               <div><label className="block text-sm font-medium mb-1.5" htmlFor="cv-nome">Seu nome</label><input id="cv-nome" value={nome} onChange={e => setNome(e.target.value)} className={campo} required /></div>
@@ -82,7 +82,7 @@ export default function PortalConvite() {
                 className="w-full py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-60 inline-flex items-center justify-center gap-2">
                 {enviando && <Loader2 size={15} className="animate-spin" />} Criar senha e entrar
               </button>
-              <p className="text-[11px] text-center text-muted-foreground">No primeiro acesso, você lê e aceita os termos de uso e o aviso de privacidade da {id.empresa}.</p>
+              <p className="text-[11px] text-center text-muted-foreground">No primeiro acesso, você lê e aceita os termos de uso e o aviso de privacidade da {id.empresa.replace(/\.$/, '')}.</p>
             </form>
           )}
         <RodapePortal />
