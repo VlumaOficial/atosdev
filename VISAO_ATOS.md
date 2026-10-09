@@ -103,6 +103,12 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 >    - modelos de mensagem;
 >    - a oferta por plano é definida na F8;
 >    - a burocracia da Meta (verificação da empresa) deve começar cedo, porque leva tempo;
+>    - **Questionamento do usuário (2026-10-08):** é necessária, se a comunicação por WhatsApp sai do celular do técnico e a opção atual atende?
+>      - **Parecer:** não é necessária antes da produção.
+>      - O portal Etapa 1 funciona com **e-mail automático + botões de WhatsApp pelo aparelho**.
+>      - Só dependem da conexão automática: os avisos automáticos de situação pelo WhatsApp (melhoria opcional) e a **abertura automática pelo WhatsApp** (Portal Etapa 3).
+>      - **Proposta (aguardando):** mover "Conexões de WhatsApp" para **depois da produção, junto com a Portal Etapa 3**.
+>      - Atenção: a **notificação diária** das escalas não pode usar o modelo Aparelho (o sistema não envia sozinho) → canal a definir no refinamento das escalas (aviso no celular pelo PWA e/ou e-mail).
 > 4. **F8 Planos, pagamento (Asaas) e integrações**;
 > 5. **Painel do Super Admin completo**;
 > 6. **Segurança pré-produção** (essencial do OWASP, antecipado da F10, porque o portal abre o sistema a usuários externos) + responsividade do painel admin;
