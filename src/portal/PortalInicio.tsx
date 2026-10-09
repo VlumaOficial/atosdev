@@ -96,9 +96,9 @@ function SemAcesso() {
 function PreviaInterna() {
   const { id } = usePortal()
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Topo />
-      <main className="max-w-3xl mx-auto px-4 py-8" data-testid="portal-previa-interna">
+      <main className="max-w-3xl w-full flex-1 mx-auto px-4 py-8" data-testid="portal-previa-interna">
         <div className="vluma-card p-5">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Você entrou com uma conta da equipe interna</p>
           <h1 className="text-lg font-bold mt-1">É assim que seus clientes veem o portal</h1>
@@ -197,9 +197,9 @@ function Inicio({ ctx }: { ctx: PortalContexto }) {
   const { id, base } = usePortal()
   const primeiroNome = (ctx.pessoa?.nome ?? '').split(' ')[0]
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Topo />
-      <main className="max-w-3xl mx-auto px-4 py-8" data-testid="portal-inicio">
+      <main className="max-w-3xl w-full flex-1 mx-auto px-4 py-8" data-testid="portal-inicio">
         <h1 className="text-xl font-bold text-foreground">Olá, {primeiroNome}!</h1>
         {id.boas_vindas && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">{id.boas_vindas}</p>}
 

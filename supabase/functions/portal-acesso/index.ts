@@ -114,7 +114,7 @@ async function dadosPortal(tenantId: string) {
 }
 
 // ---------- criar o acesso de uma pessoa a um cliente (convite novo ou vínculo direto) ----------
-async function darAcesso(opts: { clientId: string; email: string; nome: string; perfil: 'supervisor' | 'usuario'; equipes: string[]; por: string | null }) {
+async function darAcesso(opts: { clientId: string; email: string; nome: string; perfil: 'supervisor' | 'usuario'; equipes: string[]; por: string | null; celular?: string | null }) {
   const { data: cli } = await admin.from('clients').select('id, name, tenant_id, portal_ativo, active').eq('id', opts.clientId).single()
   if (!cli) return { erro: 'Cliente não encontrado.', status: 404 }
   const { t, empresa, portalNome } = await dadosPortal(cli.tenant_id)
@@ -151,7 +151,7 @@ async function darAcesso(opts: { clientId: string; email: string; nome: string; 
     .eq('client_id', opts.clientId).eq('email', email).is('aceito_em', null).is('revogado_em', null)
   const token = novoToken()
   const { data: c, error } = await admin.from('portal_convites').insert({
-    tenant_id: cli.tenant_id, client_id: opts.clientId, email, nome: opts.nome.trim(), perfil: opts.perfil, equipes: equipesOk,
+    tenant_id: cli.tenant_id, client_id: opts.clientId, email, nome: opts.nome.trim(), perfil: opts.perfil, equipes: equipesOk, celular: opts.celular ?? null,
     token_hash: await sha256(token), criado_por: opts.por,
   }).select('id, expira_em').single()
   if (error || !c) return { erro: 'Não foi possível criar o convite.', status: 500 }
@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
 
     // ================= públicas =================
     if (acao === 'consultar') {
-      const { data: c } = await admin.from('portal_convites').select('id, tenant_id, client_id, nome, email, perfil, expira_em, aceito_em, revogado_em')
+      const { data: c } = await admin.from('portal_convites').select('id, tenant_id, client_id, nome, email, celular, perfil, expira_em, aceito_em, revogado_em')
         .eq('token_hash', await sha256(String(b.token ?? ''))).maybeSingle()
       if (!c) return json({ valido: false, motivo: 'invalido' })
       if (c.aceito_em) return json({ valido: false, motivo: 'usado' })
@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
       if (new Date(c.expira_em) < new Date()) return json({ valido: false, motivo: 'expirado' })
       const { empresa, portalNome } = await dadosPortal(c.tenant_id)
       const { data: cli } = await admin.from('clients').select('name').eq('id', c.client_id).single()
-      return json({ valido: true, empresa, portal: portalNome, cliente: cli?.name, nome: c.nome, email: c.email, perfil: c.perfil })
+      return json({ valido: true, empresa, portal: portalNome, cliente: cli?.name, nome: c.nome, email: c.email, celular: c.celular, perfil: c.perfil })
     }
 
     if (acao === 'aceitar') {
@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
       // marca como aceito de forma atômica (um link só vale uma vez)
       const { data: c } = await admin.from('portal_convites').update({ aceito_em: new Date().toISOString() })
         .eq('token_hash', await sha256(String(b.token ?? ''))).is('aceito_em', null).is('revogado_em', null).gt('expira_em', new Date().toISOString())
-        .select('id, tenant_id, client_id, email, perfil, equipes').maybeSingle()
+        .select('id, tenant_id, client_id, email, celular, perfil, equipes').maybeSingle()
       if (!c) return json({ erro: 'Este convite não é mais válido. Peça um novo a quem convidou você.' }, 410)
       const desfazer = () => admin.from('portal_convites').update({ aceito_em: null }).eq('id', c.id)
       const { data: interno } = await admin.from('users').select('id').ilike('email', c.email).maybeSingle()
@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
         return json({ erro: m.includes('registered') || m.includes('exists') ? 'Já existe uma conta com este e-mail. Entre com a sua senha, ou use "Esqueci minha senha".' : 'Não foi possível criar a conta. Tente de novo.' }, 400)
       }
       const uid = criado.user.id
-      const { error: e2 } = await admin.from('portal_pessoas').insert({ user_id: uid, nome, email: c.email, celular })
+      const { error: e2 } = await admin.from('portal_pessoas').insert({ user_id: uid, nome, email: c.email, celular: celular ?? c.celular ?? null })
       if (e2) { await admin.auth.admin.deleteUser(uid); await desfazer(); return json({ erro: 'Não foi possível concluir o cadastro.' }, 500) }
       await admin.from('portal_vinculos').insert({ user_id: uid, tenant_id: c.tenant_id, client_id: c.client_id, perfil: c.perfil })
       const eq = (c.equipes ?? []) as string[]
@@ -313,7 +313,7 @@ Deno.serve(async (req) => {
       const { empresa, portalNome } = await dadosPortal(s.tenant_id)
       if (b.aprovar) {
         if (!clientId) return json({ erro: 'Escolha o cliente da pessoa para aprovar.' }, 400)
-        const r = await darAcesso({ clientId, email: s.email, nome: s.nome, perfil: b.perfil === 'supervisor' ? 'supervisor' : 'usuario', equipes: [], por: user.id })
+        const r = await darAcesso({ clientId, email: s.email, nome: s.nome, perfil: b.perfil === 'supervisor' ? 'supervisor' : 'usuario', equipes: [], por: user.id, celular: s.celular })
         if ('erro' in r) return json({ erro: r.erro }, r.status)
         await admin.from('portal_solicitacoes_acesso').update({ situacao: 'aprovada', client_id: clientId, decidido_por: user.id, decidido_em: new Date().toISOString() }).eq('id', s.id)
         await auditar(s.tenant_id, user.id, 'solicitacao_aprovada', { email: mascarar(s.email), client_id: clientId })

@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { usePortal } from './PortalContext'
 import { MarcaPortal, RodapePortal, AvisoPrevia } from './PortalLayout'
+import CampoSenha from './CampoSenha'
 
 function Moldura({ children }: { children: React.ReactNode }) {
   return (
@@ -181,11 +182,11 @@ export function PortalRedefinirSenha() {
           <form onSubmit={salvar} className="space-y-4 mt-6">
             <div>
               <label htmlFor="portal-nova" className="block text-sm font-medium mb-1.5">Nova senha</label>
-              <input id="portal-nova" type="password" autoComplete="new-password" value={senha} onChange={e => setSenha(e.target.value)} className={campo} />
+              <CampoSenha id="portal-nova" value={senha} onChange={setSenha} className={campo} />
             </div>
             <div>
               <label htmlFor="portal-conf" className="block text-sm font-medium mb-1.5">Repita a senha</label>
-              <input id="portal-conf" type="password" autoComplete="new-password" value={conf} onChange={e => setConf(e.target.value)} className={campo} />
+              <CampoSenha id="portal-conf" value={conf} onChange={setConf} className={campo} />
             </div>
             {erro && <p className="text-sm text-red-400" role="alert">{erro}</p>}
             <button type="submit" disabled={enviando} className={botao}>{enviando && <Loader2 size={15} className="animate-spin" />} Salvar senha</button>

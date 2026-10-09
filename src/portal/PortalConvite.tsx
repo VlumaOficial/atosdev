@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Eye, EyeOff, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import CampoSenha from './CampoSenha'
 import { supabase } from '@/lib/supabase'
 import { chamarAcesso } from '@/lib/portalAcesso'
 import { usePortal } from './PortalContext'
@@ -25,12 +26,11 @@ export default function PortalConvite() {
   const [celular, setCelular] = useState('')
   const [senha, setSenha] = useState('')
   const [conf, setConf] = useState('')
-  const [ver, setVer] = useState(false)
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
 
   useEffect(() => {
-    chamarAcesso({ acao: 'consultar', token }).then(r => { setInfo(r.dados ?? { valido: false, motivo: 'invalido' }); if (r.dados?.nome) setNome(r.dados.nome) })
+    chamarAcesso({ acao: 'consultar', token }).then(r => { setInfo(r.dados ?? { valido: false, motivo: 'invalido' }); if (r.dados?.nome) setNome(r.dados.nome); if (r.dados?.celular) setCelular(String(r.dados.celular)) })
   }, [token])
 
   async function criar(e: React.FormEvent) {
@@ -70,13 +70,10 @@ export default function PortalConvite() {
               <div><label className="block text-sm font-medium mb-1.5" htmlFor="cv-cel">Celular <span className="text-muted-foreground font-normal">(opcional)</span></label><input id="cv-cel" inputMode="tel" value={celular} onChange={e => setCelular(e.target.value)} placeholder="(71) 90000-0000" className={campo} /></div>
               <div>
                 <label className="block text-sm font-medium mb-1.5" htmlFor="cv-senha">Crie uma senha</label>
-                <div className="relative">
-                  <input id="cv-senha" type={ver ? 'text' : 'password'} autoComplete="new-password" value={senha} onChange={e => setSenha(e.target.value)} className={campo + ' pr-10'} />
-                  <button type="button" onClick={() => setVer(v => !v)} aria-label={ver ? 'Ocultar senha' : 'Mostrar senha'} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground">{ver ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-                </div>
+                <CampoSenha id="cv-senha" value={senha} onChange={setSenha} className={campo} />
                 <p className="text-[11px] text-muted-foreground mt-1">Mínimo de 8 caracteres, com letras e números.</p>
               </div>
-              <div><label className="block text-sm font-medium mb-1.5" htmlFor="cv-conf">Repita a senha</label><input id="cv-conf" type="password" autoComplete="new-password" value={conf} onChange={e => setConf(e.target.value)} className={campo} /></div>
+              <div><label className="block text-sm font-medium mb-1.5" htmlFor="cv-conf">Repita a senha</label><CampoSenha id="cv-conf" value={conf} onChange={setConf} className={campo} /></div>
               {erro && <p className="text-sm text-red-400" role="alert">{erro}</p>}
               <button type="submit" disabled={enviando} data-testid="convite-criar"
                 className="w-full py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-60 inline-flex items-center justify-center gap-2">

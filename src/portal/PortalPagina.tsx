@@ -24,9 +24,9 @@ export default function PortalPagina({ children, largo = false }: { children: (c
   if (!sessao) return <Navigate to={`${base}/entrar`} replace />
   if (!ctx?.acesso || (ctx.termos_pendentes?.length ?? 0) > 0) return <Navigate to={base || '/'} replace />
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Topo />
-      <main className={(largo ? 'max-w-3xl' : 'max-w-2xl') + ' mx-auto px-4 py-6'}>{children(ctx, sessao)}</main>
+      <main className={(largo ? 'max-w-3xl' : 'max-w-2xl') + ' w-full flex-1 mx-auto px-4 py-6'}>{children(ctx, sessao)}</main>
       <RodapePortal />
     </div>
   )

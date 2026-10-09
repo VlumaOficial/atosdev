@@ -30,9 +30,9 @@ export default function PortalGestao() {
   if (!sessao) return <Navigate to={`${base}/entrar`} replace />
   const supervisor = (ctx?.vinculos ?? []).filter(v => v.perfil === 'supervisor')
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Topo />
-      <main className="max-w-3xl mx-auto px-4 py-6" data-testid="portal-gestao">
+      <main className="max-w-3xl w-full flex-1 mx-auto px-4 py-6" data-testid="portal-gestao">
         <Link to={base || '/'} className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4"><ArrowLeft size={14} /> Início</Link>
         <h1 className="text-xl font-bold text-foreground">Usuários e equipes</h1>
         {supervisor.length === 0 ? (

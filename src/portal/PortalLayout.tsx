@@ -41,7 +41,7 @@ export function ContatosEmpresa() {
 export function RodapePortal() {
   const { base } = usePortal()
   return (
-    <footer className="mt-10 pb-6 text-center text-[11px] text-muted-foreground space-y-1">
+    <footer className="mt-auto pt-10 pb-6 text-center text-[11px] text-muted-foreground space-y-1">
       <p>
         <Link to={`${base}/termos/uso`} className="hover:underline">Termos de uso</Link>
         <span className="mx-2">·</span>
