@@ -956,6 +956,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 046_painel_gerencial | tenants.sla_meta_pct + definir_meta_sla; orders.tempo_atendimento_min/tempo_solucao_min (gatilho na conclusão + backfill); fn_primeira_visita, painel_desempenho, painel_gerencial; listar_os com várias prioridades | OK | Pendente | Sim |
 | 047_lista_os_periodo_conclusao | listar_os aceita periodo_por = conclusao (links do painel) | OK | Pendente | Sim |
 | 048_seguranca_cadastro_publico | handle_new_user não aceita perfil vindo do cadastro; contas do portal não viram usuários internos (+ Auth: cadastro público desligado, site_url corrigido) | OK | Pendente | Sim |
+| 049_seguranca_politicas_escrita | users: admin só na própria empresa, gestor só técnicos, gatilho trg_users_protege (sem trocar empresa, sem mudar o próprio perfil, sem promover a super_admin); order_comments/order_evidences update exigem pode_ver_os | OK | Pendente | Sim |
 
 ---
 
@@ -1899,6 +1900,26 @@ Achado ao preparar a E1 do portal (usuários externos vão entrar no sistema).
   - depois da propagação, o cadastro público foi recusado com `signup_disabled`;
   - regressão: `criar-tecnico` com o admin da Infoxtec criou o técnico com a empresa certa (conta de teste apagada em seguida).
 
+### 🔴→✅ Segurança — regras de escrita sem checagem de empresa (2026-10-09, migration 049)
+Varredura das regras de escrita (UPDATE/INSERT/DELETE) logo depois da 048.
+- **Problemas encontrados:**
+  - `users_admin_update`/`users_admin_insert` (migration 002) só checavam o papel: um **admin podia virar super_admin** mudando o próprio perfil, ou **trocar a própria empresa** e entrar em outra como admin;
+  - `order_comments_update`/`order_evidences_update`: o autor podia **mover o próprio comentário/evidência para uma OS de outra empresa**.
+- **Correção:**
+  - users: admin escreve só na própria empresa; gestor edita só técnicos da própria empresa (a tela Técnicos já era liberada ao gestor e a edição falhava — falha latente corrigida junto);
+  - gatilho `trg_users_protege` impede trocar a empresa, mudar o próprio perfil e promover a super_admin (só o Super Admin ou o servidor podem);
+  - comentários e evidências exigem que a OS de destino seja visível (`pode_ver_os`).
+- **Testado por personificação** (com o desfazer no fim):
+  - admin mudando o próprio perfil → bloqueado;
+  - admin trocando a própria empresa → bloqueado;
+  - admin editando um técnico → OK;
+  - admin promovendo técnico a super_admin → bloqueado;
+  - admin mudando técnico para gestor → OK;
+  - técnico mudando o próprio perfil → 0 linhas;
+  - admin inserindo usuário em outra empresa → bloqueado;
+  - técnico movendo o próprio comentário para uma OS de outra empresa → bloqueado;
+  - preferências do técnico (`atualizar_minhas_preferencias`) → OK.
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -1917,7 +1938,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–048 em ordem (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–049 em ordem (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
