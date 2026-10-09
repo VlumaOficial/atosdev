@@ -97,7 +97,12 @@ Multi-tenant **desde a fundação**. Cada empresa cliente é um tenant com dados
 > **Proposta de sequência consolidada levada (aguardando):**
 > 1. Portal: fechar o refinamento (pontos 10–11) e construir a **Etapa 1**;
 > 2. **Escalas + notificação diária**;
-> 3. **F6 Avançado** (WhatsApp automático);
+> 3. **Conexões de WhatsApp** (antes "F6 Avançado"; escopo ampliado em 2026-10-08 após pergunta do usuário):
+>    - painel por empresa para escolher o modelo: **Aparelho** (atual, já feito) / **Evolution** (QR Code pela tela do ATOS, com aceite do risco) / **API oficial da Meta** (cadastro integrado da Meta, número dedicado, modelos de mensagem aprovados, custo por conversa);
+>    - configuração da plataforma no Super Admin: servidor da Evolution; app da Meta com a VLUMA como "Tech Provider";
+>    - modelos de mensagem;
+>    - a oferta por plano é definida na F8;
+>    - a burocracia da Meta (verificação da empresa) deve começar cedo, porque leva tempo;
 > 4. **F8 Planos, pagamento (Asaas) e integrações**;
 > 5. **Painel do Super Admin completo**;
 > 6. **Segurança pré-produção** (essencial do OWASP, antecipado da F10, porque o portal abre o sistema a usuários externos) + responsividade do painel admin;
