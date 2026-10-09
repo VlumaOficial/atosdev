@@ -2180,6 +2180,10 @@ Desenho aprovado em 2026-10-08 (VISAO_ATOS.md 9.1, pontos 2, 6 e 10).
   3. Notificação por e-mail da aprovação/recusa usa o remetente da empresa.
   4. Limites de usuários por plano e verificação em duas etapas do Supervisor ficam para a F8 / Etapa 2.
 - **Massa de teste do DEV:** `portal.teste@example.com` (Supervisora) segue; os resíduos de teste (e3, e3ui, removido-) foram apagados.
+- **✅ Decisões 1 a 4 CONFIRMADAS pelo usuário em 2026-10-10** (pedido ligado ao cliente pelo nome digitado; Supervisor convida outros Supervisores; login do portal sem captcha; limite de usuários e verificação em duas etapas do Supervisor para a F8/Etapa 2).
+- **A tratar no teste ponta a ponta (decisão do usuário, 2026-10-10):**
+  - criar o widget do **Turnstile** na Cloudflare (Site Key + Secret Key) e ligar o anti-robô do "Solicitar acesso";
+  - convite e pedido de acesso **com e-mail real** (os de `example.com` não são enviados), conferindo o texto, o remetente e o link recebidos.
 
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
