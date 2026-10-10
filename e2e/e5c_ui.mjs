@@ -51,14 +51,9 @@ ok((await ad.getByTestId('fechada-os').innerText()).includes('assinatura do soli
 await an.getByTestId('abrir-relacionado').click(); await an.waitForSelector('[data-testid=banner-relacionado]', { timeout: 20000 })
 ok((await an.getByTestId('banner-relacionado').innerText()).includes(oA.numero), 'abrir relacionado: o banner mostra a que chamado ele fica ligado')
 await an.locator('[data-tipo=incidente]').click(); await an.selectOption('#ab-assunto', { label: 'E5C Rede' })
-await an.getByRole('radio').first().isVisible().catch(() => {})
 await an.fill('#ab-titulo', 'E5C o problema voltou'); await an.fill('#ab-desc', 'O mesmo problema de internet voltou a acontecer hoje à tarde')
-await an.getByRole('button', { name: /Todo mundo|A empresa toda/ }).first().click().catch(() => {})
-const imp = an.locator('[data-impacto]'); if (await imp.count()) await imp.last().click()
-await an.waitForTimeout(500)
-await an.getByTestId('enviar-chamado').click(); await an.waitForTimeout(500)
-if (await an.getByTestId('erro-abrir').count()) { await an.locator('[data-impacto="alto"]').click().catch(() => {}); await an.locator('[data-urgencia="alta"]').click().catch(() => {}); await an.getByTestId('enviar-chamado').click() }
-await an.waitForTimeout(5000)
+await an.locator('[data-impacto=alto]').click(); await an.locator('[data-urgencia=alta]').click()
+await an.getByTestId('enviar-chamado').click(); await an.waitForTimeout(5000)
 const rel = sql(`select relacionada_a from orders where title='E5C o problema voltou'`)[0]
 ok(rel && rel.relacionada_a === oA.id, 'banco: o novo chamado nasce "relacionado a" ' + oA.numero)
 
