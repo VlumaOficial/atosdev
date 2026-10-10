@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import type { AnexoChamado } from '@/lib/portalChamados'
 
 export interface OrderComment {
   id: string
@@ -8,6 +9,9 @@ export interface OrderComment {
   author_name: string | null
   comment: string
   created_at: string
+  visibilidade: 'interno' | 'cliente'
+  autor_portal_id: string | null
+  anexos: AnexoChamado[]   // fotos que o cliente mandou nesta mensagem
 }
 
 export function useOrderComments(orderId: string | undefined) {
@@ -17,12 +21,15 @@ export function useOrderComments(orderId: string | undefined) {
   const fetchComments = useCallback(async () => {
     if (!orderId) { setLoading(false); return }
     setLoading(true)
-    const { data, error } = await supabase
-      .from('order_comments')
-      .select('*')
-      .eq('order_id', orderId)
-      .order('created_at', { ascending: true })
-    if (!error && data) setComments(data as OrderComment[])
+    const [c, a] = await Promise.all([
+      supabase.from('order_comments').select('*').eq('order_id', orderId).order('created_at', { ascending: true }),
+      supabase.from('os_anexos_cliente').select('id, path, nome, tipo, mime, bytes, comentario_id').eq('order_id', orderId).not('comentario_id', 'is', null),
+    ])
+    if (!c.error && c.data) {
+      const porComentario = new Map<string, AnexoChamado[]>()
+      for (const x of (a.data ?? []) as (AnexoChamado & { comentario_id: string })[]) porComentario.set(x.comentario_id, [...(porComentario.get(x.comentario_id) ?? []), x])
+      setComments((c.data as Omit<OrderComment, 'anexos'>[]).map(x => ({ ...x, anexos: porComentario.get(x.id) ?? [] })))
+    }
     setLoading(false)
   }, [orderId])
 
@@ -30,20 +37,10 @@ export function useOrderComments(orderId: string | undefined) {
     fetchComments()
   }, [fetchComments])
 
-  async function addComment(text: string) {
+  // "Nota interna" (nunca sai da empresa) ou "Responder ao cliente" (aparece no portal)
+  async function addComment(text: string, visibilidade: 'interno' | 'cliente' = 'interno') {
     if (!orderId) return
-    const { data: { user } } = await supabase.auth.getUser()
-    let authorName: string | null = null
-    if (user) {
-      const { data: perfil } = await supabase.from('users').select('name').eq('id', user.id).single()
-      authorName = perfil?.name ?? user.email ?? null
-    }
-    const { error } = await supabase.from('order_comments').insert({
-      order_id: orderId,
-      user_id: user?.id ?? null,
-      author_name: authorName,
-      comment: text,
-    })
+    const { error } = await supabase.rpc('os_comentar', { p_order: orderId, p_texto: text, p_visibilidade: visibilidade })
     if (error) throw error
     await fetchComments()
   }

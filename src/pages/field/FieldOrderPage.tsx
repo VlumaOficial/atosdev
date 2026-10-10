@@ -250,7 +250,7 @@ export default function FieldOrderPage() {
       )}
 
       <Card className="p-4">
-        <OrderComments orderId={order.id} />
+        <OrderComments orderId={order.id} portal={order.origem === 'portal'} />
       </Card>
 
       <ConcluirOSModal open={concluirAberto} order={order as any} onClose={() => setConcluirAberto(false)}

@@ -5,33 +5,33 @@ import { useAuth } from '@/hooks/useAuth'
 import { linkWhatsApp } from '@/lib/portal'
 import { ROTULO_PERIODO, dataBR, type AnexoChamado } from '@/lib/portalChamados'
 import AnexosCliente from './AnexosCliente'
+import TriagemPortal, { type InfoTriagem } from './TriagemPortal'
 
 // "Aberto pelo portal": quem abriu, equipe, quantas pessoas são afetadas, o que o cliente informou
 // de prioridade, as datas que pediu, fotos e áudio. A equipe interna vê contato; o técnico, só o nome.
-interface Info {
+interface Info extends InfoTriagem {
   origem: string
   solicitante: { nome: string; email: string | null; celular: string | null } | null
-  equipe: string | null; compartilhado: boolean; prioridade_informada: string | null; afetados: number
+  equipe: string | null; compartilhado: boolean; afetados: number
   preferencias: { data: string; periodo: string }[] | null
   anexos: AnexoChamado[]
   portal_host: string | null
 }
 const HORA: Record<string, string> = { manha: '09:00', tarde: '14:00', qualquer: '09:00' }
 
-export default function PortalInfoOS({ orderId, numero, titulo, prioridadeAtual, onAgendar, compacto = false }: {
+export default function PortalInfoOS({ orderId, numero, titulo, prioridadeAtual, onAgendar, compacto = false, podeTriar = false, onMudou }: {
   orderId: string; numero: string; titulo: string; prioridadeAtual?: string; onAgendar?: (isoLocal: string) => void; compacto?: boolean
+  podeTriar?: boolean; onMudou?: () => void   // triagem do N1 (E5a): confirmar/reclassificar
 }) {
   const { tenant } = useAuth()
   const [info, setInfo] = useState<Info | null>(null)
-  useEffect(() => {
-    supabase.rpc('portal_info_chamado', { p_order: orderId }).then(({ data }) => setInfo((data as Info) ?? null))
-  }, [orderId])
+  const carregar = () => supabase.rpc('portal_info_chamado', { p_order: orderId }).then(({ data }) => setInfo((data as Info) ?? null))
+  useEffect(() => { carregar() }, [orderId, prioridadeAtual]) // eslint-disable-line react-hooks/exhaustive-deps
   if (!info) return null
 
   const empresa = (tenant?.trade_name || tenant?.name || '').replace(/\.$/, '')
   const wa = info.solicitante?.celular
     ? linkWhatsApp(info.solicitante.celular, `Olá, ${info.solicitante.nome.split(' ')[0]}! Aqui é da ${empresa}. Sobre o seu chamado ${numero} (${titulo}).${info.portal_host ? ` Acompanhe em https://${info.portal_host}/chamados/${orderId}` : ''}`) : null
-  const divergiu = info.prioridade_informada && prioridadeAtual && info.prioridade_informada !== prioridadeAtual
 
   return (
     <div className="rounded-md border border-primary/25 bg-primary/5 p-4 space-y-3" data-testid="info-portal">
@@ -40,8 +40,8 @@ export default function PortalInfoOS({ orderId, numero, titulo, prioridadeAtual,
         {info.solicitante && <p className="text-foreground" data-testid="solicitante-portal">{info.solicitante.nome}{info.solicitante.email ? <span className="text-xs text-muted-foreground"> · {info.solicitante.email}</span> : null}{info.solicitante.celular ? <span className="text-xs text-muted-foreground"> · {info.solicitante.celular}</span> : null}</p>}
         {info.equipe && <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5"><Users2 size={12} /> Equipe {info.equipe} · {info.compartilhado ? 'compartilhado com a equipe' : 'não compartilhado'}</p>}
         {info.afetados > 1 && <p className="text-xs text-amber-300" data-testid="afetados-portal">{info.afetados} pessoas afetadas (marcaram "também me afeta")</p>}
-        {info.prioridade_informada && !compacto && <p className="text-xs text-muted-foreground">Prioridade informada pelo cliente: <span className="text-foreground">{info.prioridade_informada}</span>{divergiu ? <span className="text-amber-300"> — diferente da atual ({prioridadeAtual}): confirme ou ajuste</span> : null}</p>}
       </div>
+      {!compacto && <TriagemPortal orderId={orderId} info={info} podeTriar={podeTriar} onMudou={() => { carregar(); onMudou?.() }} />}
       {info.preferencias && info.preferencias.length > 0 && (
         <div data-testid="preferencias-data">
           <p className="text-xs text-muted-foreground mb-1 inline-flex items-center gap-1.5"><Calendar size={12} /> Datas que o cliente pediu</p>

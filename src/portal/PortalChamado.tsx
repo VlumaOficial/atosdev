@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Loader2, MessageCircle, Users2, Calendar, UserRound, Hand, Check } from 'lucide-react'
+import { ArrowLeft, Loader2, MessageCircle, Users2, Calendar, UserRound, Hand, Check, Send, Camera, X, MessagesSquare } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { linkWhatsApp } from '@/lib/portal'
-import { STATUS_CLIENTE, ROTULO_EVENTO, ROTULO_PERIODO, dataBR, dataHoraBR, type DetalheChamado } from '@/lib/portalChamados'
+import { STATUS_CLIENTE, ROTULO_EVENTO, ROTULO_PERIODO, ROTULO_PRIORIDADE, dataBR, dataHoraBR, prepararFoto, enviarAnexos, type AnexoLocal, type DetalheChamado } from '@/lib/portalChamados'
 import AnexosCliente from '@/components/portal/AnexosCliente'
 import { usePortal } from './PortalContext'
 import PortalPagina from './PortalPagina'
@@ -11,14 +11,14 @@ import StatusChamado from './StatusChamado'
 import { cn } from '@/lib/utils'
 
 // Acompanhar o chamado: situação em etapas, dados, fotos e áudio, marcos e contato.
-// (A conversa com a empresa e a confirmação da solução chegam na E5.)
+// Conversa com a empresa (E5a): respostas da empresa e mensagens do cliente, com até 3 fotos. A confirmação da solução chega na E5c.
 const ETAPAS = ['recebido', 'agendado', 'em_atendimento', 'resolvido'] as const
 
 export default function PortalChamado() {
-  return <PortalPagina>{() => <Detalhe />}</PortalPagina>
+  return <PortalPagina>{(_ctx, sessao) => <Detalhe userId={sessao.user.id} />}</PortalPagina>
 }
 
-function Detalhe() {
+function Detalhe({ userId }: { userId: string }) {
   const { id: chamadoId } = useParams()
   const { id, base } = usePortal()
   const [c, setC] = useState<DetalheChamado | null>(null)
@@ -104,12 +104,24 @@ function Detalhe() {
         </div>
       ) : null}
 
+      <Conversa c={c} userId={userId} tenantId={id.tenant_id} onEnviou={carregar} />
+
       <div className="mt-5">
         <p className="text-sm font-medium text-foreground mb-2">Andamento</p>
         <ol className="space-y-2" data-testid="linha-do-tempo">
           {c.linha_do_tempo.map((e, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-              <span><span className="text-foreground">{ROTULO_EVENTO[e.evento] ?? e.evento}{e.evento === 'scheduled' && e.para ? ` para ${dataHoraBR(e.para)}` : ''}</span> <span className="text-xs text-muted-foreground">· {dataHoraBR(e.em)}</span></span></li>
+            <li key={i} className="flex items-start gap-2 text-sm" data-evento={e.evento}><span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+              <span>
+                <span className="text-foreground">
+                  {e.evento === 'reclassified'
+                    ? (e.detalhe?.de && e.detalhe?.para && e.detalhe.de !== e.detalhe.para
+                        ? `Prioridade ajustada de ${ROTULO_PRIORIDADE[e.detalhe.de] ?? e.detalhe.de} para ${ROTULO_PRIORIDADE[e.detalhe.para] ?? e.detalhe.para}`
+                        : 'Chamado reclassificado') + (e.detalhe?.assunto ? ` · assunto: ${e.detalhe.assunto}` : '')
+                    : <>{ROTULO_EVENTO[e.evento] ?? e.evento}{e.evento === 'scheduled' && e.para ? ` para ${dataHoraBR(e.para)}` : ''}</>}
+                </span>{' '}
+                <span className="text-xs text-muted-foreground">{dataHoraBR(e.em)}</span>
+                {e.evento === 'reclassified' && e.detalhe?.motivo && <span className="block text-xs text-muted-foreground" data-testid="motivo-reclassificacao">Motivo: {e.detalhe.motivo}</span>}
+              </span></li>
           ))}
         </ol>
       </div>
@@ -118,6 +130,88 @@ function Detalhe() {
         <a href={wa} target="_blank" rel="noreferrer" data-testid="wa-chamado"
           className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-green-600 hover:bg-green-500 text-white text-sm font-medium"><MessageCircle size={16} /> Falar pelo WhatsApp sobre este chamado</a>
       )}
+    </div>
+  )
+}
+
+
+// Conversa pública do chamado: o que a empresa respondeu e o que o cliente (ou a equipe dele) escreveu
+function Conversa({ c, userId, tenantId, onEnviou }: { c: DetalheChamado; userId: string; tenantId: string; onEnviou: () => void }) {
+  const [texto, setTexto] = useState('')
+  const [fotos, setFotos] = useState<AnexoLocal[]>([])
+  const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState('')
+  const entrada = useRef<HTMLInputElement>(null)
+
+  async function adicionar(files: FileList | null) {
+    if (!files) return
+    setErro('')
+    try {
+      for (const f of Array.from(files)) {
+        if (fotos.length >= 3) { setErro('No máximo 3 fotos por mensagem.'); break }
+        const a = await prepararFoto(f)
+        setFotos(l => (l.length < 3 ? [...l, a] : l))
+      }
+    } catch (e) { setErro((e as Error).message) }
+    if (entrada.current) entrada.current.value = ''
+  }
+  async function enviar() {
+    setErro('')
+    if (texto.trim().length < 2) { setErro('Escreva a mensagem.'); return }
+    setEnviando(true)
+    try {
+      const up = fotos.length ? await enviarAnexos(tenantId, c.client_id, userId, fotos) : []
+      const { error } = await supabase.rpc('portal_enviar_mensagem', { p_order: c.id, p_texto: texto.trim(), p_anexos: up })
+      if (error) { if (up.length) await supabase.storage.from('portal-anexos').remove(up.map(x => x.path)); throw new Error(error.message) }
+      fotos.forEach(f => URL.revokeObjectURL(f.url))
+      setTexto(''); setFotos([]); onEnviou()
+    } catch (e) { setErro((e as Error).message) } finally { setEnviando(false) }
+  }
+
+  return (
+    <div className="mt-5" data-testid="conversa">
+      <p className="text-sm font-medium text-foreground mb-2 inline-flex items-center gap-1.5"><MessagesSquare size={15} /> Conversa com a empresa</p>
+      {c.mensagens.length === 0
+        ? <p className="text-xs text-muted-foreground mb-3" data-testid="conversa-vazia">Ainda não há mensagens. Se precisar acrescentar alguma informação, escreva abaixo.</p>
+        : (
+          <ul className="space-y-2 mb-3" data-testid="mensagens">
+            {c.mensagens.map(m => (
+              <li key={m.id} data-autor={m.autor}
+                className={cn('rounded-lg border p-3 text-sm', m.autor === 'empresa' ? 'bg-primary/5 border-primary/25' : 'bg-secondary/40 border-border')}>
+                <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">{m.autor === 'empresa' ? `${m.nome} · atendimento` : m.nome}</span> · {dataHoraBR(m.em)}</p>
+                <p className="text-foreground whitespace-pre-wrap mt-1">{m.texto}</p>
+                {m.anexos.length > 0 && <div className="mt-2 max-w-xs"><AnexosCliente anexos={m.anexos} /></div>}
+              </li>
+            ))}
+          </ul>
+        )}
+      {c.pode_responder ? (
+        <div className="space-y-2">
+          <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={3} maxLength={2000} aria-label="Sua mensagem" data-testid="mensagem-texto"
+            placeholder="Escreva sua mensagem para a empresa…"
+            className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          {fotos.length > 0 && (
+            <ul className="flex gap-2" data-testid="mensagem-fotos">
+              {fotos.map(f => (
+                <li key={f.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
+                  <img src={f.url} alt={f.nome} className="w-full h-full object-cover" />
+                  <button type="button" aria-label="Remover foto" onClick={() => { URL.revokeObjectURL(f.url); setFotos(l => l.filter(x => x.id !== f.id)) }}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 text-white inline-flex items-center justify-center"><X size={11} /></button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <input ref={entrada} type="file" accept="image/*" multiple className="hidden" onChange={e => adicionar(e.target.files)} data-testid="mensagem-input-foto" />
+            <button type="button" disabled={fotos.length >= 3} onClick={() => entrada.current?.click()}
+              className="px-3 py-2 rounded-md border border-border text-sm inline-flex items-center gap-1.5 disabled:opacity-50"><Camera size={15} /> Foto</button>
+            <button type="button" onClick={enviar} disabled={enviando || texto.trim().length < 2} data-testid="enviar-mensagem"
+              className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium inline-flex items-center gap-1.5 disabled:opacity-60">
+              {enviando ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Enviar mensagem</button>
+          </div>
+          {erro && <p className="text-xs text-red-400" role="alert" data-testid="erro-mensagem">{erro}</p>}
+        </div>
+      ) : <p className="text-xs text-muted-foreground">Este chamado foi cancelado: não recebe novas mensagens.</p>}
     </div>
   )
 }

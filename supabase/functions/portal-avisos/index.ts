@@ -43,8 +43,8 @@ function moldura(titulo: string, corpoHtml: string, botao: { texto: string; link
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   try {
-    const { order_id, evento } = await req.json()
-    if (!order_id || !['aberto', 'agendada', 'em_atendimento', 'resolvido', 'cancelado'].includes(evento)) return json({ erro: 'Parâmetros inválidos.' }, 400)
+    const { order_id, evento, comment_id } = await req.json()
+    if (!order_id || !['aberto', 'agendada', 'em_atendimento', 'resolvido', 'cancelado', 'mensagem'].includes(evento)) return json({ erro: 'Parâmetros inválidos.' }, 400)
     const { data: o } = await admin.from('orders').select('id, tenant_id, client_id, number, title, status, solicitante_id, scheduled_at, location_id').eq('id', order_id).maybeSingle()
     if (!o?.solicitante_id) return json({ ok: false, motivo: 'sem_solicitante' })
     const [{ data: t }, { data: pessoa }, { data: cli }, { data: pref }, { data: cfgEnvio }] = await Promise.all([
@@ -57,9 +57,15 @@ Deno.serve(async (req) => {
     if (!pessoa?.email || pessoa.email.endsWith('@anonimizado.invalid')) return json({ ok: false, motivo: 'sem_destinatario' })
 
     // chave do aviso: remarcar a data gera aviso novo
-    const chave = evento === 'agendada' ? `agendada:${o.scheduled_at ?? ''}` : evento
+    const chave = evento === 'agendada' ? `agendada:${o.scheduled_at ?? ''}` : evento === 'mensagem' ? `mensagem:${comment_id ?? ''}` : evento
     const registrar = async (enviado: boolean, motivo?: string, detalhe?: string) => {
       await admin.from('portal_avisos').upsert({ tenant_id: o.tenant_id, order_id: o.id, evento: chave, enviado, motivo: motivo ?? null, detalhe: detalhe ?? null }, { onConflict: 'order_id,evento', ignoreDuplicates: false })
+    }
+    // nova mensagem: no máximo 1 e-mail a cada 10 minutos por chamado (várias respostas seguidas viram um aviso só)
+    if (evento === 'mensagem') {
+      const desde = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+      const { data: recente } = await admin.from('portal_avisos').select('id').eq('order_id', o.id).like('evento', 'mensagem:%').eq('enviado', true).gt('em', desde).limit(1)
+      if (recente?.length) { await registrar(false, 'agrupado'); return json({ ok: false, motivo: 'agrupado' }) }
     }
     const { data: jaFoi } = await admin.from('portal_avisos').select('id, enviado').eq('order_id', o.id).eq('evento', chave).maybeSingle()
     if (jaFoi?.enviado) return json({ ok: true, ja_enviado: true })
@@ -82,6 +88,7 @@ Deno.serve(async (req) => {
       agendada: { assunto: `Seu chamado ${o.number} foi agendado`, titulo: 'Chamado agendado', texto: `O atendimento do chamado "${o.title}" (${o.number}) foi agendado para ${quando(o.scheduled_at)}.` },
       em_atendimento: { assunto: `Seu chamado ${o.number} está em atendimento`, titulo: 'Chamado em atendimento', texto: `O atendimento do chamado "${o.title}" (${o.number}) foi iniciado.` },
       resolvido: { assunto: `Seu chamado ${o.number} foi resolvido`, titulo: 'Chamado resolvido', texto: `O chamado "${o.title}" (${o.number}) foi concluído pela ${empresa}. Se o problema continuar, fale com a ${empresa} pelos contatos do portal.` },
+      mensagem: { assunto: `Nova mensagem sobre o seu chamado ${o.number}`, titulo: 'Nova mensagem', texto: `A ${empresa} enviou uma mensagem sobre o chamado "${o.title}" (${o.number}). Entre no portal para ler e responder.` },
       cancelado: { assunto: `Seu chamado ${o.number} foi cancelado`, titulo: 'Chamado cancelado', texto: `O chamado "${o.title}" (${o.number}) foi cancelado. Em caso de dúvida, fale com a ${empresa} pelos contatos do portal.` },
     }
     const m = T[evento]

@@ -69,7 +69,7 @@ export default function OrderDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { order, loading, error, changeStatus, fetchOrder } = useOrder(id)
-  const { tenant } = useAuth()
+  const { tenant, user } = useAuth()
 
   const [statusModal, setStatusModal] = useState<{ open: boolean; target: string; needsReason: boolean; needsDate: boolean; needsNotes: boolean; needsCompleteDate: boolean }>({ open: false, target: '', needsReason: false, needsDate: false, needsNotes: false, needsCompleteDate: false })
   const [notesInput, setNotesInput] = useState('')
@@ -202,7 +202,8 @@ export default function OrderDetailPage() {
 
           <CartaoSla o={order} />
           <PortalInfoOS orderId={order.id} numero={order.number} titulo={order.title} prioridadeAtual={order.priority}
-            onAgendar={['aberta', 'agendada', 'pausada'].includes(order.status) ? agendarComDataPedida : undefined} />
+            onAgendar={['aberta', 'agendada', 'pausada'].includes(order.status) ? agendarComDataPedida : undefined}
+            podeTriar={['admin', 'gestor', 'atendente'].includes(user?.role ?? '') && !['concluida', 'cancelada'].includes(order.status)} onMudou={() => fetchOrder()} />
           <Card className="p-5">
             <p className="text-sm font-medium text-foreground mb-3">Linha do tempo</p>
             <OrderTimeline orderId={order.id} />
@@ -239,7 +240,7 @@ export default function OrderDetailPage() {
           )}
 
           <Card className="p-5">
-            <OrderComments orderId={order.id} />
+            <OrderComments orderId={order.id} portal={order.origem === 'portal'} />
           </Card>
         </div>
 

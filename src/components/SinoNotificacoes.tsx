@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Bell, AlertTriangle, Clock, CheckCheck, ArrowRightLeft, UserPlus, Headset } from 'lucide-react'
+import { Bell, AlertTriangle, Clock, CheckCheck, ArrowRightLeft, UserPlus, Headset, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // Avisos de SLA (migration 045) para admin/gestor: "em risco" e "vencido".
 // Tempo real pela publicação do Supabase; tocar abre a OS e marca como lido.
 
-interface Notificacao { id: string; tipo: 'sla_em_risco' | 'sla_vencido' | 'transferida' | 'pingue_pongue' | 'solicitacao_acesso' | 'novo_chamado_portal'; order_id: string | null; link: string | null; titulo: string; corpo: string | null; criada_em: string; lida_em: string | null }
+interface Notificacao { id: string; tipo: 'sla_em_risco' | 'sla_vencido' | 'transferida' | 'pingue_pongue' | 'solicitacao_acesso' | 'novo_chamado_portal' | 'mensagem_cliente'; order_id: string | null; link: string | null; titulo: string; corpo: string | null; criada_em: string; lida_em: string | null }
 
 export function useNotificacoes() {
   const { user } = useAuth()
@@ -99,6 +99,8 @@ export default function SinoNotificacoes({ onNavegar }: { onNavegar?: () => void
                       ? <UserPlus size={15} className="text-primary flex-shrink-0 mt-0.5" />
                       : n.tipo === 'novo_chamado_portal'
                         ? <Headset size={15} className="text-primary flex-shrink-0 mt-0.5" />
+                        : n.tipo === 'mensagem_cliente'
+                          ? <MessageSquare size={15} className="text-green-400 flex-shrink-0 mt-0.5" />
                     : <Clock size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />}
                 <span className="min-w-0">
                   <span className={cn('block text-xs', n.lida_em ? 'text-muted-foreground' : 'text-foreground font-medium')}>{n.titulo}</span>

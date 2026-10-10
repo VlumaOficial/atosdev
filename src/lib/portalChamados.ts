@@ -21,8 +21,9 @@ export interface ListaChamados {
   itens: ItemChamado[]
 }
 export interface AnexoChamado { id: string; path: string; nome: string; tipo: 'foto' | 'audio'; mime: string; bytes: number }
+export interface MensagemChamado { id: string; em: string; autor: 'empresa' | 'cliente'; nome: string; texto: string; anexos: AnexoChamado[] }
 export interface DetalheChamado {
-  id: string; numero: string; titulo: string; descricao: string | null; tipo: string; status: StatusCliente
+  id: string; client_id: string; numero: string; titulo: string; descricao: string | null; tipo: string; status: StatusCliente
   criado_em: string; atualizado_em: string; cliente: string; unidade: string | null
   categoria: { nome: string; pai: string | null } | null
   solicitante: string | null; meu: boolean; equipe: string | null; compartilhado: boolean
@@ -30,14 +31,16 @@ export interface DetalheChamado {
   preferencias: { data: string; periodo: string }[] | null
   afetados: number; eu_afetado: boolean
   anexos: AnexoChamado[]
-  linha_do_tempo: { evento: string; em: string; para: string | null }[]
+  mensagens: MensagemChamado[]; pode_responder: boolean
+  linha_do_tempo: { evento: string; em: string; para: string | null; detalhe?: { de: string | null; para: string | null; motivo: string | null; assunto: string | null } | null }[]
   contatos: { email?: string; telefone?: string; whatsapp?: string; site?: string } | null
 }
 
 export const ROTULO_EVENTO: Record<string, string> = {
   created: 'Chamado registrado', scheduled: 'Atendimento agendado', started: 'Atendimento iniciado',
-  completed: 'Chamado resolvido', cancelled: 'Chamado cancelado', reopened: 'Chamado reaberto',
+  completed: 'Chamado resolvido', cancelled: 'Chamado cancelado', reopened: 'Chamado reaberto', reclassified: 'Chamado reclassificado',
 }
+export const ROTULO_PRIORIDADE: Record<string, string> = { critico: 'Crítico', alto: 'Alto', baixo: 'Baixo' }
 export const ROTULO_PERIODO: Record<string, string> = { manha: 'de manhã', tarde: 'à tarde', qualquer: 'qualquer horário' }
 
 export function dataHoraBR(iso?: string | null): string {
