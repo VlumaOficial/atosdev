@@ -2,7 +2,7 @@ import { CheckCircle2, Clock, Calendar, Inbox, XCircle } from 'lucide-react'
 import { STATUS_CLIENTE, type StatusCliente } from '@/lib/portalChamados'
 import { cn } from '@/lib/utils'
 
-const ICONE = { recebido: Inbox, agendado: Calendar, em_atendimento: Clock, resolvido: CheckCircle2, cancelado: XCircle } as const
+const ICONE = { recebido: Inbox, agendado: Calendar, em_atendimento: Clock, resolvido: CheckCircle2, fechado: CheckCircle2, cancelado: XCircle } as const
 
 // Situação em texto + ícone + cor (nunca só cor)
 export default function StatusChamado({ status }: { status: StatusCliente }) {

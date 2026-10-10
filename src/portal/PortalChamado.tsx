@@ -12,10 +12,11 @@ import { cn } from '@/lib/utils'
 import AguardandoVoce from './AguardandoVoce'
 import AgendamentoCliente from './AgendamentoCliente'
 import NovaVisita from './NovaVisita'
+import ResolucaoCliente from './ResolucaoCliente'
 
 // Acompanhar o chamado: situação em etapas, dados, fotos e áudio, marcos e contato.
 // Conversa com a empresa (E5a): respostas da empresa e mensagens do cliente, com até 3 fotos. A confirmação da solução chega na E5c.
-const ETAPAS = ['recebido', 'agendado', 'em_atendimento', 'resolvido'] as const
+const ETAPAS = ['recebido', 'agendado', 'em_atendimento', 'resolvido'] as const   // "fechado" aparece como etapa final cumprida (ordem 4)
 
 export default function PortalChamado() {
   return <PortalPagina>{(_ctx, sessao) => <Detalhe userId={sessao.user.id} />}</PortalPagina>
@@ -80,7 +81,7 @@ function Detalhe({ userId }: { userId: string }) {
         </ol>
       )}
 
-      {c.prazos && c.status !== 'resolvido' && c.status !== 'cancelado' && (
+      {c.prazos && c.status !== 'resolvido' && c.status !== 'fechado' && c.status !== 'cancelado' && (
         <div className="vluma-card p-4 mt-4" data-testid="prazos" data-nivel={c.prazos.nivel}>
           <p className="text-sm font-medium text-foreground">Previsões</p>
           <div className="grid grid-cols-2 gap-3 mt-2 text-xs text-muted-foreground">
@@ -102,6 +103,8 @@ function Detalhe({ userId }: { userId: string }) {
       )}
       <AgendamentoCliente c={c} onMudou={carregar} />
       {c.cancelamento && <NovaVisita c={c} />}
+      <ResolucaoCliente c={c} onMudou={carregar} />
+      {c.reaberturas > 0 && c.status !== 'resolvido' && c.status !== 'fechado' && c.motivo_nao_resolvido && <p className="mt-3 text-xs text-muted-foreground" data-testid="reaberto-aviso">Chamado reaberto a seu pedido: “{c.motivo_nao_resolvido}”.</p>}
       {(c.relacionada || c.derivados.length > 0) && (
         <div className="mt-3 text-xs text-muted-foreground space-y-1" data-testid="chamados-ligados">
           {c.relacionada && <p>Relacionado ao chamado <Link to={`${base}/chamados/${c.relacionada.id}`} className="text-primary hover:underline font-mono" data-testid="link-relacionada">{c.relacionada.numero}</Link></p>}
@@ -129,10 +132,10 @@ function Detalhe({ userId }: { userId: string }) {
 
       {c.anexos.length > 0 && <div className="mt-4"><p className="text-sm font-medium text-foreground mb-2">Fotos e áudio enviados</p><AnexosCliente anexos={c.anexos} /></div>}
 
-      {c.afetados > 1 || (!c.meu && c.status !== 'resolvido' && c.status !== 'cancelado') ? (
+      {c.afetados > 1 || (!c.meu && c.status !== 'resolvido' && c.status !== 'fechado' && c.status !== 'cancelado') ? (
         <div className="vluma-card p-4 mt-4 flex flex-wrap items-center justify-between gap-3" data-testid="afetados">
           <p className="text-sm text-foreground inline-flex items-center gap-2"><Users2 size={15} className="text-muted-foreground" /> {c.afetados} {c.afetados === 1 ? 'pessoa afetada' : 'pessoas afetadas'}</p>
-          {!c.meu && !c.eu_afetado && c.status !== 'resolvido' && c.status !== 'cancelado' && (
+          {!c.meu && !c.eu_afetado && c.status !== 'resolvido' && c.status !== 'fechado' && c.status !== 'cancelado' && (
             <button onClick={tambemAfeta} disabled={afetando} data-testid="tambem-afeta" className="px-3 py-1.5 rounded-md border border-primary/40 text-primary text-sm inline-flex items-center gap-1.5"><Hand size={14} /> Também me afeta</button>
           )}
           {c.eu_afetado && <span className="text-xs text-green-400 inline-flex items-center gap-1"><Check size={12} /> Você marcou que também é afetado</span>}

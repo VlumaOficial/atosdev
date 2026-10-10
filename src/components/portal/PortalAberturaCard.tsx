@@ -52,6 +52,7 @@ export default function PortalAberturaCard() {
   }, [categorias])
   const modoMatriz = tenant?.prioridade_modo === 'matriz'
   const [msgPrazo, setMsgPrazo] = useState('')
+  const [diasFechar, setDiasFechar] = useState<number | null>(null)
 
   async function salvar() {
     setMsg(null); setSalvando(true)
@@ -103,6 +104,17 @@ export default function PortalAberturaCard() {
           </select>
           <p className="text-[11px] text-muted-foreground mt-1">Visita não tem prazo: o cliente vê só "Agendado para…". Dá para abrir exceção por cliente na aba Portal do cliente. Quando um prazo muda, o andamento explica o motivo.</p>
           {msgPrazo && <p className="text-[11px] text-muted-foreground mt-1" role="status">{msgPrazo}</p>}
+        </div>
+
+        <div data-testid="config-fechamento">
+          <p className="text-xs font-medium mb-2">Fechamento do chamado resolvido</p>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+            Fechar sozinho depois de
+            <input type="number" min={0} max={30} aria-label="Dias úteis para o fechamento automático" value={diasFechar ?? (tenant?.fechamento_dias_uteis ?? 3)} onChange={e => setDiasFechar(Number(e.target.value))} className="w-20 px-2 py-1.5 rounded-md bg-input border border-border text-sm text-foreground" data-testid="dias-fechamento" />
+            dias úteis sem resposta do cliente
+            <Button size="sm" variant="outline" onClick={async () => { setMsgPrazo(''); const { error } = await supabase.rpc('definir_fechamento_dias', { p_dias: diasFechar ?? (tenant?.fechamento_dias_uteis ?? 3) }); if (error) setMsgPrazo(error.message); else { await refreshTenant(); setMsgPrazo('Fechamento salvo.') } }} data-testid="salvar-fechamento">Salvar</Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">0 = não fechar sozinho. Quando a OS é concluída o cliente vê "Resolvido" e confirma ou diz que não foi resolvido; a assinatura do próprio solicitante em campo já fecha o chamado.</p>
         </div>
 
         <div>

@@ -48,7 +48,7 @@ await tc.goto(U + '/campo/os/' + v1.id); await tc.waitForSelector('[data-testid=
 ok(await tc.getByRole('button', { name: 'Cliente ausente' }).count() === 1, 'app do técnico: botão "Cliente ausente"')
 ok(await tc.getByTestId('gerar-chamado').count() === 1, 'app do técnico: "Gerar chamado" na visita')
 await tc.getByRole('button', { name: 'Cliente ausente' }).click(); await tc.waitForSelector('#motivo-cancelamento')
-ok(await tc.locator('#motivo-cancelamento option:checked').innerText().then(t => t.startsWith('Cliente ausente')), 'o motivo "Cliente ausente" já vem escolhido')
+ok(await tc.waitForFunction(() => { const o = document.querySelector('#motivo-cancelamento option:checked'); return o && o.textContent.startsWith('Cliente ausente') }, null, { timeout: 8000 }).then(() => true).catch(() => false), 'o motivo "Cliente ausente" já vem escolhido')
 ok((await tc.getByTestId('aviso-ausente').innerText()).includes('Evidências'), 'avisa que hora e posição ficam registradas e sugere a foto nas Evidências')
 await tc.fill('#reason', 'Portão fechado, ninguém atendeu'); await tc.getByRole('button', { name: 'Confirmar' }).click(); await tc.waitForTimeout(5000)
 const o1 = sql(`select status, improdutiva, cliente_ausente_em is not null a, cancel_reason, (select codigo from motivos_cancelamento where id=cancel_motivo_id) cod from orders where id='${v1.id}'`)[0]

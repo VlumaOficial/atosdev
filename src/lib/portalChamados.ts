@@ -2,12 +2,13 @@ import { supabase } from '@/lib/supabase'
 
 // Chamados do portal (E4, migration 061) — tipos, rótulos e envio de anexos
 
-export type StatusCliente = 'recebido' | 'agendado' | 'em_atendimento' | 'resolvido' | 'cancelado'
+export type StatusCliente = 'recebido' | 'agendado' | 'em_atendimento' | 'resolvido' | 'fechado' | 'cancelado'
 export const STATUS_CLIENTE: Record<StatusCliente, { rotulo: string; cor: string; ordem: number }> = {
   recebido: { rotulo: 'Recebido', cor: 'text-blue-400 bg-blue-500/10 border-blue-500/30', ordem: 1 },
   agendado: { rotulo: 'Agendado', cor: 'text-purple-400 bg-purple-500/10 border-purple-500/30', ordem: 2 },
   em_atendimento: { rotulo: 'Em atendimento', cor: 'text-amber-400 bg-amber-500/10 border-amber-500/30', ordem: 3 },
   resolvido: { rotulo: 'Resolvido', cor: 'text-green-400 bg-green-500/10 border-green-500/30', ordem: 4 },
+  fechado: { rotulo: 'Fechado', cor: 'text-muted-foreground bg-secondary border-border', ordem: 4 },
   cancelado: { rotulo: 'Cancelado', cor: 'text-muted-foreground bg-secondary border-border', ordem: 5 },
 }
 
@@ -35,6 +36,8 @@ export interface DetalheChamado {
   mensagens: MensagemChamado[]; pode_responder: boolean
   agendamento: AgendamentoChamado | null
   config_agendamento: ConfigAgendamento
+  resolucao: { resumo: string | null; concluida_em: string | null; fechada_em: string | null; fechamento_tipo: 'confirmada' | 'assinatura' | 'automatica' | null; pode_confirmar: boolean; pode_nao_resolvido: boolean; fecha_em: string | null; relatorio: boolean; pode_novo_chamado: boolean } | null
+  reaberturas: number; motivo_nao_resolvido: string | null
   relacionada: { id: string; numero: string } | null
   derivados: { id: string; numero: string; tipo: string }[]
   cancelamento: { texto: string; ausente: boolean; pode_pedir_nova_visita: boolean } | null

@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
       aberto: { assunto: `Recebemos o seu chamado ${o.number}`, titulo: 'Chamado recebido', texto: `Registramos o seu chamado "${o.title}" (${o.number}). A ${empresa} vai analisá-lo e você acompanha tudo pelo portal.` },
       agendada: { assunto: `Seu chamado ${o.number} foi agendado`, titulo: 'Chamado agendado', texto: `O atendimento do chamado "${o.title}" (${o.number}) foi agendado para ${quando(o.scheduled_at)}.` },
       em_atendimento: { assunto: `Seu chamado ${o.number} está em atendimento`, titulo: 'Chamado em atendimento', texto: `O atendimento do chamado "${o.title}" (${o.number}) foi iniciado.` },
-      resolvido: { assunto: `Seu chamado ${o.number} foi resolvido`, titulo: 'Chamado resolvido', texto: `O chamado "${o.title}" (${o.number}) foi concluído pela ${empresa}. Se o problema continuar, fale com a ${empresa} pelos contatos do portal.` },
+      resolvido: { assunto: `Seu chamado ${o.number} foi resolvido`, titulo: 'Chamado resolvido', texto: `O chamado "${o.title}" (${o.number}) foi marcado como resolvido pela ${empresa}. Entre no portal e confirme se ficou tudo certo — ou diga que NÃO foi resolvido, e o atendimento é reaberto.` },
       mensagem: { assunto: `Nova mensagem sobre o seu chamado ${o.number}`, titulo: 'Nova mensagem', texto: `A ${empresa} enviou uma mensagem sobre o chamado "${o.title}" (${o.number}). Entre no portal para ler e responder.` },
       cancelado: { assunto: `Seu chamado ${o.number} foi cancelado`, titulo: 'Chamado cancelado', texto: `O chamado "${o.title}" (${o.number}) foi cancelado. Em caso de dúvida, fale com a ${empresa} pelos contatos do portal.` },
     }

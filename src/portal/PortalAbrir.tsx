@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { linkWhatsApp, type PortalContexto } from '@/lib/portal'
 import { MAX_ANEXOS, MAX_AUDIO_SEG, prepararFoto, prepararAudio, enviarAnexos, dataBR, type AnexoLocal, type ConfigAgendamento } from '@/lib/portalChamados'
 import OpcoesDatas from './OpcoesDatas'
+import { useSearchParams } from 'react-router-dom'
 import { ROTULO_NIVEL } from '@/lib/sla'
 import { usePortal } from './PortalContext'
 import PortalPagina from './PortalPagina'
@@ -34,9 +35,19 @@ export default function PortalAbrir() { return <PortalPagina>{(ctx, sessao) => <
 function Formulario({ ctx, userId }: { ctx: PortalContexto; userId: string }) {
   const { id, base } = usePortal()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const relacionado = params.get('relacionado')   // novo chamado ligado a um chamado já fechado (E5c)
+  const [origem, setOrigem] = useState<{ numero: string; client_id: string } | null>(null)
   const clientes = ctx.vinculos ?? []
   const [clientId, setClientId] = useState(clientes[0]?.client_id ?? '')
   const [cfg, setCfg] = useState<Cfg | null>(null)
+  useEffect(() => {
+    if (!relacionado) return
+    supabase.rpc('portal_obter_chamado', { p_order: relacionado }).then(({ data }) => {
+      const d = data as { numero: string; client_id: string } | null
+      if (d) { setOrigem({ numero: d.numero, client_id: d.client_id }); setClientId(d.client_id) }
+    })
+  }, [relacionado])
   const [erroCfg, setErroCfg] = useState('')
   const [tipo, setTipo] = useState('')
   const [cat, setCat] = useState('')
@@ -120,7 +131,7 @@ function Formulario({ ctx, userId }: { ctx: PortalContexto; userId: string }) {
       const up = anexos.length ? await enviarAnexos(id.tenant_id, clientId, userId, anexos) : []
       const { data, error } = await supabase.rpc('portal_abrir_chamado', { p: {
         client_id: clientId, tipo, categoria_id: cat || null, location_id: loc || null, titulo: titulo.trim(), descricao: desc.trim(),
-        equipe_id: equipe || null, compartilhado: compart, nivel: nivel || null, impacto: imp || null, urgencia: urg || null, preferencias, anexos: up,
+        relacionada_a: relacionado && origem ? relacionado : null, equipe_id: equipe || null, compartilhado: compart, nivel: nivel || null, impacto: imp || null, urgencia: urg || null, preferencias, anexos: up,
       } })
       if (error) {
         if (up.length) await supabase.storage.from('portal-anexos').remove(up.map(x => x.path))
@@ -150,6 +161,7 @@ function Formulario({ ctx, userId }: { ctx: PortalContexto; userId: string }) {
 
   return (
     <div data-testid="portal-abrir">
+      {origem && <p className="text-sm text-primary bg-primary/10 border border-primary/30 rounded-md px-3 py-2 mb-4" data-testid="banner-relacionado">Novo chamado relacionado a <b className="font-mono">{origem.numero}</b>.</p>}
       <h1 className="text-xl font-bold text-foreground">Abrir chamado</h1>
       <p className="text-sm text-muted-foreground mt-1 mb-5">Conte o que precisa; levamos menos de um minuto.</p>
 

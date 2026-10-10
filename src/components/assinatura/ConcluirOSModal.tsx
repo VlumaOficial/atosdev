@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -29,7 +30,7 @@ interface Props {
   open: boolean
   order: OrderMin
   onClose: () => void
-  onConcluir: (extra: { completion_notes: string | null; completed_at?: string; signature_absent_reason?: string | null }) => Promise<void>
+  onConcluir: (extra: { completion_notes: string | null; completed_at?: string; signature_absent_reason?: string | null; assinou_solicitante?: boolean }) => Promise<void>
 }
 
 export default function ConcluirOSModal({ open, order, onClose, onConcluir }: Props) {
@@ -40,6 +41,10 @@ export default function ConcluirOSModal({ open, order, onClose, onConcluir }: Pr
   const [relato, setRelato] = useState('')
   const [dataConclusao, setDataConclusao] = useState('')
   const [nomeCliente, setNomeCliente] = useState('')
+  // E5c: em chamado do portal, a assinatura do próprio solicitante vale como a confirmação da solução
+  const [solicitante, setSolicitante] = useState<string | null>(null)
+  const [quemAssina, setQuemAssina] = useState<'solicitante' | 'outra'>('solicitante')
+  const norm = (t: string | null | undefined) => (t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
   const [semAssinatura, setSemAssinatura] = useState(false)
   const [motivo, setMotivo] = useState('')
   const [assinaturaCliente, setAssinaturaCliente] = useState<string | null>(null)
@@ -52,12 +57,15 @@ export default function ConcluirOSModal({ open, order, onClose, onConcluir }: Pr
   useEffect(() => {
     if (!open) return
     setRelato(''); setDataConclusao(''); setNomeCliente(''); setSemAssinatura(false); setMotivo(''); setErro('')
-    setMinhaAssinatura(undefined)
+    setMinhaAssinatura(undefined); setSolicitante(null); setQuemAssina('solicitante')
+    if ((order as any).origem === 'portal') supabase.rpc('portal_info_chamado', { p_order: order.id }).then(({ data }) => setSolicitante((data as any)?.solicitante?.nome ?? null))
     urlMinhaAssinatura().then(setMinhaAssinatura)
     if (order.signature_path) urlAssinatura(order.signature_path).then(setAssinaturaCliente)
     else setAssinaturaCliente(null)
   }, [open, order.signature_path])
 
+  const usaSolicitante = !!solicitante && quemAssina === 'solicitante'
+  const nomeEfetivo = usaSolicitante ? solicitante! : nomeCliente
   async function concluir() {
     setErro('')
     if (dataConclusao && new Date(dataConclusao).getTime() > Date.now()) { setErro('A data de conclusão não pode ser no futuro.'); return }
@@ -67,7 +75,7 @@ export default function ConcluirOSModal({ open, order, onClose, onConcluir }: Pr
       if (semAssinatura) {
         if (!motivo.trim()) { setErro('Informe o motivo de o cliente não ter assinado.'); return }
       } else if (clienteDesenhou) {
-        if (!nomeCliente.trim()) { setErro('Informe o nome de quem assinou.'); return }
+        if (!nomeEfetivo.trim()) { setErro('Informe o nome de quem assinou.'); return }
       } else if (exige) {
         setErro(permiteExcecao
           ? 'Colete a assinatura do cliente ou marque "Cliente não pôde assinar" com o motivo.'
@@ -87,7 +95,7 @@ export default function ConcluirOSModal({ open, order, onClose, onConcluir }: Pr
       }
       // 1) assinatura do cliente
       if (!order.signature_path && !semAssinatura && clienteDesenhou) {
-        const r = await uploadAssinatura(quadroCliente.current!.dataUrl(), order.id, nomeCliente.trim())
+        const r = await uploadAssinatura(quadroCliente.current!.dataUrl(), order.id, nomeEfetivo.trim())
         if (r.erro) { setErro(r.erro); return }
       }
       // 2) assinatura do responsável (perfil → OS)
@@ -103,6 +111,8 @@ export default function ConcluirOSModal({ open, order, onClose, onConcluir }: Pr
         completion_notes: relato.trim() || null,
         ...(dataConclusao ? { completed_at: new Date(dataConclusao).toISOString() } : {}),
         signature_absent_reason: reason,
+        // assinou o solicitante? (assinatura já existente: compara o nome; assinatura nova: pela escolha)
+        ...(solicitante ? { assinou_solicitante: order.signature_path ? norm(order.signer_name) === norm(solicitante) : (!semAssinatura && clienteDesenhou && usaSolicitante) } : {}),
       })
       if (reason) await registrarEvento(order.id, 'signature_absent', { reason })
       onClose()
@@ -143,10 +153,19 @@ export default function ConcluirOSModal({ open, order, onClose, onConcluir }: Pr
             <div className="mt-2 space-y-2">
               {!semAssinatura && (
                 <>
-                  <div>
-                    <Label htmlFor="nome-cliente">Nome de quem assina</Label>
-                    <Input id="nome-cliente" value={nomeCliente} onChange={e => setNomeCliente(e.target.value)} placeholder="Nome do cliente/responsável no local" />
-                  </div>
+                  {solicitante && (
+                    <div className="space-y-1.5" data-testid="quem-assina">
+                      <p className="text-xs text-muted-foreground">Quem está assinando?</p>
+                      <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer"><input type="radio" name="quem-assina" checked={quemAssina === 'solicitante'} onChange={() => setQuemAssina('solicitante')} data-testid="assina-solicitante" /> {solicitante} <span className="text-[11px] text-muted-foreground">(quem abriu o chamado — vale como confirmação da solução)</span></label>
+                      <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer"><input type="radio" name="quem-assina" checked={quemAssina === 'outra'} onChange={() => setQuemAssina('outra')} data-testid="assina-outra" /> Outra pessoa</label>
+                    </div>
+                  )}
+                  {!usaSolicitante && (
+                    <div>
+                      <Label htmlFor="nome-cliente">Nome de quem assina</Label>
+                      <Input id="nome-cliente" value={nomeCliente} onChange={e => setNomeCliente(e.target.value)} placeholder="Nome do cliente/responsável no local" />
+                    </div>
+                  )}
                   <QuadroAssinatura ref={quadroCliente} rotulo="Assinatura do cliente" />
                 </>
               )}

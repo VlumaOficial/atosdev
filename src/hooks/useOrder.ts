@@ -49,7 +49,7 @@ export function useOrder(id: string | undefined) {
 
   async function changeStatus(
     status: OrderStatus,
-    extra?: { scheduled_at?: string; schedule_reason?: string; pause_reason?: string; pause_motivo_id?: string | null; agendado_pelo_cliente?: boolean; previsao_retorno?: string | null; cancel_reason?: string; cancel_motivo_id?: string | null; cancel_detalhes?: Record<string, any>; completion_notes?: string | null; completed_at?: string; signature_absent_reason?: string | null }
+    extra?: { scheduled_at?: string; schedule_reason?: string; pause_reason?: string; pause_motivo_id?: string | null; agendado_pelo_cliente?: boolean; previsao_retorno?: string | null; cancel_reason?: string; cancel_motivo_id?: string | null; cancel_detalhes?: Record<string, any>; assinou_solicitante?: boolean; completion_notes?: string | null; completed_at?: string; signature_absent_reason?: string | null }
   ) {
     if (!id) return
     const patch: any = { status }
@@ -69,6 +69,7 @@ export function useOrder(id: string | undefined) {
       patch.completed_at = extra?.completed_at || new Date().toISOString()
       patch.completion_notes = extra?.completion_notes ?? null
       if (extra?.signature_absent_reason !== undefined) patch.signature_absent_reason = extra.signature_absent_reason
+      if (extra?.assinou_solicitante !== undefined) patch.assinou_solicitante = extra.assinou_solicitante   // E5c: o solicitante assinou = confirma a solução
     }
     if (status === 'cancelada') { patch.cancel_reason = extra?.cancel_reason ?? null; patch.cancel_motivo_id = extra?.cancel_motivo_id ?? null }
     const { error } = await supabase.from('orders').update(patch).eq('id', id)
