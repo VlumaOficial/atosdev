@@ -973,6 +973,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 063_portal_convite_celular | portal_convites.celular: o celular do "Solicitar acesso" acompanha o convite até a tela de criar senha e o cadastro da pessoa | OK | Pendente | Sim |
 | 064_email_unico | índice único por e-mail (sem diferenciar caixa) em users e portal_pessoas + travas entre equipe interna e portal (nenhum e-mail existe nos dois lados) | OK | Pendente | Sim |
 | 065_portal_tipos_independentes | o tipo de chamado do portal depende só da configuração da empresa; assunto obrigatório só quando há categorias visíveis para o tipo (portal_abertura_config e portal_abrir_chamado) | OK | Pendente | Sim |
+| 066_portal_conversa_triagem | E5a: comentários com visibilidade (interno/cliente) e autoria do cliente, mensagens do cliente com até 3 fotos, `os_comentar`, `portal_enviar_mensagem`, triagem do N1 (`os_triagem`: confirmar/reclassificar), conversa e reclassificação no portal, aviso por e-mail de nova mensagem — **URL do DEV escrita no gatilho** | OK | Pendente | Sim |
 
 ---
 
@@ -1334,7 +1335,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 
 ## 🔚 Estado ao encerrar a sessão de 2026-10-10 (RETOMAR POR AQUI)
 
-**Frente atual: Portal de atendimento — Etapa 1.** E1 (fundação e endereços), E2 (catálogo, grupos, Atendente, filas), E3 (clientes no portal, convites, equipes, pedidos de acesso, LGPD) e **E4 (abrir e acompanhar chamado)** estão **concluídas e testadas na URL pública**. Próxima: **E5 (ciclo do chamado)**, depois E6.
+**Frente atual: Portal de atendimento — Etapa 1.** E1 (fundação e endereços), E2 (catálogo, grupos, Atendente, filas), E3 (clientes no portal, convites, equipes, pedidos de acesso, LGPD), **E4 (abrir e acompanhar chamado)** e **E5a (conversa e triagem)** estão **concluídas e testadas na URL pública**. Próximas: **E5b** e **E5c** (desenho aprovado em 2026-10-10, ver VISAO_ATOS.md), depois E6. *(Texto anterior: "Próxima: E5 (ciclo do chamado), depois E6".)*
 
 **Migrations da frente do portal (047–062): todas aplicadas no DEV (vgkiddqahubznlzkxfgb); PRD (zeejmwdyqrbjnkhwtdsu) segue pendente — esperado até a promoção do MVP.** Tabela na seção 6; checklist do PRD acima ("001–062").
 
@@ -1349,7 +1350,7 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 4. **E6:** painel do Supervisor, acréscimos no painel F7, PWA, auditoria, regressão completa.
 5. **Ordem até o PRD (mantida):** escalas + notificação diária → Conexões de WhatsApp (item 3, antes da F8) → F8 planos/pagamento → painel do Super Admin → segurança essencial + responsividade → limpeza de dados de teste + troca de credenciais → PRD. Depois do PRD: Portal Etapas 2–3, F12 (app nas lojas), F9 (GLPI), F10 completa, F11 (manual).
 6. **Pontos abertos de desenho:** domínio próprio da gestão/técnicos (hoje o mesmo host da plataforma); botão de remover endereço do portal e limpeza de endereços antigos após 90 dias; varredura no servidor de anexos órfãos do `portal-anexos`.
-7. **Antes do PRD:** limites de domínios e uso comercial do plano Vercel (Hobby); URL do DEV escrita nos gatilhos das migrations 030 e 062; migrations 001–065 e republicação das Edge Functions (`portal-endereco`, `portal-acesso`, `portal-avisos`, `criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`); segredos `TURNSTILE_SECRET` e `SITE_URL`.
+7. **Antes do PRD:** limites de domínios e uso comercial do plano Vercel (Hobby); URL do DEV escrita nos gatilhos das migrations 030 e 062; migrations 001–066 e republicação das Edge Functions (`portal-endereco`, `portal-acesso`, `portal-avisos`, `criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`); segredos `TURNSTILE_SECRET` e `SITE_URL`.
 8. **Só no FIM do MVP:** limpar dados de teste (OS-0018 em diante, grupos Central N1 / Redes N2 / Campo Interior, usuários `atendente.teste` e `portal.teste`, resíduos de e-mails `e3.*`/`e4.*`) e **trocar credenciais**: token do Supabase, `cfut_` da Cloudflare, `vcp_` da Vercel, segredo do Turnstile, senhas de teste, PAT do GitHub, senha do Zoho, chave do LocationIQ.
 
 ---
@@ -2344,6 +2345,28 @@ Pedido do usuário: "como os grandes players trabalham e o que o ITIL recomenda?
 - Fontes: [Cornell — status e SLA](https://tdx.cornell.edu/TDClient/189/Portal/KB/ArticleDet?ID=7714), [Ivanti — Stop the Clock](https://help.ivanti.com/ch/help/en_US/CSM/2023/documentation_bundle/record_management/sla_stop_the_clock_stc.htm), [Xurrent — relógio parado](https://www.xurrent.com/blog/clock-stopped-system-notification), [ServiceNow — condições de SLA](https://www.servicenow.com/docs/bundle/zurich-it-service-management/page/product/service-level-management/concept/c_SLAConditions.html), [Zendesk — pausar SLA](https://support.zendesk.com/hc/en-us/articles/4408825745690-Can-I-pause-the-SLA-timer-or-reset-it-under-certain-conditions), [Freshservice — status e SLA](https://support.freshservice.com/en/support/solutions/articles/156452-customizing-service-desk-statuses), [Fieldproxy — lembretes e ausências (blog de fornecedor; números são alegações)](https://www.fieldproxy.ai/blog/how-to-eliminate-no-shows-in-hvac-business-with-smart-scheduling-d1-14).
 - O desenho resultante está em `VISAO_ATOS.md` (E5, "Respostas do usuário sobre a Visita e o agendamento").
 
+### Portal — Etapa 1 · E5a Conversa e triagem (2026-10-10) — CONCLUÍDA E TESTADA
+Desenho aprovado em 2026-10-10 (VISAO_ATOS.md, E5: "pontos decididos"). Próximas partes: **E5b** (matriz de pausa, "Aguardando você", pausa do SLA ao reagendar, agendamento combinado, transparência do prazo, fluxo da visita) e **E5c** (Resolvido → Fechado, reabrir, novo chamado ligado, assinatura como confirmação).
+- **Migration 066:**
+  - `order_comments`: `visibilidade` (`interno` padrão | `cliente`) e `autor_portal_id` (pessoa do portal). A escrita direta na tabela só cria nota **interna** (política); responder ao cliente só pela função `os_comentar`. Editar um comentário não troca visibilidade nem autoria (gatilho).
+  - `os_anexos_cliente.comentario_id`: fotos de uma mensagem do cliente.
+  - `notificacoes`: tipo novo `mensagem_cliente`. `orders`: `classificada_em`/`classificada_por`.
+  - Funções: `os_comentar` (equipe/técnico responsável), `portal_enviar_mensagem` (cliente), `os_triagem` (N1), e `portal_obter_chamado`/`portal_info_chamado` estendidas (conversa, reclassificação, modo/matriz/impacto/urgência).
+  - Gatilho `fn_comentario_avisar_portal` (pg_net + Vault) → `portal-avisos` evento `mensagem`.
+- **Conversa (regras no servidor):**
+  - **Equipe** (OS aberta pelo portal): dois botões distintos, **"Responder ao cliente"** e **"Nota interna"** (a nota nunca sai da empresa). Em OS comum continua só o comentário interno. O **técnico responsável também responde ao cliente** pelo app (só texto). Resposta ao cliente: 1 a 2000 letras, não vale em OS cancelada nem em OS sem solicitante; técnico sem acesso à OS não comenta.
+  - **SLA:** a 1ª resposta pública (ou a triagem) grava `respondido_em`.
+  - **Cliente** (portal): quem **vê** o chamado (dono, equipe se compartilhado, Supervisor, "também me afeta") e aceitou os termos responde com texto (2 a 2000) e **até 3 fotos** (mesma pasta privada do chamado; arquivo de outra pessoa/fantasma é recusado); **20 mensagens por hora** por pessoa; chamado cancelado não recebe.
+  - O portal mostra só a conversa pública (nunca nota interna), com o 1º nome de quem respondeu pela empresa ("Carla · atendimento") e "Você"/nome do colega nas mensagens do cliente; a pessoa do portal não lê `order_comments` diretamente.
+  - **Avisos:** mensagem do cliente → sino do técnico responsável e dos coordenadores do grupo (sem ninguém: admin, gestor e atendente); resposta da empresa → **e-mail ao solicitante** (consentimento LGPD + canal liberado), no máximo **1 a cada 10 minutos por chamado**; o e-mail não traz o texto, só o aviso e o link.
+- **Triagem pelo N1** (admin, gestor, atendente) no cartão "Aberto pelo portal":
+  - **"Confirmar prioridade"** registra quem classificou e quando; **"Reclassificar"** exige **motivo** (3 a 300 letras, **visível ao cliente**). Só em OS do portal ainda não encerrada.
+  - **Modo matriz:** o N1 ajusta **Impacto e Urgência** e a prioridade sai da matriz (o gatilho do SLA recalcula; ajustar a prioridade solta é recusado). **Modo simples:** escolhe a prioridade. Só o incidente tem prioridade ajustável; qualquer tipo pode trocar o **assunto**, e se o novo assunto tem grupo padrão a OS **vai para esse grupo**.
+  - Guarda prioridade informada × final; o SLA recalcula a partir da abertura; o cliente vê "Prioridade ajustada de Crítico para Baixo — motivo…". Base do KPI "% reclassificados" (painel na E6).
+- **Testes na URL pública:** `supabase/tests/portal_conversa.sql` (**54** verificações, validado com falha plantada) e `e2e/e5a_ui.mjs` (38 verificações: botões, selos, nota interna que não vaza, resposta com foto, sino, e-mail, triagem em modo matriz, Atendente, técnico no app e celular). **Achado e corrigido no teste:** no modo matriz o gatilho do SLA recalcula a prioridade por impacto×urgência, então reclassificar a prioridade solta não tinha efeito — a função passou a ajustar impacto e urgência.
+- **Decisões a confirmar:** mensagem do cliente não retoma a pausa nem reabre OS concluída ainda (E5b e E5c); o e-mail de nova mensagem não traz o conteúdo (privacidade); limite de 20 mensagens/hora e 3 fotos; coordenador que seja técnico não recebe o aviso do grupo (regra já existente).
+- **PRD:** o gatilho da 066 também tem a URL do DEV; republicar `portal-avisos` (evento `mensagem`).
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -2363,7 +2386,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–065 em ordem (**062: trocar a URL do projeto no gatilho**) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–066 em ordem (**062 e 066: trocar a URL do projeto nos gatilhos**) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código

@@ -38,3 +38,4 @@ falha plantada (um tratador EXCEPTION no bloco externo já deixou checagens vazi
 - `portal_ajustes.mjs`: celular do pedido → convite → cadastro, olho de mostrar senha e rodapé no fim da tela (ajustes do teste manual de 2026-10-10).
 - `email_unico.mjs`: nenhum caminho cadastra e-mail repetido (equipe interna, portal, caixas diferentes, escrita direta no banco).
 - `portal_tipos.mjs`: tipo de chamado só pela configuração, assunto só com categorias, menu "Portal do cliente".
+- `e5a_ui.mjs`: conversa (resposta ao cliente, nota interna, mensagem do cliente com foto, sino, e-mail) e triagem do N1; `supabase/tests/portal_conversa.sql` (54 verificações).
