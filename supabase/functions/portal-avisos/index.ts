@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
   try {
     const { order_id, evento, comment_id, antes_horas } = await req.json()
     if (!order_id || !['aberto', 'agendada', 'em_atendimento', 'resolvido', 'cancelado', 'mensagem', 'pausa', 'lembrete'].includes(evento)) return json({ erro: 'Parâmetros inválidos.' }, 400)
-    const { data: o } = await admin.from('orders').select('id, tenant_id, client_id, number, title, status, solicitante_id, scheduled_at, location_id, pause_motivo_id, previsao_retorno').eq('id', order_id).maybeSingle()
+    const { data: o } = await admin.from('orders').select('id, tenant_id, client_id, number, title, status, solicitante_id, scheduled_at, location_id, pause_motivo_id, previsao_retorno, improdutiva, cancel_motivo_id, tipo').eq('id', order_id).maybeSingle()
     if (!o?.solicitante_id) return json({ ok: false, motivo: 'sem_solicitante' })
     const [{ data: t }, { data: pessoa }, { data: cli }, { data: pref }, { data: cfgEnvio }] = await Promise.all([
       admin.from('tenants').select('name, trade_name, email, envio_nivel, portal_nome, portal_slug, portal_abertura, fuso_horario').eq('id', o.tenant_id).single(),
@@ -97,6 +97,11 @@ Deno.serve(async (req) => {
       if (o.status !== 'pausada' || mp?.comportamento !== 'comunica') { await registrar(false, 'sem_pausa_comunicavel'); return json({ ok: false, motivo: 'sem_pausa_comunicavel' }) }
       const motivoTxt = (mp.texto_cliente || mp.nome || 'em pausa') as string
       T.pausa = { assunto: `Seu chamado ${o.number} está em pausa`, titulo: 'Chamado em pausa', texto: `O chamado "${o.title}" (${o.number}) está em pausa: ${motivoTxt}.${o.previsao_retorno ? ` Previsão de retorno: ${quando(o.previsao_retorno)}.` : ''}` }
+    }
+    if (evento === 'cancelado' && o.improdutiva) {
+      // visita não realizada (cliente ausente, sem acesso…): explica e convida a pedir uma nova visita
+      const { data: mc } = await admin.from('motivos_cancelamento').select('nome').eq('id', o.cancel_motivo_id).maybeSingle()
+      T.cancelado = { assunto: `A visita do chamado ${o.number} não foi realizada`, titulo: 'Visita não realizada', texto: `A visita do chamado "${o.title}" (${o.number}) não pôde ser realizada: ${(mc?.nome ?? 'motivo não informado').toLowerCase()}. Você pode pedir uma nova visita pelo portal.` }
     }
     let extraHtml = ''; let extraTexto = ''
     if (evento === 'lembrete') {

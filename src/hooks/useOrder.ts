@@ -49,7 +49,7 @@ export function useOrder(id: string | undefined) {
 
   async function changeStatus(
     status: OrderStatus,
-    extra?: { scheduled_at?: string; schedule_reason?: string; pause_reason?: string; pause_motivo_id?: string | null; agendado_pelo_cliente?: boolean; previsao_retorno?: string | null; cancel_reason?: string; completion_notes?: string | null; completed_at?: string; signature_absent_reason?: string | null }
+    extra?: { scheduled_at?: string; schedule_reason?: string; pause_reason?: string; pause_motivo_id?: string | null; agendado_pelo_cliente?: boolean; previsao_retorno?: string | null; cancel_reason?: string; cancel_motivo_id?: string | null; cancel_detalhes?: Record<string, any>; completion_notes?: string | null; completed_at?: string; signature_absent_reason?: string | null }
   ) {
     if (!id) return
     const patch: any = { status }
@@ -70,7 +70,7 @@ export function useOrder(id: string | undefined) {
       patch.completion_notes = extra?.completion_notes ?? null
       if (extra?.signature_absent_reason !== undefined) patch.signature_absent_reason = extra.signature_absent_reason
     }
-    if (status === 'cancelada') patch.cancel_reason = extra?.cancel_reason ?? null
+    if (status === 'cancelada') { patch.cancel_reason = extra?.cancel_reason ?? null; patch.cancel_motivo_id = extra?.cancel_motivo_id ?? null }
     const { error } = await supabase.from('orders').update(patch).eq('id', id)
     if (error) throw error
 
@@ -87,7 +87,7 @@ export function useOrder(id: string | undefined) {
       const det: Record<string, any> = {}
       if (status === 'agendada') { det.scheduled_at = extra?.scheduled_at ?? null; det.reason = extra?.schedule_reason ?? null; if (extra?.agendado_pelo_cliente) det.a_pedido_do_cliente = true; if (order?.status === 'agendada') det.reagendado = true }
       if (status === 'pausada') { det.reason = extra?.pause_reason ?? null; det.motivo_id = extra?.pause_motivo_id ?? null; if (extra?.previsao_retorno) det.previsao_retorno = extra.previsao_retorno }
-      if (status === 'cancelada') det.reason = extra?.cancel_reason ?? null
+      if (status === 'cancelada') { det.reason = extra?.cancel_reason ?? null; det.motivo_id = extra?.cancel_motivo_id ?? null; Object.assign(det, extra?.cancel_detalhes ?? {}) }
       if (status === 'concluida') { det.completion_notes = extra?.completion_notes ?? null; det.completed_at = patch.completed_at }
       await registrarEvento(id, tipoEvento, det)
     }

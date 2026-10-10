@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useFiltrosUrl } from '@/hooks/useFiltrosUrl'
-import { useCategorias, useMotivosPausa, usePoliticasSla, type Categoria, type PoliticaSla, type MotivoPausa } from '@/hooks/useCatalogoSla'
+import { useCategorias, useMotivosPausa, useMotivosCancelamento, usePoliticasSla, type Categoria, type PoliticaSla, type MotivoPausa, type MotivoCancelamento } from '@/hooks/useCatalogoSla'
 import { useHorariosAtendimento } from '@/components/calendario/HorariosAtendimento'
 import { useClients } from '@/hooks/useClients'
 import { useGrupos } from '@/hooks/useGrupos'
@@ -25,8 +25,8 @@ import { Plus, Pencil, Trash2, Power, Lock, Loader2, Sparkles, CornerDownRight }
 // (matriz Impacto × Urgência ou escolha direta), as metas de SLA por
 // nível (com exceções por cliente/categoria) e os motivos de pausa.
 
-type Aba = 'categorias' | 'prioridades' | 'sla' | 'pausas'
-const ABAS: [Aba, string][] = [['categorias', 'Categorias'], ['prioridades', 'Prioridades'], ['sla', 'SLA'], ['pausas', 'Motivos de pausa']]
+type Aba = 'categorias' | 'prioridades' | 'sla' | 'pausas' | 'cancelamentos'
+const ABAS: [Aba, string][] = [['categorias', 'Categorias'], ['prioridades', 'Prioridades'], ['sla', 'SLA'], ['pausas', 'Motivos de pausa'], ['cancelamentos', 'Motivos de cancelamento']]
 
 export default function CatalogoSlaPage() {
   const { user } = useAuth()
@@ -48,6 +48,7 @@ export default function CatalogoSlaPage() {
       {aba === 'prioridades' && <AbaPrioridades podeEditar={podeEditar} />}
       {aba === 'sla' && <AbaSla podeEditar={podeEditar} />}
       {aba === 'pausas' && <AbaPausas podeEditar={podeEditar} />}
+      {aba === 'cancelamentos' && <AbaCancelamentos podeEditar={podeEditar} />}
     </div>
   )
 }
@@ -668,6 +669,48 @@ function AbaPausas({ podeEditar }: { podeEditar: boolean }) {
           </div>
         </Card>
       )}
+    </div>
+  )
+}
+
+
+// ---------------- Motivos de cancelamento ----------------
+function AbaCancelamentos({ podeEditar }: { podeEditar: boolean }) {
+  const { motivos, carregando, recarregar } = useMotivosCancelamento()
+  const [novo, setNovo] = useState('')
+  const [improd, setImprod] = useState(false)
+  const [erro, setErro] = useState('')
+  async function adicionar() {
+    if (novo.trim().length < 2) { setErro('Informe o motivo.'); return }
+    const { error } = await supabase.from('motivos_cancelamento').insert({ nome: novo.trim(), improdutiva: improd, ordem: 5 })
+    if (error) { setErro(error.code === '23505' ? 'Esse motivo já existe.' : error.message); return }
+    setNovo(''); setImprod(false); setErro(''); recarregar()
+  }
+  async function atualizar(m: MotivoCancelamento, dados: Partial<MotivoCancelamento>) { const { error } = await supabase.from('motivos_cancelamento').update(dados).eq('id', m.id); if (error) setErro(error.message); else setErro(''); recarregar() }
+  if (carregando) return <Loader2 className="animate-spin text-muted-foreground" size={18} />
+  return (
+    <div className="space-y-3" data-testid="aba-cancelamentos">
+      <p className="text-xs text-muted-foreground max-w-2xl">Ao cancelar uma OS, o motivo vem desta lista. Os marcados como <b>visita improdutiva</b> (ex.: cliente ausente, sem acesso ao local) entram no indicador de visitas improdutivas e deixam o cliente <b>pedir uma nova visita</b> pelo portal. "Cancelado pelo cliente" e "Cliente ausente" são do sistema.</p>
+      <Card className="divide-y divide-border">
+        {motivos.map(m => (
+          <div key={m.id} className={cn('flex flex-wrap items-center gap-3 px-4 py-2.5', !m.ativo && 'opacity-50')} data-motivo-cancelamento={m.nome}>
+            <p className="flex-1 min-w-[160px] text-sm text-foreground">{m.nome}{m.codigo && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">sistema</span>}</p>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <input type="checkbox" checked={m.improdutiva} disabled={!podeEditar || m.codigo === 'ausente'} onChange={e => atualizar(m, { improdutiva: e.target.checked })} aria-label={'Visita improdutiva: ' + m.nome} />
+              Visita improdutiva
+            </label>
+            {podeEditar && !m.codigo && <button title={m.ativo ? 'Desativar' : 'Ativar'} onClick={() => atualizar(m, { ativo: !m.ativo })} className={btnIcone}><Power size={13} /></button>}
+          </div>
+        ))}
+      </Card>
+      {podeEditar && (
+        <Card className="p-3 flex flex-wrap items-center gap-2" data-testid="novo-motivo-cancelamento">
+          <Input value={novo} onChange={e => setNovo(e.target.value)} placeholder="Novo motivo de cancelamento" className="flex-1 min-w-[200px]" aria-label="Novo motivo de cancelamento" />
+          <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={improd} onChange={e => setImprod(e.target.checked)} /> Visita improdutiva</label>
+          <Button size="sm" variant="cta" onClick={adicionar}><Plus size={14} /> Adicionar</Button>
+        </Card>
+      )}
+      {erro && <p className="text-xs text-red-400" role="alert">{erro}</p>}
     </div>
   )
 }

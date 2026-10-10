@@ -73,3 +73,16 @@ export function usePoliticasSla() {
   useEffect(() => { recarregar() }, [recarregar])
   return { politicas, carregando, recarregar }
 }
+
+export interface MotivoCancelamento { id: string; nome: string; codigo: 'cliente' | 'ausente' | null; improdutiva: boolean; ativo: boolean; ordem: number }
+export function useMotivosCancelamento() {
+  const [motivos, setMotivos] = useState<MotivoCancelamento[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const recarregar = useCallback(async () => {
+    const { data } = await supabase.from('motivos_cancelamento').select('id, nome, codigo, improdutiva, ativo, ordem').order('ordem').order('nome')
+    setMotivos((data ?? []) as MotivoCancelamento[])
+    setCarregando(false)
+  }, [])
+  useEffect(() => { recarregar() }, [recarregar])
+  return { motivos, carregando, recarregar }
+}

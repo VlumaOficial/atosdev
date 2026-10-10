@@ -55,7 +55,7 @@ ok((await an.locator('[data-aviso-data="0"]').innerText()).includes('a partir de
 const v1 = await abrirVisita('E5B3 visita 1', [{ data: ld(6), periodo: 'manha' }, { data: ld(8), periodo: 'tarde' }])
 ok(!!v1.id, 'visita aberta com 2 datas dentro da regra: ' + v1.numero)
 await ad.goto(U + '/os/' + v1.id); await ad.waitForSelector('[data-testid=info-portal]', { timeout: 20000 }); await ad.waitForTimeout(1500)
-await ad.getByRole('button', { name: 'Agendar' }).click(); await ad.waitForSelector('#schedule-date')
+await ad.getByRole('button', { name: 'Agendar', exact: true }).click(); await ad.waitForSelector('#schedule-date')
 await ad.fill('#schedule-date', ld(10) + 'T10:00'); await ad.fill('#reason', 'Equipe disponível nessa data'); await ad.getByRole('button', { name: 'Confirmar' }).click(); await ad.waitForTimeout(3500)
 ok(sql(`select agendamento_status s from orders where id='${v1.id}'`)[0].s === 'proposto', 'data que o cliente NÃO pediu → "proposto"')
 await ad.reload(); await ad.waitForSelector('[data-testid=info-portal]'); await ad.waitForTimeout(1500)

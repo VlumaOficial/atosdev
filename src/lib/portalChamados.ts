@@ -34,6 +34,10 @@ export interface DetalheChamado {
   anexos: AnexoChamado[]
   mensagens: MensagemChamado[]; pode_responder: boolean
   agendamento: AgendamentoChamado | null
+  config_agendamento: ConfigAgendamento
+  relacionada: { id: string; numero: string } | null
+  derivados: { id: string; numero: string; tipo: string }[]
+  cancelamento: { texto: string; ausente: boolean; pode_pedir_nova_visita: boolean } | null
   prazos: { nivel: 'previsao' | 'completo'; atendimento: string | null; solucao: string | null; pausado: boolean; situacao: 'no_prazo' | 'fora_do_prazo' | 'pausado' | null } | null
   aguardando_voce: boolean
   pausa: { tipo: 'aciona' | 'comunica'; texto: string; desde?: string | null; previsao?: string | null } | null

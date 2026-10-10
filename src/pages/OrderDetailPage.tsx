@@ -6,7 +6,7 @@ import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
 import CartaoSla, { TipoNivel } from '@/components/SlaOS'
-import { MotivoPausaCampo, AgendadoClienteCampo, PausaClienteCampos } from '@/components/orders/CamposStatusSla'
+import { MotivoPausaCampo, AgendadoClienteCampo, PausaClienteCampos, MotivoCancelamentoCampo } from '@/components/orders/CamposStatusSla'
 import type { MotivoPausa } from '@/hooks/useCatalogoSla'
 import { supabase } from '@/lib/supabase'
 import { useCategorias } from '@/hooks/useCatalogoSla'
@@ -22,6 +22,7 @@ import { Modal } from '@/components/ui/modal'
 import { Label } from '@/components/ui/input'
 import { BotaoTransferir, HistoricoTransferencias } from '@/components/orders/TransferirOS'
 import PortalInfoOS from '@/components/portal/PortalInfoOS'
+import GerarChamadoVisita from '@/components/orders/GerarChamadoVisita'
 import { ROTULO_NIVEL_GRUPO } from '@/lib/grupos'
 import { ArrowLeft, Building2, MapPin, Wrench, FileText, Users2 } from 'lucide-react'
 
@@ -80,6 +81,7 @@ export default function OrderDetailPage() {
   const [reasonInput, setReasonInput] = useState('')
   // SLA (migration 044): motivo de pausa da lista e agendamento a pedido do cliente
   const [motivoPausa, setMotivoPausa] = useState<{ id: string; nome: string; obj?: MotivoPausa }>({ id: '', nome: '' })
+  const [motivoCancel, setMotivoCancel] = useState<{ id: string; nome: string }>({ id: '', nome: '' })
   const [mensagemCliente, setMensagemCliente] = useState('')   // E5b: pausa que aciona o cliente
   const [previsao, setPrevisao] = useState('')                  // E5b: previsão de retorno
   const [pedidoCliente, setPedidoCliente] = useState(false)
@@ -92,7 +94,7 @@ export default function OrderDetailPage() {
   function requestStatusChange(action: { target: string; reason?: boolean; date?: boolean; notes?: boolean; completeDate?: boolean }) {
     if (action.target === 'concluida') { setConcluirAberto(true); return }
     if (action.reason || action.date || action.notes || action.completeDate) {
-      setReasonInput(''); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(action.target === 'agendada' && !!order?.agendado_pelo_cliente); setMensagemCliente(''); setPrevisao('')
+      setReasonInput(''); setMotivoCancel({ id: '', nome: '' }); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(action.target === 'agendada' && !!order?.agendado_pelo_cliente); setMensagemCliente(''); setPrevisao('')
       setDateInput('')
       setNotesInput('')
       setCompleteDateInput('')
@@ -139,7 +141,8 @@ export default function OrderDetailPage() {
       if (previsao && new Date(previsao).getTime() <= new Date().getTime()) { setStatusError('A previsão de retorno precisa ser uma data futura.'); return }
       if (mo.comportamento === 'aciona' && portal && mensagemCliente.trim().length < 2) { setStatusError('Escreva a mensagem ao cliente (o que você precisa dele).'); return }
     }
-    if (statusModal.needsReason && statusModal.target !== 'pausada' && !reasonInput.trim()) {
+    if (statusModal.target === 'cancelada' && !motivoCancel.id) { setStatusError('Escolha o motivo do cancelamento.'); return }
+    if (statusModal.needsReason && statusModal.target !== 'pausada' && statusModal.target !== 'cancelada' && !reasonInput.trim()) {
       setStatusError('Informe o motivo.')
       return
     }
@@ -158,7 +161,7 @@ export default function OrderDetailPage() {
         if (error) { setStatusError(error.message); return }
       }
     }
-    if (statusModal.target === 'cancelada') extra.cancel_reason = reasonInput || null
+    if (statusModal.target === 'cancelada') { extra.cancel_motivo_id = motivoCancel.id; extra.cancel_reason = motivoCancel.nome + (reasonInput.trim() ? ' — ' + reasonInput.trim() : '') }
     await applyStatusChange(statusModal.target, extra)
   }
 
@@ -272,9 +275,10 @@ export default function OrderDetailPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 <BotaoTransferir order={order} onDone={fetchOrder} />
+                {['admin', 'gestor', 'atendente'].includes(user?.role ?? '') && <GerarChamadoVisita order={order} caminho="/os/" />}
                 {actions.map(action => (
                   <button
-                    key={action.target}
+                    key={action.label}
                     onClick={() => requestStatusChange(action)}
                     className={'w-full px-3 py-2 rounded-md text-sm font-medium border transition ' + (action.target === 'cancelada' ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : 'border-primary/30 text-primary hover:bg-primary/10')}
                   >
@@ -310,11 +314,12 @@ export default function OrderDetailPage() {
             </div>
           )}
           {statusModal.target === 'agendada' && <AgendadoClienteCampo valor={pedidoCliente} onChange={setPedidoCliente} />}
+          {statusModal.target === 'cancelada' && <MotivoCancelamentoCampo valor={motivoCancel.id} onChange={(id, nome) => setMotivoCancel({ id, nome })} />}
           {statusModal.target === 'pausada' && <MotivoPausaCampo valor={motivoPausa.id} onChange={(id, nome, obj) => setMotivoPausa({ id, nome, obj })} />}
           {statusModal.target === 'pausada' && <PausaClienteCampos motivo={motivoPausa.obj} portal={order?.origem === 'portal'} mensagem={mensagemCliente} setMensagem={setMensagemCliente} previsao={previsao} setPrevisao={setPrevisao} />}
           {statusModal.needsReason && (
             <div>
-              <Label htmlFor="reason">{statusModal.target === 'pausada' ? 'Observação (opcional)' : 'Motivo *'}</Label>
+              <Label htmlFor="reason">{statusModal.target === 'pausada' || statusModal.target === 'cancelada' ? 'Observação (opcional)' : 'Motivo *'}</Label>
               <textarea
                 id="reason"
                 value={reasonInput}

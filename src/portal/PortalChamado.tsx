@@ -11,6 +11,7 @@ import StatusChamado from './StatusChamado'
 import { cn } from '@/lib/utils'
 import AguardandoVoce from './AguardandoVoce'
 import AgendamentoCliente from './AgendamentoCliente'
+import NovaVisita from './NovaVisita'
 
 // Acompanhar o chamado: situação em etapas, dados, fotos e áudio, marcos e contato.
 // Conversa com a empresa (E5a): respostas da empresa e mensagens do cliente, com até 3 fotos. A confirmação da solução chega na E5c.
@@ -100,6 +101,13 @@ function Detalhe({ userId }: { userId: string }) {
         </div>
       )}
       <AgendamentoCliente c={c} onMudou={carregar} />
+      {c.cancelamento && <NovaVisita c={c} />}
+      {(c.relacionada || c.derivados.length > 0) && (
+        <div className="mt-3 text-xs text-muted-foreground space-y-1" data-testid="chamados-ligados">
+          {c.relacionada && <p>Relacionado ao chamado <Link to={`${base}/chamados/${c.relacionada.id}`} className="text-primary hover:underline font-mono" data-testid="link-relacionada">{c.relacionada.numero}</Link></p>}
+          {c.derivados.length > 0 && <p>Chamados gerados a partir deste: {c.derivados.map((d, i) => <span key={d.id}>{i > 0 && ', '}<Link to={`${base}/chamados/${d.id}`} className="text-primary hover:underline font-mono">{d.numero}</Link></span>)}</p>}
+        </div>
+      )}
       {c.tecnico && (
         <p className="text-sm text-muted-foreground mt-3 inline-flex items-center gap-2" data-testid="tecnico"><UserRound size={14} /> Técnico responsável: <span className="text-foreground">{c.tecnico}</span></p>
       )}

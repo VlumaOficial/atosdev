@@ -6,7 +6,10 @@ import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
 import CartaoSla, { TipoNivel } from '@/components/SlaOS'
-import { MotivoPausaCampo, AgendadoClienteCampo, PausaClienteCampos } from '@/components/orders/CamposStatusSla'
+import { MotivoPausaCampo, AgendadoClienteCampo, PausaClienteCampos, MotivoCancelamentoCampo } from '@/components/orders/CamposStatusSla'
+import { useMotivosCancelamento } from '@/hooks/useCatalogoSla'
+import { obterLocalizacao } from '@/lib/geolocation'
+import GerarChamadoVisita from '@/components/orders/GerarChamadoVisita'
 import type { MotivoPausa } from '@/hooks/useCatalogoSla'
 import { useCategorias } from '@/hooks/useCatalogoSla'
 import ConcluirOSModal from '@/components/assinatura/ConcluirOSModal'
@@ -37,15 +40,17 @@ const STATUS_STYLES: Record<string, string> = {
 
 
 // ações do técnico em campo (subconjunto do fluxo do gestor)
-const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean; danger?: boolean }[]> = {
+const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean; danger?: boolean; ausente?: boolean }[]> = {
   aberta: [
     { target: 'em_andamento', label: 'Iniciar atendimento' },
     { target: 'agendada', label: 'Agendar', reason: true, date: true },
+    { target: 'cancelada', label: 'Cliente ausente', reason: true, danger: true, ausente: true },
     { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
   ],
   agendada: [
     { target: 'agendada', label: 'Reagendar', reason: true, date: true },
     { target: 'em_andamento', label: 'Iniciar atendimento' },
+    { target: 'cancelada', label: 'Cliente ausente', reason: true, danger: true, ausente: true },
     { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
   ],
   em_andamento: [
@@ -82,12 +87,14 @@ export default function FieldOrderPage() {
   }
   const { tenant } = useAuth()
 
-  const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean; date: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })
+  const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean; date: boolean; ausente?: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })
   const [reasonInput, setReasonInput] = useState('')
   // SLA (migration 044): motivo de pausa da lista e agendamento a pedido do cliente
   const [motivoPausa, setMotivoPausa] = useState<{ id: string; nome: string; obj?: MotivoPausa }>({ id: '', nome: '' })
   const [mensagemCliente, setMensagemCliente] = useState('')
   const [previsao, setPrevisao] = useState('')
+  const [motivoCancel, setMotivoCancel] = useState<{ id: string; nome: string }>({ id: '', nome: '' })
+  const { motivos: motivosCancel } = useMotivosCancelamento()
   const [pedidoCliente, setPedidoCliente] = useState(false)
   const { opcoes: categoriasOp } = useCategorias()
   const [notesInput, setNotesInput] = useState('')
@@ -97,11 +104,14 @@ export default function FieldOrderPage() {
   const [saving, setSaving] = useState(false)
   const [concluirAberto, setConcluirAberto] = useState(false)
 
-  function requestAction(action: { target: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean }) {
+  function requestAction(action: { target: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean; ausente?: boolean }) {
     if (action.target === 'concluida') { setConcluirAberto(true); return }
     if (action.reason || action.notes || action.completeDate || action.date) {
       setReasonInput(''); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(action.target === 'agendada' && !!order?.agendado_pelo_cliente); setMensagemCliente(''); setPrevisao(''); setNotesInput(''); setCompleteDateInput(''); setScheduleDateInput(''); setModalError('')
-      setModal({ open: true, target: action.target, reason: !!action.reason, notes: !!action.notes, completeDate: !!action.completeDate, date: !!action.date })
+      // "Cliente ausente" já vem com o motivo do sistema escolhido
+      const ausente = action.ausente ? motivosCancel.find(m => m.codigo === 'ausente') : undefined
+      setMotivoCancel(ausente ? { id: ausente.id, nome: ausente.nome } : { id: '', nome: '' })
+      setModal({ open: true, target: action.target, reason: !!action.reason, notes: !!action.notes, completeDate: !!action.completeDate, date: !!action.date, ausente: !!action.ausente })
     } else {
       apply(action.target)
     }
@@ -135,7 +145,8 @@ export default function FieldOrderPage() {
       if (previsao && new Date(previsao).getTime() <= new Date().getTime()) { setModalError('A previsão de retorno precisa ser uma data futura.'); return }
       if (mo.comportamento === 'aciona' && portal && mensagemCliente.trim().length < 2) { setModalError('Escreva a mensagem ao cliente (o que você precisa dele).'); return }
     }
-    if (modal.reason && modal.target !== 'pausada' && !reasonInput.trim()) { setModalError('Informe o motivo.'); return }
+    if (modal.target === 'cancelada' && !motivoCancel.id) { setModalError('Escolha o motivo do cancelamento.'); return }
+    if (modal.reason && modal.target !== 'pausada' && modal.target !== 'cancelada' && !reasonInput.trim()) { setModalError('Informe o motivo.'); return }
     if (modal.completeDate && completeDateInput && new Date(completeDateInput).getTime() > new Date().getTime()) {
       setModalError('A data de conclusão não pode ser no futuro.'); return
     }
@@ -149,7 +160,14 @@ export default function FieldOrderPage() {
         if (error) { setModalError(error.message); return }
       }
     }
-    if (modal.target === 'cancelada') extra.cancel_reason = reasonInput || null
+    if (modal.target === 'cancelada') {
+      extra.cancel_motivo_id = motivoCancel.id; extra.cancel_reason = motivoCancel.nome + (reasonInput.trim() ? ' — ' + reasonInput.trim() : '')
+      if (modal.ausente) {
+        // prova do "cliente ausente": hora (automática) e posição do técnico; as fotos do local ficam nas Evidências
+        const pos = await obterLocalizacao()
+        extra.cancel_detalhes = { cliente_ausente: true, ...(pos.coords ? { lat: pos.coords.lat, lng: pos.coords.lng, precisao_m: pos.coords.accuracy } : { sem_posicao: pos.erro ?? true }) }
+      }
+    }
     await apply(modal.target, extra)
   }
 
@@ -250,7 +268,7 @@ export default function FieldOrderPage() {
         <div className="space-y-2 mb-4">
           {actions.map(a => (
             <button
-              key={a.target}
+              key={a.label}
               onClick={() => requestAction(a)}
               className={'w-full px-4 py-3 rounded-xl text-sm font-medium border transition active:opacity-80 ' + (a.danger ? 'border-red-500/30 text-red-400' : a.target === 'concluida' || a.target === 'em_andamento' ? 'bg-primary text-primary-foreground border-primary' : 'border-primary/30 text-primary')}
             >
@@ -259,6 +277,8 @@ export default function FieldOrderPage() {
           ))}
         </div>
       )}
+
+      {order.technician_id && <div className="mb-4 empty:hidden"><GerarChamadoVisita order={order} caminho="/campo/os/" /></div>}
 
       {order.technician_id && (
         <div className="mb-4">
@@ -301,11 +321,13 @@ export default function FieldOrderPage() {
             </div>
           )}
           {modal.target === 'agendada' && <AgendadoClienteCampo valor={pedidoCliente} onChange={setPedidoCliente} />}
+          {modal.target === 'cancelada' && <MotivoCancelamentoCampo valor={motivoCancel.id} onChange={(id, nome) => setMotivoCancel({ id, nome })} />}
+          {modal.ausente && <p className="text-[11px] text-muted-foreground" data-testid="aviso-ausente">A hora e a sua posição ficam registradas como prova. Se puder, tire uma foto do local na seção Evidências antes de confirmar (depois do cancelamento ela fica só para consulta).</p>}
           {modal.target === 'pausada' && <MotivoPausaCampo valor={motivoPausa.id} onChange={(id, nome, obj) => setMotivoPausa({ id, nome, obj })} />}
           {modal.target === 'pausada' && <PausaClienteCampos motivo={motivoPausa.obj} portal={order?.origem === 'portal'} mensagem={mensagemCliente} setMensagem={setMensagemCliente} previsao={previsao} setPrevisao={setPrevisao} />}
           {modal.reason && (
             <div>
-              <Label htmlFor="reason">{modal.target === 'pausada' ? 'Observação (opcional)' : 'Motivo *'}</Label>
+              <Label htmlFor="reason">{modal.target === 'pausada' || modal.target === 'cancelada' ? 'Observação (opcional)' : 'Motivo *'}</Label>
               <textarea id="reason" value={reasonInput} onChange={e => setReasonInput(e.target.value)} placeholder="Descreva o motivo" rows={3} className="w-full px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition resize-none" />
             </div>
           )}
