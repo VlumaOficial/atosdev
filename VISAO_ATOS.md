@@ -359,7 +359,7 @@ Modelo comercial **já definido em detalhe**. Todas as configurações são edit
 - **Integração GLPI (F9):** abertura automática de ticket + fechamento na normalização, configurável por tenant
 - **OWASP (F10):** testes de segurança multi-tenant
 - **Manual (F11):** por perfil de acesso + documentação técnica
-- **Orçamento como opção da OS** (backlog — decisão do usuário em 2026-10-10): disponível dentro da OS (Incidente, Requisição e OS gerada por Visita); integração ou reaproveitamento do sistema de orçamento que o usuário já possui; detalhes e perguntas abertas na seção 9.1 (E5, "ORÇAMENTO — radar").
+- **Orçamento como opção da OS** (backlog — decisão do usuário em 2026-10-10): disponível dentro da OS: **todo Incidente e toda Requisição terá a opção de gerar orçamento, tenham ou não sido gerados por uma Visita** (esclarecimento do usuário em 2026-10-10); integração ou reaproveitamento do sistema de orçamento que o usuário já possui; detalhes e perguntas abertas na seção 9.1 (E5, "ORÇAMENTO — radar").
 
 ### 8.4. Jurídico
 - **Contrato VLUMA ↔ clientes**, estabelecendo relação **operador/controlador** de dados, resguardando a VLUMA caso o cliente aja em desacordo com as leis de proteção de dados. **Sujeito a revisão por advogado (OAB).**
@@ -908,6 +908,7 @@ O **cliente final** (ex: Atakarejo) abre chamados, acompanha e comenta pelo port
     - **Visita gera chamado (decisão: sim):** da Visita concluída a equipe cria um **Incidente ou uma Requisição** ligados ("relacionado a OS-xxxx", herdando cliente, unidade e anexos); **ambos podem gerar um Orçamento**.
     - **ORÇAMENTO → BACKLOG (decisão do usuário em 2026-10-10): "vamos colocar orçamento no backlog, mas ele vai entrar como uma opção das OS".** Fica fora da sequência até o PRD; quando entrar, será uma opção dentro da OS. Registro original do radar:
     - **ORÇAMENTO — radar levantado (2026-10-10), fora do escopo E1–E6:** o usuário quer **integrar ou reutilizar o sistema de orçamento que já existe**. Perguntas levadas: qual é o sistema (nome, onde roda, tecnologia, tem API, é multi-empresa); integrar (o ATOS chama o sistema e traz número, valor, status e PDF) ou reaproveitar o código dentro do ATOS (ou orçamento simples nativo); quem aprova no portal; se aprovado vira OS de execução; se faturamento fica de fora. **Preparação sem retrabalho na E5:** o vínculo "relacionada a" e a origem "visita" já nascem na E5c.
+  - **Aprovado pelo usuário em 2026-10-10 ("ok para todas"):** (1) reagendar Incidente/Requisição **pausa o SLA mantendo o tempo já gasto**, com retomada automática na nova data e limite de pausas por chamado; (2) o **fluxo da visita** acima (calendário configurável, reagendar e cancelar pelo cliente, lembretes, cliente ausente, visita gera chamado); (3) **ordem da E5:** E5a (conversa e triagem) → E5b (pausa, prazos, agendamento e visita) → E5c (fechamento). **Construção da E5a iniciada em 2026-10-10.**
 - ✅ **ESTRUTURA OFICIAL DE ENDEREÇOS — definida pelo usuário em 2026-10-09 (portal: pontos 1 e HML confirmados):**
 
 | Quem | PRD | HML (DEV) |
