@@ -49,7 +49,7 @@ export function useOrder(id: string | undefined) {
 
   async function changeStatus(
     status: OrderStatus,
-    extra?: { scheduled_at?: string; schedule_reason?: string; pause_reason?: string; pause_motivo_id?: string | null; agendado_pelo_cliente?: boolean; cancel_reason?: string; completion_notes?: string | null; completed_at?: string; signature_absent_reason?: string | null }
+    extra?: { scheduled_at?: string; schedule_reason?: string; pause_reason?: string; pause_motivo_id?: string | null; agendado_pelo_cliente?: boolean; previsao_retorno?: string | null; cancel_reason?: string; completion_notes?: string | null; completed_at?: string; signature_absent_reason?: string | null }
   ) {
     if (!id) return
     const patch: any = { status }
@@ -57,12 +57,13 @@ export function useOrder(id: string | undefined) {
       patch.scheduled_at = extra?.scheduled_at ?? null
       patch.schedule_reason = extra?.schedule_reason ?? null
       // a pedido do cliente: a data agendada vira o prazo do SLA (só liga; não desliga um acordo anterior)
-      if (extra?.agendado_pelo_cliente) patch.agendado_pelo_cliente = true
+      if (extra?.agendado_pelo_cliente !== undefined) patch.agendado_pelo_cliente = extra.agendado_pelo_cliente   // liga ou desliga (reagendar pode deixar de ser a pedido do cliente)
     }
     if (status === 'em_andamento') patch.started_at = new Date().toISOString()
     if (status === 'pausada') {
       patch.pause_reason = extra?.pause_reason ?? null
       patch.pause_motivo_id = extra?.pause_motivo_id ?? null   // motivo configurável: pode parar o relógio do SLA
+      patch.previsao_retorno = extra?.previsao_retorno ?? null   // E5b: previsão de retorno (o servidor exige quando o motivo pede)
     }
     if (status === 'concluida') {
       patch.completed_at = extra?.completed_at || new Date().toISOString()
@@ -84,8 +85,8 @@ export function useOrder(id: string | undefined) {
     const tipoEvento = mapaEvento[status]
     if (tipoEvento) {
       const det: Record<string, any> = {}
-      if (status === 'agendada') { det.scheduled_at = extra?.scheduled_at ?? null; det.reason = extra?.schedule_reason ?? null; if (extra?.agendado_pelo_cliente) det.a_pedido_do_cliente = true }
-      if (status === 'pausada') det.reason = extra?.pause_reason ?? null
+      if (status === 'agendada') { det.scheduled_at = extra?.scheduled_at ?? null; det.reason = extra?.schedule_reason ?? null; if (extra?.agendado_pelo_cliente) det.a_pedido_do_cliente = true; if (order?.status === 'agendada') det.reagendado = true }
+      if (status === 'pausada') { det.reason = extra?.pause_reason ?? null; if (extra?.previsao_retorno) det.previsao_retorno = extra.previsao_retorno }
       if (status === 'cancelada') det.reason = extra?.cancel_reason ?? null
       if (status === 'concluida') { det.completion_notes = extra?.completion_notes ?? null; det.completed_at = patch.completed_at }
       await registrarEvento(id, tipoEvento, det)

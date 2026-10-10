@@ -6,7 +6,9 @@ import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
 import CartaoSla, { TipoNivel } from '@/components/SlaOS'
-import { MotivoPausaCampo, AgendadoClienteCampo } from '@/components/orders/CamposStatusSla'
+import { MotivoPausaCampo, AgendadoClienteCampo, PausaClienteCampos } from '@/components/orders/CamposStatusSla'
+import type { MotivoPausa } from '@/hooks/useCatalogoSla'
+import { supabase } from '@/lib/supabase'
 import { useCategorias } from '@/hooks/useCatalogoSla'
 import ConcluirOSModal from '@/components/assinatura/ConcluirOSModal'
 import AssinaturasDaOS from '@/components/assinatura/AssinaturasDaOS'
@@ -44,6 +46,7 @@ const TRANSITIONS: Record<string, { target: string; label: string; reason?: bool
     { target: 'cancelada', label: 'Cancelar', reason: true },
   ],
   agendada: [
+    { target: 'agendada', label: 'Reagendar', reason: true, date: true },
     { target: 'em_andamento', label: 'Iniciar' },
     { target: 'concluida', label: 'Concluir', notes: true, completeDate: true },
     { target: 'cancelada', label: 'Cancelar', reason: true },
@@ -76,7 +79,9 @@ export default function OrderDetailPage() {
   const [completeDateInput, setCompleteDateInput] = useState('')
   const [reasonInput, setReasonInput] = useState('')
   // SLA (migration 044): motivo de pausa da lista e agendamento a pedido do cliente
-  const [motivoPausa, setMotivoPausa] = useState<{ id: string; nome: string }>({ id: '', nome: '' })
+  const [motivoPausa, setMotivoPausa] = useState<{ id: string; nome: string; obj?: MotivoPausa }>({ id: '', nome: '' })
+  const [mensagemCliente, setMensagemCliente] = useState('')   // E5b: pausa que aciona o cliente
+  const [previsao, setPrevisao] = useState('')                  // E5b: previsão de retorno
   const [pedidoCliente, setPedidoCliente] = useState(false)
   const { opcoes: categoriasOp } = useCategorias()
   const [dateInput, setDateInput] = useState('')
@@ -87,7 +92,7 @@ export default function OrderDetailPage() {
   function requestStatusChange(action: { target: string; reason?: boolean; date?: boolean; notes?: boolean; completeDate?: boolean }) {
     if (action.target === 'concluida') { setConcluirAberto(true); return }
     if (action.reason || action.date || action.notes || action.completeDate) {
-      setReasonInput(''); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(false)
+      setReasonInput(''); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(action.target === 'agendada' && !!order?.agendado_pelo_cliente); setMensagemCliente(''); setPrevisao('')
       setDateInput('')
       setNotesInput('')
       setCompleteDateInput('')
@@ -127,6 +132,13 @@ export default function OrderDetailPage() {
       }
     }
     if (statusModal.target === 'pausada' && !motivoPausa.id) { setStatusError('Escolha o motivo da pausa.'); return }
+    const portal = order?.origem === 'portal'
+    if (statusModal.target === 'pausada' && motivoPausa.obj) {
+      const mo = motivoPausa.obj
+      if (mo.exige_previsao && !previsao) { setStatusError('Informe a previsão de retorno.'); return }
+      if (previsao && new Date(previsao).getTime() <= new Date().getTime()) { setStatusError('A previsão de retorno precisa ser uma data futura.'); return }
+      if (mo.comportamento === 'aciona' && portal && mensagemCliente.trim().length < 2) { setStatusError('Escreva a mensagem ao cliente (o que você precisa dele).'); return }
+    }
     if (statusModal.needsReason && statusModal.target !== 'pausada' && !reasonInput.trim()) {
       setStatusError('Informe o motivo.')
       return
@@ -137,7 +149,15 @@ export default function OrderDetailPage() {
     }
     const extra: any = {}
     if (statusModal.target === 'agendada') { extra.scheduled_at = dateInput || null; extra.schedule_reason = reasonInput || null; extra.agendado_pelo_cliente = pedidoCliente }
-    if (statusModal.target === 'pausada') { extra.pause_motivo_id = motivoPausa.id; extra.pause_reason = motivoPausa.nome + (reasonInput.trim() ? ' — ' + reasonInput.trim() : '') }
+    if (statusModal.target === 'pausada') {
+      extra.pause_motivo_id = motivoPausa.id; extra.pause_reason = motivoPausa.nome + (reasonInput.trim() ? ' — ' + reasonInput.trim() : '')
+      if (previsao) extra.previsao_retorno = new Date(previsao).toISOString()
+      if (motivoPausa.obj?.comportamento === 'aciona' && portal) {
+        // a mensagem pública vai ANTES da pausa (o servidor exige que ela exista)
+        const { error } = await supabase.rpc('os_comentar', { p_order: order!.id, p_texto: mensagemCliente.trim(), p_visibilidade: 'cliente' })
+        if (error) { setStatusError(error.message); return }
+      }
+    }
     if (statusModal.target === 'cancelada') extra.cancel_reason = reasonInput || null
     await applyStatusChange(statusModal.target, extra)
   }
@@ -290,7 +310,8 @@ export default function OrderDetailPage() {
             </div>
           )}
           {statusModal.target === 'agendada' && <AgendadoClienteCampo valor={pedidoCliente} onChange={setPedidoCliente} />}
-          {statusModal.target === 'pausada' && <MotivoPausaCampo valor={motivoPausa.id} onChange={(id, nome) => setMotivoPausa({ id, nome })} />}
+          {statusModal.target === 'pausada' && <MotivoPausaCampo valor={motivoPausa.id} onChange={(id, nome, obj) => setMotivoPausa({ id, nome, obj })} />}
+          {statusModal.target === 'pausada' && <PausaClienteCampos motivo={motivoPausa.obj} portal={order?.origem === 'portal'} mensagem={mensagemCliente} setMensagem={setMensagemCliente} previsao={previsao} setPrevisao={setPrevisao} />}
           {statusModal.needsReason && (
             <div>
               <Label htmlFor="reason">{statusModal.target === 'pausada' ? 'Observação (opcional)' : 'Motivo *'}</Label>

@@ -576,41 +576,96 @@ function PreviaSla({ versao }: { versao: string }) {   // versao: recalcula quan
 }
 
 // ---------------- Motivos de pausa ----------------
+const COMPORTAMENTOS: [MotivoPausa['comportamento'], string, string][] = [
+  ['aciona', 'Aciona o cliente', 'O cliente vê "Aguardando sua resposta" com uma mensagem sua; a resposta dele retoma a OS sozinha.'],
+  ['comunica', 'Comunica o cliente', 'O cliente vê o texto (e a previsão de retorno) e recebe um e-mail.'],
+  ['interno', 'Interno', 'O cliente continua vendo "Em andamento".'],
+]
 function AbaPausas({ podeEditar }: { podeEditar: boolean }) {
+  const { tenant } = useAuth()
   const { motivos, carregando, recarregar } = useMotivosPausa()
   const [novo, setNovo] = useState('')
   const [para, setPara] = useState(false)
+  const [comp, setComp] = useState<MotivoPausa['comportamento']>('interno')
+  const [textoNovo, setTextoNovo] = useState('')
+  const [prevNovo, setPrevNovo] = useState(false)
   const [erro, setErro] = useState('')
+  const [limite, setLimite] = useState<string>(String(tenant?.sla_limite_reagendamentos ?? 3))
+  const [msgLimite, setMsgLimite] = useState('')
   async function adicionar() {
     if (novo.trim().length < 2) { setErro('Informe o motivo.'); return }
-    const { error } = await supabase.from('motivos_pausa').insert({ nome: novo.trim(), para_sla: para, ordem: 5 })
+    const { error } = await supabase.from('motivos_pausa').insert({ nome: novo.trim(), para_sla: para, ordem: 5, comportamento: comp, texto_cliente: comp === 'interno' ? null : (textoNovo.trim() || null), exige_previsao: prevNovo })
     if (error) { setErro(error.code === '23505' ? 'Esse motivo já existe.' : error.message); return }
-    setNovo(''); setPara(false); setErro(''); recarregar()
+    setNovo(''); setPara(false); setComp('interno'); setTextoNovo(''); setPrevNovo(false); setErro(''); recarregar()
   }
   async function atualizar(m: MotivoPausa, dados: Partial<MotivoPausa>) { await supabase.from('motivos_pausa').update(dados).eq('id', m.id); recarregar() }
+  async function salvarLimite() {
+    setMsgLimite('')
+    const { error } = await supabase.rpc('definir_limite_reagendamentos', { p_limite: Number(limite) })
+    setMsgLimite(error ? error.message : 'Limite salvo.')
+  }
   const ativos = useMemo(() => motivos, [motivos])
   if (carregando) return <Loader2 className="animate-spin text-muted-foreground" size={18} />
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground max-w-2xl">Ao pausar uma OS, o técnico escolhe um destes motivos. Os que <b>param o relógio</b> não contam no prazo de solução (ex.: aguardando o cliente) — os demais continuam contando (ex.: falta de peça da própria empresa).</p>
+    <div className="space-y-3" data-testid="aba-pausas">
+      <p className="text-xs text-muted-foreground max-w-2xl">Ao pausar uma OS, o técnico escolhe um destes motivos. Os que <b>param o relógio</b> não contam no prazo de solução (ex.: aguardando o cliente). O <b>comportamento</b> diz o que o cliente do portal vê e o que o técnico precisa informar. Você pode cadastrar quantos motivos quiser.</p>
       <Card className="divide-y divide-border">
         {ativos.map(m => (
-          <div key={m.id} className={cn('flex items-center gap-3 px-4 py-2.5', !m.ativo && 'opacity-50')} data-motivo={m.nome}>
-            <p className="flex-1 text-sm text-foreground">{m.nome}</p>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-              <input type="checkbox" checked={m.para_sla} disabled={!podeEditar} onChange={e => atualizar(m, { para_sla: e.target.checked })} aria-label={'Para o relógio: ' + m.nome} />
-              Para o relógio do SLA
-            </label>
-            {podeEditar && <button title={m.ativo ? 'Desativar' : 'Ativar'} onClick={() => atualizar(m, { ativo: !m.ativo })} className={btnIcone}><Power size={13} /></button>}
+          <div key={m.id} className={cn('px-4 py-3 space-y-2', !m.ativo && 'opacity-50')} data-motivo={m.nome}>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="flex-1 min-w-[160px] text-sm font-medium text-foreground">{m.nome}</p>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                <input type="checkbox" checked={m.para_sla} disabled={!podeEditar} onChange={e => atualizar(m, { para_sla: e.target.checked })} aria-label={'Para o relógio: ' + m.nome} />
+                Para o relógio do SLA
+              </label>
+              {podeEditar && <button title={m.ativo ? 'Desativar' : 'Ativar'} onClick={() => atualizar(m, { ativo: !m.ativo })} className={btnIcone}><Power size={13} /></button>}
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              <select value={m.comportamento} disabled={!podeEditar} onChange={e => atualizar(m, { comportamento: e.target.value as MotivoPausa['comportamento'] })} aria-label={'Comportamento: ' + m.nome} data-testid="comportamento"
+                className="px-2 py-1.5 rounded-md bg-input border border-border text-xs text-foreground">
+                {COMPORTAMENTOS.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+              </select>
+              {m.comportamento !== 'interno' && (
+                <input defaultValue={m.texto_cliente ?? ''} disabled={!podeEditar} maxLength={140} placeholder="Texto para o cliente" aria-label={'Texto para o cliente: ' + m.nome}
+                  onBlur={e => { if ((e.target.value || null) !== (m.texto_cliente ?? null)) atualizar(m, { texto_cliente: e.target.value.trim() || null }) }}
+                  className="flex-1 min-w-[200px] px-2 py-1.5 rounded-md bg-input border border-border text-xs text-foreground" />
+              )}
+              <label className="flex items-center gap-1.5 text-muted-foreground cursor-pointer">
+                <input type="checkbox" checked={m.exige_previsao} disabled={!podeEditar} onChange={e => atualizar(m, { exige_previsao: e.target.checked })} aria-label={'Exige previsão: ' + m.nome} /> Exige previsão de retorno
+              </label>
+            </div>
+            <p className="text-[11px] text-muted-foreground">{COMPORTAMENTOS.find(c => c[0] === m.comportamento)?.[2]}</p>
           </div>
         ))}
       </Card>
       {podeEditar && (
-        <Card className="p-3 flex flex-wrap items-center gap-2">
-          <Input value={novo} onChange={e => setNovo(e.target.value)} placeholder="Novo motivo de pausa" className="flex-1 min-w-[200px]" aria-label="Novo motivo" />
-          <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={para} onChange={e => setPara(e.target.checked)} /> Para o relógio</label>
-          <Button size="sm" variant="cta" onClick={adicionar}><Plus size={14} /> Adicionar</Button>
+        <Card className="p-3 space-y-2" data-testid="novo-motivo">
+          <p className="text-xs font-medium text-foreground">Novo motivo de pausa</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input value={novo} onChange={e => setNovo(e.target.value)} placeholder="Nome do motivo" className="flex-1 min-w-[200px]" aria-label="Novo motivo" />
+            <select value={comp} onChange={e => setComp(e.target.value as MotivoPausa['comportamento'])} aria-label="Comportamento do novo motivo" className="px-2 py-2 rounded-md bg-input border border-border text-sm text-foreground">
+              {COMPORTAMENTOS.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+            </select>
+          </div>
+          {comp !== 'interno' && <Input value={textoNovo} onChange={e => setTextoNovo(e.target.value)} placeholder="Texto que o cliente vê (opcional)" maxLength={140} aria-label="Texto para o cliente do novo motivo" />}
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={para} onChange={e => setPara(e.target.checked)} /> Para o relógio do SLA</label>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={prevNovo} onChange={e => setPrevNovo(e.target.checked)} /> Exige previsão de retorno</label>
+            <Button size="sm" variant="cta" onClick={adicionar}><Plus size={14} /> Adicionar</Button>
+          </div>
           {erro && <p className="w-full text-xs text-red-400">{erro}</p>}
+        </Card>
+      )}
+      {podeEditar && (
+        <Card className="p-3 space-y-2" data-testid="limite-reagendamentos">
+          <p className="text-xs font-medium text-foreground">Agendamentos a pedido do cliente</p>
+          <p className="text-[11px] text-muted-foreground max-w-2xl">Quando o técnico agenda ou reagenda "a pedido do cliente", o tempo até a data <b>pausa o SLA</b> (o tempo já gasto é mantido). Para evitar abuso, defina quantas vezes isso pode acontecer por chamado.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input type="number" min={0} max={20} value={limite} onChange={e => setLimite(e.target.value)} className="w-24" aria-label="Limite de agendamentos por chamado" />
+            <span className="text-xs text-muted-foreground">por chamado (0 = sem limite)</span>
+            <Button size="sm" variant="outline" onClick={salvarLimite}>Salvar</Button>
+            {msgLimite && <span className="text-xs text-muted-foreground" role="status">{msgLimite}</span>}
+          </div>
         </Card>
       )}
     </div>

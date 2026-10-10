@@ -53,6 +53,7 @@ export interface Tenant {
   portal_logo_versao?: number | null
   portal_abertura?: Record<string, any>
   transferencias_limite?: number
+  sla_limite_reagendamentos?: number
   created_at: string
   updated_at: string
 }

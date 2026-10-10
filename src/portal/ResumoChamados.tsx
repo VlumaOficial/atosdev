@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, ArrowRight } from 'lucide-react'
+import { Plus, ArrowRight, Hourglass } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { dataBR, type ListaChamados } from '@/lib/portalChamados'
 import { usePortal } from './PortalContext'
 import StatusChamado from './StatusChamado'
+import AguardandoVoce from './AguardandoVoce'
 
 // Início do portal: o botão de abrir chamado, os contadores e os chamados recentes
 export default function ResumoChamados() {
@@ -18,6 +19,12 @@ export default function ResumoChamados() {
     <section className="mt-6" data-testid="resumo-chamados">
       <Link to={`${base}/abrir`} data-testid="inicio-abrir"
         className="w-full py-3.5 rounded-lg bg-primary text-primary-foreground text-base font-semibold inline-flex items-center justify-center gap-2 hover:opacity-90"><Plus size={18} /> Abrir chamado</Link>
+      {!!c?.aguardando_voce && (
+        <Link to={`${base}/chamados`} data-testid="card-aguardando-voce" className="mt-4 block rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 hover:border-amber-400/60 transition">
+          <p className="text-sm font-medium text-amber-200 inline-flex items-center gap-2"><Hourglass size={16} /> {c.aguardando_voce === 1 ? '1 chamado aguarda a sua resposta' : `${c.aguardando_voce} chamados aguardam a sua resposta`}</p>
+          <p className="text-xs text-amber-100/80 mt-1">A empresa precisa de uma informação sua para continuar. Abra o chamado e responda.</p>
+        </Link>
+      )}
       <div className="grid grid-cols-2 gap-3 mt-4">
         <Link to={`${base}/chamados`} className="vluma-card p-4 hover:border-primary/40 transition" data-contador="abertos">
           <p className="text-2xl font-semibold text-foreground tabular-nums">{c ? c.abertos : '–'}</p><p className="text-xs text-muted-foreground mt-0.5">Chamados abertos</p>
@@ -36,7 +43,7 @@ export default function ResumoChamados() {
             {d.itens.map(i => (
               <li key={i.id}>
                 <Link to={`${base}/chamados/${i.id}`} className="vluma-card p-3.5 block hover:border-primary/40 transition" data-chamado={i.numero}>
-                  <div className="flex items-center justify-between gap-2"><span className="text-xs font-mono text-primary">{i.numero}</span><StatusChamado status={i.status} /></div>
+                  <div className="flex items-center justify-between gap-2"><span className="text-xs font-mono text-primary">{i.numero}</span>{i.aguardando_voce ? <AguardandoVoce /> : <StatusChamado status={i.status} />}</div>
                   <p className="text-sm text-foreground mt-1">{i.titulo}</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{dataBR(i.criado_em)}{i.unidade ? ` · ${i.unidade}` : ''}</p>
                 </Link>

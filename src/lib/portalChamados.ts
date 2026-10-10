@@ -14,10 +14,11 @@ export const STATUS_CLIENTE: Record<StatusCliente, { rotulo: string; cor: string
 export interface ItemChamado {
   id: string; numero: string; titulo: string; tipo: string; status: StatusCliente; criado_em: string; atualizado_em: string
   cliente: string; unidade: string | null; categoria: string | null; meu: boolean; solicitante: string | null; afetados: number
+  aguardando_voce?: boolean
 }
 export interface ListaChamados {
   total: number
-  contagens: { abertos: number; resolvidos_mes: number; todos: number }
+  contagens: { abertos: number; resolvidos_mes: number; todos: number; aguardando_voce?: number }
   itens: ItemChamado[]
 }
 export interface AnexoChamado { id: string; path: string; nome: string; tipo: 'foto' | 'audio'; mime: string; bytes: number }
@@ -32,6 +33,8 @@ export interface DetalheChamado {
   afetados: number; eu_afetado: boolean
   anexos: AnexoChamado[]
   mensagens: MensagemChamado[]; pode_responder: boolean
+  aguardando_voce: boolean
+  pausa: { tipo: 'aciona' | 'comunica'; texto: string; desde?: string | null; previsao?: string | null } | null
   linha_do_tempo: { evento: string; em: string; para: string | null; detalhe?: { de: string | null; para: string | null; motivo: string | null; assunto: string | null } | null }[]
   contatos: { email?: string; telefone?: string; whatsapp?: string; site?: string } | null
 }

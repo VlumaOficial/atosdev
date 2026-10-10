@@ -15,7 +15,7 @@ export interface Categoria {
   tipos_portal: string[]
   grupo_padrao_id: string | null
 }
-export interface MotivoPausa { id: string; nome: string; para_sla: boolean; ativo: boolean; ordem: number }
+export interface MotivoPausa { id: string; nome: string; para_sla: boolean; ativo: boolean; ordem: number; comportamento: 'interno' | 'comunica' | 'aciona'; texto_cliente: string | null; exige_previsao: boolean }
 export interface PoliticaSla {
   id: string
   nivel: string
@@ -54,7 +54,7 @@ export function useMotivosPausa() {
   const [motivos, setMotivos] = useState<MotivoPausa[]>([])
   const [carregando, setCarregando] = useState(true)
   const recarregar = useCallback(async () => {
-    const { data } = await supabase.from('motivos_pausa').select('id, nome, para_sla, ativo, ordem').order('ordem').order('nome')
+    const { data } = await supabase.from('motivos_pausa').select('id, nome, para_sla, ativo, ordem, comportamento, texto_cliente, exige_previsao').order('ordem').order('nome')
     setMotivos((data ?? []) as MotivoPausa[])
     setCarregando(false)
   }, [])

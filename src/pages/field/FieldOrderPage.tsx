@@ -6,7 +6,8 @@ import OrderTimeline from '@/components/orders/OrderTimeline'
 import OrderComments from '@/components/orders/OrderComments'
 import OrderChecklist from '@/components/orders/OrderChecklist'
 import CartaoSla, { TipoNivel } from '@/components/SlaOS'
-import { MotivoPausaCampo, AgendadoClienteCampo } from '@/components/orders/CamposStatusSla'
+import { MotivoPausaCampo, AgendadoClienteCampo, PausaClienteCampos } from '@/components/orders/CamposStatusSla'
+import type { MotivoPausa } from '@/hooks/useCatalogoSla'
 import { useCategorias } from '@/hooks/useCatalogoSla'
 import ConcluirOSModal from '@/components/assinatura/ConcluirOSModal'
 import AssinaturasDaOS from '@/components/assinatura/AssinaturasDaOS'
@@ -43,6 +44,7 @@ const FIELD_TRANSITIONS: Record<string, { target: string; label: string; reason?
     { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
   ],
   agendada: [
+    { target: 'agendada', label: 'Reagendar', reason: true, date: true },
     { target: 'em_andamento', label: 'Iniciar atendimento' },
     { target: 'cancelada', label: 'Cancelar', reason: true, danger: true },
   ],
@@ -83,7 +85,9 @@ export default function FieldOrderPage() {
   const [modal, setModal] = useState<{ open: boolean; target: string; reason: boolean; notes: boolean; completeDate: boolean; date: boolean }>({ open: false, target: '', reason: false, notes: false, completeDate: false, date: false })
   const [reasonInput, setReasonInput] = useState('')
   // SLA (migration 044): motivo de pausa da lista e agendamento a pedido do cliente
-  const [motivoPausa, setMotivoPausa] = useState<{ id: string; nome: string }>({ id: '', nome: '' })
+  const [motivoPausa, setMotivoPausa] = useState<{ id: string; nome: string; obj?: MotivoPausa }>({ id: '', nome: '' })
+  const [mensagemCliente, setMensagemCliente] = useState('')
+  const [previsao, setPrevisao] = useState('')
   const [pedidoCliente, setPedidoCliente] = useState(false)
   const { opcoes: categoriasOp } = useCategorias()
   const [notesInput, setNotesInput] = useState('')
@@ -96,7 +100,7 @@ export default function FieldOrderPage() {
   function requestAction(action: { target: string; reason?: boolean; notes?: boolean; completeDate?: boolean; date?: boolean }) {
     if (action.target === 'concluida') { setConcluirAberto(true); return }
     if (action.reason || action.notes || action.completeDate || action.date) {
-      setReasonInput(''); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(false); setNotesInput(''); setCompleteDateInput(''); setScheduleDateInput(''); setModalError('')
+      setReasonInput(''); setMotivoPausa({ id: '', nome: '' }); setPedidoCliente(action.target === 'agendada' && !!order?.agendado_pelo_cliente); setMensagemCliente(''); setPrevisao(''); setNotesInput(''); setCompleteDateInput(''); setScheduleDateInput(''); setModalError('')
       setModal({ open: true, target: action.target, reason: !!action.reason, notes: !!action.notes, completeDate: !!action.completeDate, date: !!action.date })
     } else {
       apply(action.target)
@@ -124,13 +128,27 @@ export default function FieldOrderPage() {
       }
     }
     if (modal.target === 'pausada' && !motivoPausa.id) { setModalError('Escolha o motivo da pausa.'); return }
+    const portal = order?.origem === 'portal'
+    if (modal.target === 'pausada' && motivoPausa.obj) {
+      const mo = motivoPausa.obj
+      if (mo.exige_previsao && !previsao) { setModalError('Informe a previsão de retorno.'); return }
+      if (previsao && new Date(previsao).getTime() <= new Date().getTime()) { setModalError('A previsão de retorno precisa ser uma data futura.'); return }
+      if (mo.comportamento === 'aciona' && portal && mensagemCliente.trim().length < 2) { setModalError('Escreva a mensagem ao cliente (o que você precisa dele).'); return }
+    }
     if (modal.reason && modal.target !== 'pausada' && !reasonInput.trim()) { setModalError('Informe o motivo.'); return }
     if (modal.completeDate && completeDateInput && new Date(completeDateInput).getTime() > new Date().getTime()) {
       setModalError('A data de conclusão não pode ser no futuro.'); return
     }
     const extra: any = {}
     if (modal.target === 'agendada') { extra.scheduled_at = scheduleDateInput || null; extra.schedule_reason = reasonInput || null; extra.agendado_pelo_cliente = pedidoCliente }
-    if (modal.target === 'pausada') { extra.pause_motivo_id = motivoPausa.id; extra.pause_reason = motivoPausa.nome + (reasonInput.trim() ? ' — ' + reasonInput.trim() : '') }
+    if (modal.target === 'pausada') {
+      extra.pause_motivo_id = motivoPausa.id; extra.pause_reason = motivoPausa.nome + (reasonInput.trim() ? ' — ' + reasonInput.trim() : '')
+      if (previsao) extra.previsao_retorno = new Date(previsao).toISOString()
+      if (motivoPausa.obj?.comportamento === 'aciona' && portal) {
+        const { error } = await supabase.rpc('os_comentar', { p_order: order!.id, p_texto: mensagemCliente.trim(), p_visibilidade: 'cliente' })
+        if (error) { setModalError(error.message); return }
+      }
+    }
     if (modal.target === 'cancelada') extra.cancel_reason = reasonInput || null
     await apply(modal.target, extra)
   }
@@ -283,7 +301,8 @@ export default function FieldOrderPage() {
             </div>
           )}
           {modal.target === 'agendada' && <AgendadoClienteCampo valor={pedidoCliente} onChange={setPedidoCliente} />}
-          {modal.target === 'pausada' && <MotivoPausaCampo valor={motivoPausa.id} onChange={(id, nome) => setMotivoPausa({ id, nome })} />}
+          {modal.target === 'pausada' && <MotivoPausaCampo valor={motivoPausa.id} onChange={(id, nome, obj) => setMotivoPausa({ id, nome, obj })} />}
+          {modal.target === 'pausada' && <PausaClienteCampos motivo={motivoPausa.obj} portal={order?.origem === 'portal'} mensagem={mensagemCliente} setMensagem={setMensagemCliente} previsao={previsao} setPrevisao={setPrevisao} />}
           {modal.reason && (
             <div>
               <Label htmlFor="reason">{modal.target === 'pausada' ? 'Observação (opcional)' : 'Motivo *'}</Label>

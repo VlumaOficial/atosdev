@@ -65,6 +65,8 @@ export interface Order {
   grupo?: { id: string; nome: string; nivel: string } | null
   transferencias?: number
   origem?: string
+  aguardando_cliente_desde?: string | null
+  previsao_retorno?: string | null
 }
 
 export interface OrderInput {

@@ -9,6 +9,7 @@ import { usePortal } from './PortalContext'
 import PortalPagina from './PortalPagina'
 import StatusChamado from './StatusChamado'
 import { cn } from '@/lib/utils'
+import AguardandoVoce from './AguardandoVoce'
 
 // Acompanhar o chamado: situação em etapas, dados, fotos e áudio, marcos e contato.
 // Conversa com a empresa (E5a): respostas da empresa e mensagens do cliente, com até 3 fotos. A confirmação da solução chega na E5c.
@@ -50,8 +51,17 @@ function Detalhe({ userId }: { userId: string }) {
       <Link to={`${base}/chamados`} className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4"><ArrowLeft size={14} /> Chamados</Link>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0"><span className="text-xs font-mono text-primary">{c.numero}</span><h1 className="text-xl font-bold text-foreground">{c.titulo}</h1></div>
-        <StatusChamado status={c.status} />
+        {c.aguardando_voce ? <AguardandoVoce /> : <StatusChamado status={c.status} />}
       </div>
+
+      {c.pausa && (
+        <div className={cn('rounded-lg border p-4 mt-4', c.pausa.tipo === 'aciona' ? 'border-amber-500/40 bg-amber-500/10' : 'border-border bg-secondary/40')} data-testid={c.pausa.tipo === 'aciona' ? 'banner-aguardando-voce' : 'banner-pausa'}>
+          <p className={cn('text-sm font-medium', c.pausa.tipo === 'aciona' ? 'text-amber-200' : 'text-foreground')}>{c.pausa.tipo === 'aciona' ? 'Aguardando sua resposta' : `Em pausa: ${c.pausa.texto}`}</p>
+          {c.pausa.tipo === 'aciona' && <p className="text-sm text-amber-100/90 mt-1 whitespace-pre-wrap" data-testid="pedido-da-empresa">{[...c.mensagens].reverse().find(m => m.autor === 'empresa')?.texto ?? c.pausa.texto}</p>}
+          {c.pausa.tipo === 'aciona' && <p className="text-xs text-amber-100/70 mt-1">Responda na conversa abaixo: assim que você responder, a empresa retoma o atendimento.</p>}
+          {c.pausa.tipo === 'comunica' && c.pausa.previsao && <p className="text-xs text-muted-foreground mt-1" data-testid="previsao-retorno">Previsão de retorno: {dataHoraBR(c.pausa.previsao)}</p>}
+        </div>
+      )}
 
       {c.status !== 'cancelado' && (
         <ol className="grid grid-cols-4 gap-1 mt-5" aria-label="Etapas do chamado" data-testid="etapas">
@@ -188,7 +198,7 @@ function Conversa({ c, userId, tenantId, onEnviou }: { c: DetalheChamado; userId
       {c.pode_responder ? (
         <div className="space-y-2">
           <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={3} maxLength={2000} aria-label="Sua mensagem" data-testid="mensagem-texto"
-            placeholder="Escreva sua mensagem para a empresa…"
+            placeholder={c.aguardando_voce ? 'Responda aqui para a empresa retomar o atendimento…' : 'Escreva sua mensagem para a empresa…'}
             className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
           {fotos.length > 0 && (
             <ul className="flex gap-2" data-testid="mensagem-fotos">

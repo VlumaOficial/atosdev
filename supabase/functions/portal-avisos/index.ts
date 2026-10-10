@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   try {
     const { order_id, evento, comment_id } = await req.json()
-    if (!order_id || !['aberto', 'agendada', 'em_atendimento', 'resolvido', 'cancelado', 'mensagem'].includes(evento)) return json({ erro: 'Parâmetros inválidos.' }, 400)
-    const { data: o } = await admin.from('orders').select('id, tenant_id, client_id, number, title, status, solicitante_id, scheduled_at, location_id').eq('id', order_id).maybeSingle()
+    if (!order_id || !['aberto', 'agendada', 'em_atendimento', 'resolvido', 'cancelado', 'mensagem', 'pausa'].includes(evento)) return json({ erro: 'Parâmetros inválidos.' }, 400)
+    const { data: o } = await admin.from('orders').select('id, tenant_id, client_id, number, title, status, solicitante_id, scheduled_at, location_id, pause_motivo_id, previsao_retorno').eq('id', order_id).maybeSingle()
     if (!o?.solicitante_id) return json({ ok: false, motivo: 'sem_solicitante' })
     const [{ data: t }, { data: pessoa }, { data: cli }, { data: pref }, { data: cfgEnvio }] = await Promise.all([
       admin.from('tenants').select('name, trade_name, email, envio_nivel, portal_nome, portal_slug, portal_abertura, fuso_horario').eq('id', o.tenant_id).single(),
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     if (!pessoa?.email || pessoa.email.endsWith('@anonimizado.invalid')) return json({ ok: false, motivo: 'sem_destinatario' })
 
     // chave do aviso: remarcar a data gera aviso novo
-    const chave = evento === 'agendada' ? `agendada:${o.scheduled_at ?? ''}` : evento === 'mensagem' ? `mensagem:${comment_id ?? ''}` : evento
+    const chave = evento === 'agendada' ? `agendada:${o.scheduled_at ?? ''}` : evento === 'mensagem' ? `mensagem:${comment_id ?? ''}` : evento === 'pausa' ? `pausa:${o.previsao_retorno ?? ''}` : evento
     const registrar = async (enviado: boolean, motivo?: string, detalhe?: string) => {
       await admin.from('portal_avisos').upsert({ tenant_id: o.tenant_id, order_id: o.id, evento: chave, enviado, motivo: motivo ?? null, detalhe: detalhe ?? null }, { onConflict: 'order_id,evento', ignoreDuplicates: false })
     }
@@ -90,6 +90,13 @@ Deno.serve(async (req) => {
       resolvido: { assunto: `Seu chamado ${o.number} foi resolvido`, titulo: 'Chamado resolvido', texto: `O chamado "${o.title}" (${o.number}) foi concluído pela ${empresa}. Se o problema continuar, fale com a ${empresa} pelos contatos do portal.` },
       mensagem: { assunto: `Nova mensagem sobre o seu chamado ${o.number}`, titulo: 'Nova mensagem', texto: `A ${empresa} enviou uma mensagem sobre o chamado "${o.title}" (${o.number}). Entre no portal para ler e responder.` },
       cancelado: { assunto: `Seu chamado ${o.number} foi cancelado`, titulo: 'Chamado cancelado', texto: `O chamado "${o.title}" (${o.number}) foi cancelado. Em caso de dúvida, fale com a ${empresa} pelos contatos do portal.` },
+    }
+    if (evento === 'pausa') {
+      // pausa que COMUNICA: texto para o cliente + previsão de retorno (a pausa "interno" nunca chega aqui)
+      const { data: mp } = await admin.from('motivos_pausa').select('nome, texto_cliente, comportamento').eq('id', o.pause_motivo_id).maybeSingle()
+      if (o.status !== 'pausada' || mp?.comportamento !== 'comunica') { await registrar(false, 'sem_pausa_comunicavel'); return json({ ok: false, motivo: 'sem_pausa_comunicavel' }) }
+      const motivoTxt = (mp.texto_cliente || mp.nome || 'em pausa') as string
+      T.pausa = { assunto: `Seu chamado ${o.number} está em pausa`, titulo: 'Chamado em pausa', texto: `O chamado "${o.title}" (${o.number}) está em pausa: ${motivoTxt}.${o.previsao_retorno ? ` Previsão de retorno: ${quando(o.previsao_retorno)}.` : ''}` }
     }
     const m = T[evento]
     const texto = `Olá, ${primeiro}!\n\n${m.texto}\n\nAcompanhe: ${link}\n\nVocê recebe este aviso porque aceitou receber comunicações da ${empresa}. Para parar, ajuste as preferências no portal: ${base}/preferencias`

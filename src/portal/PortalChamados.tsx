@@ -6,6 +6,7 @@ import { dataBR, type ListaChamados } from '@/lib/portalChamados'
 import { usePortal } from './PortalContext'
 import PortalPagina from './PortalPagina'
 import StatusChamado from './StatusChamado'
+import AguardandoVoce from './AguardandoVoce'
 import { cn } from '@/lib/utils'
 
 // Meus chamados: abertos, resolvidos e todos — os meus, os da minha equipe e (Supervisor) os do cliente
@@ -65,7 +66,7 @@ function Lista() {
                 <Link to={`${base}/chamados/${c.id}`} data-chamado={c.numero} className="vluma-card p-4 block hover:border-primary/40 transition">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-mono text-primary">{c.numero}</span>
-                    <StatusChamado status={c.status} />
+                    {c.aguardando_voce ? <AguardandoVoce /> : <StatusChamado status={c.status} />}
                   </div>
                   <p className="text-sm font-medium text-foreground mt-1">{c.titulo}</p>
                   <p className="text-xs text-muted-foreground mt-1">

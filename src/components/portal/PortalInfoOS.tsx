@@ -3,7 +3,7 @@ import { Headset, Users2, MessageCircle, Calendar, Hand } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { linkWhatsApp } from '@/lib/portal'
-import { ROTULO_PERIODO, dataBR, type AnexoChamado } from '@/lib/portalChamados'
+import { ROTULO_PERIODO, dataBR, dataHoraBR, type AnexoChamado } from '@/lib/portalChamados'
 import AnexosCliente from './AnexosCliente'
 import TriagemPortal, { type InfoTriagem } from './TriagemPortal'
 
@@ -16,6 +16,7 @@ interface Info extends InfoTriagem {
   preferencias: { data: string; periodo: string }[] | null
   anexos: AnexoChamado[]
   portal_host: string | null
+  aguardando_cliente_desde?: string | null; previsao_retorno?: string | null; reagendamentos?: number
 }
 const HORA: Record<string, string> = { manha: '09:00', tarde: '14:00', qualquer: '09:00' }
 
@@ -38,6 +39,9 @@ export default function PortalInfoOS({ orderId, numero, titulo, prioridadeAtual,
       <p className="text-sm font-medium text-foreground inline-flex items-center gap-2"><Headset size={15} className="text-primary" /> Aberto pelo portal do cliente</p>
       <div className="text-sm space-y-1">
         {info.solicitante && <p className="text-foreground" data-testid="solicitante-portal">{info.solicitante.nome}{info.solicitante.email ? <span className="text-xs text-muted-foreground"> · {info.solicitante.email}</span> : null}{info.solicitante.celular ? <span className="text-xs text-muted-foreground"> · {info.solicitante.celular}</span> : null}</p>}
+        {info.aguardando_cliente_desde && <p className="text-xs text-amber-300" data-testid="aguardando-cliente-os">Aguardando o cliente desde {dataHoraBR(info.aguardando_cliente_desde)} — ele responde pelo portal e a OS retoma sozinha.</p>}
+        {info.previsao_retorno && <p className="text-xs text-muted-foreground" data-testid="previsao-os">Previsão de retorno: <span className="text-foreground">{dataHoraBR(info.previsao_retorno)}</span></p>}
+        {(info.reagendamentos ?? 0) > 0 && <p className="text-xs text-muted-foreground">Agendamentos a pedido do cliente: {info.reagendamentos}</p>}
         {info.equipe && <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5"><Users2 size={12} /> Equipe {info.equipe} · {info.compartilhado ? 'compartilhado com a equipe' : 'não compartilhado'}</p>}
         {info.afetados > 1 && <p className="text-xs text-amber-300" data-testid="afetados-portal">{info.afetados} pessoas afetadas (marcaram "também me afeta")</p>}
       </div>
