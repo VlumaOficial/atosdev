@@ -2384,6 +2384,8 @@ pelo chat — trocar também no fim do MVP (guardados só no scratchpad da
 sessão, nunca no git).
 **2026-10-09:** token da **Cloudflare** (conta adm@vluma.com.br, token de usuário `cfut_…`, permissão só "Editar DNS" na zona vluma.com.br) enviado pelo chat para o subdomínio automático do portal — guardado só no scratchpad; **trocar no fim do MVP** (e revogar o atual na Cloudflare). **2026-10-09:** token da **Vercel** (`vcp_…`, criado em Account Settings › Tokens com escopo no projeto atosdev; enxerga só esse projeto) enviado pelo chat — guardado só no scratchpad e como segredo da função `portal-endereco`; **trocar no fim do MVP** (revogar o atual na Vercel e atualizar o segredo).
 
+**2026-10-10:** as credenciais de DEV passaram a ficar também em `~/.atos-credenciais/` na máquina do usuário (fora do repositório e do `/tmp`, só o usuário lê), por decisão dele, depois de a pasta temporária da sessão ser apagada num reinício. **Apagar/trocar esse arquivo junto com as demais no fim do MVP.** Nunca versionar.
+
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
 - Aplicar migrations 001–066 em ordem (**062 e 066: trocar a URL do projeto nos gatilhos**) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
