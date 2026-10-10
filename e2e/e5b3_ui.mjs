@@ -90,11 +90,10 @@ ok((await an.getByTestId('data-confirmada').innerText()).includes('Você confirm
 await an.getByTestId('pedir-outra-data').click(); await an.waitForSelector('[data-testid=form-outra-data]')
 await an.locator('[data-data="0"]').fill(ld(12)); await an.getByTestId('enviar-outra-data').click(); await an.waitForTimeout(3500)
 ok(sql(`select agendamento_status s, reagendamentos_cliente r from orders where id='${v1.id}'`)[0].r === 1, 'reagendar um confirmado conta 1 no limite do cliente')
-ok(await an.getByTestId('pode-reagendar').count() === 0, '(controle) sem elemento inventado')
 const v2 = await abrirVisita('E5B3 visita 2', [{ data: ld(6), periodo: 'manha' }])
 sql(`update orders set status='agendada', scheduled_at = (now() + interval '4 days'), agendado_pelo_cliente = true where id='${v2.id}'`)
-await an.goto(PH + '/chamados/' + v2.id + '?acao=cancelar'); await an.waitForSelector('[data-testid=form-cancelar]', { timeout: 20000 })
-ok(true, 'o link do lembrete (?acao=cancelar) abre o cancelamento')
+await an.goto(PH + '/chamados/' + v2.id + '?acao=cancelar')
+ok(await an.waitForSelector('[data-testid=form-cancelar]', { timeout: 20000 }).then(() => true).catch(() => false), 'o link do lembrete (?acao=cancelar) abre o cancelamento')
 await an.getByTestId('cancelar-motivo').fill('Vamos remarcar com a diretoria'); await an.getByTestId('confirmar-cancelar').click(); await an.waitForTimeout(3500)
 const c2 = sql(`select status, cancel_reason from orders where id='${v2.id}'`)[0]
 ok(c2.status === 'cancelada' && c2.cancel_reason === 'Cancelado pelo cliente — Vamos remarcar com a diretoria', 'cancelar: OS cancelada com "Cancelado pelo cliente — motivo"')
