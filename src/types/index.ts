@@ -55,6 +55,7 @@ export interface Tenant {
   transferencias_limite?: number
   sla_limite_reagendamentos?: number
   sla_transparencia?: 'oculto' | 'previsao' | 'completo'
+  agendamento_config?: Record<string, any>
   created_at: string
   updated_at: string
 }

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Camera, Image as ImageIcon, Mic, Square, X, Loader2, AlertTriangle, CheckCircle2, MessageCircle, Plus, Hand, Calendar } from 'lucide-react'
+import { Camera, Image as ImageIcon, Mic, Square, X, Loader2, AlertTriangle, CheckCircle2, MessageCircle, Hand, Calendar } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { linkWhatsApp, type PortalContexto } from '@/lib/portal'
-import { MAX_ANEXOS, MAX_AUDIO_SEG, prepararFoto, prepararAudio, enviarAnexos, ROTULO_PERIODO, dataBR, type AnexoLocal } from '@/lib/portalChamados'
+import { MAX_ANEXOS, MAX_AUDIO_SEG, prepararFoto, prepararAudio, enviarAnexos, dataBR, type AnexoLocal, type ConfigAgendamento } from '@/lib/portalChamados'
+import OpcoesDatas from './OpcoesDatas'
 import { ROTULO_NIVEL } from '@/lib/sla'
 import { usePortal } from './PortalContext'
 import PortalPagina from './PortalPagina'
@@ -22,11 +23,11 @@ interface Cfg {
   unidades: { id: string; nome: string }[]
   equipes: { id: string; nome: string; unidades: string[] }[]
   contatos: { whatsapp?: string } | null
+  agendamento: ConfigAgendamento
 }
 const campo = 'w-full px-3 py-2.5 rounded-md bg-input border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 const IMPACTOS = [['baixo', 'Só eu'], ['medio', 'Meu setor'], ['alto', 'A empresa toda']] as const
 const URGENCIAS = [['baixa', 'Pode esperar'], ['media', 'Atrapalha o trabalho'], ['alta', 'Parou tudo']] as const
-const amanha = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10) }
 
 export default function PortalAbrir() { return <PortalPagina>{(ctx, sessao) => <Formulario ctx={ctx} userId={sessao.user.id} />}</PortalPagina> }
 
@@ -260,20 +261,7 @@ function Formulario({ ctx, userId }: { ctx: PortalContexto; userId: string }) {
               {precisaData && (
                 <section data-testid="bloco-datas">
                   <p className="text-sm font-medium text-foreground mb-1 inline-flex items-center gap-1.5"><Calendar size={14} /> Quando prefere o atendimento? <span className="font-normal text-muted-foreground">(até 3 opções)</span></p>
-                  <div className="space-y-2">
-                    {prefs.map((p, i) => (
-                      <div key={i}>
-                        <div className="flex gap-2">
-                          <input type="date" aria-label={`Data ${i + 1}`} min={amanha()} value={p.data} onChange={e => setPrefs(l => l.map((x, k) => k === i ? { ...x, data: e.target.value } : x))} className={campo} data-data={i} />
-                          <select aria-label={`Período ${i + 1}`} value={p.periodo} onChange={e => setPrefs(l => l.map((x, k) => k === i ? { ...x, periodo: e.target.value } : x))} className={campo + ' w-40'}>
-                            {Object.entries(ROTULO_PERIODO).map(([v, r]) => <option key={v} value={v}>{r}</option>)}</select>
-                          {prefs.length > 1 && <button type="button" aria-label="Remover data" onClick={() => setPrefs(l => l.filter((_, k) => k !== i))} className="px-2 text-muted-foreground"><X size={16} /></button>}
-                        </div>
-                        {avisosData[i] && <p className="text-xs text-amber-300 mt-1" data-aviso-data={i}>{avisosData[i]} — o atendimento pode propor outra data.</p>}
-                      </div>
-                    ))}
-                  </div>
-                  {prefs.length < 3 && <button type="button" onClick={() => setPrefs(l => [...l, { data: '', periodo: 'qualquer' }])} className="mt-2 text-xs text-primary inline-flex items-center gap-1"><Plus size={12} /> Adicionar outra opção</button>}
+                  <OpcoesDatas opcoes={prefs} setOpcoes={setPrefs} config={cfg.agendamento} avisos={avisosData} />
                   <p className="text-[11px] text-muted-foreground mt-1">O atendimento confirma uma das datas.</p>
                 </section>
               )}

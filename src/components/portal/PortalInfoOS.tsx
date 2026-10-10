@@ -17,8 +17,11 @@ interface Info extends InfoTriagem {
   anexos: AnexoChamado[]
   portal_host: string | null
   aguardando_cliente_desde?: string | null; previsao_retorno?: string | null; reagendamentos?: number
+  agendamento_status?: 'proposto' | 'confirmado' | 'reagendamento_pedido' | null; agendamento_cliente_em?: string | null
+  reagendamento_motivo?: string | null; reagendamentos_cliente?: number
+  janelas?: { manha: { nome: string; inicio: string; fim: string }; tarde: { nome: string; inicio: string; fim: string } }
 }
-const HORA: Record<string, string> = { manha: '09:00', tarde: '14:00', qualquer: '09:00' }
+const HORA_PADRAO: Record<string, string> = { manha: '09:00', tarde: '14:00', qualquer: '09:00' }
 
 export default function PortalInfoOS({ orderId, numero, titulo, prioridadeAtual, onAgendar, compacto = false, podeTriar = false, onMudou }: {
   orderId: string; numero: string; titulo: string; prioridadeAtual?: string; onAgendar?: (isoLocal: string) => void; compacto?: boolean
@@ -39,6 +42,10 @@ export default function PortalInfoOS({ orderId, numero, titulo, prioridadeAtual,
       <p className="text-sm font-medium text-foreground inline-flex items-center gap-2"><Headset size={15} className="text-primary" /> Aberto pelo portal do cliente</p>
       <div className="text-sm space-y-1">
         {info.solicitante && <p className="text-foreground" data-testid="solicitante-portal">{info.solicitante.nome}{info.solicitante.email ? <span className="text-xs text-muted-foreground"> · {info.solicitante.email}</span> : null}{info.solicitante.celular ? <span className="text-xs text-muted-foreground"> · {info.solicitante.celular}</span> : null}</p>}
+        {info.agendamento_status === 'proposto' && <p className="text-xs text-purple-300" data-testid="agendamento-proposto-os">Proposta de data enviada ao cliente — aguardando a resposta dele (aceitar ou pedir outra data).</p>}
+        {info.agendamento_status === 'confirmado' && <p className="text-xs text-green-400" data-testid="agendamento-confirmado-os">{info.agendamento_cliente_em ? `Cliente confirmou presença em ${dataHoraBR(info.agendamento_cliente_em)}.` : 'Data confirmada (uma das pedidas ou combinada com o cliente).'}</p>}
+        {info.agendamento_status === 'reagendamento_pedido' && <p className="text-xs text-amber-300" data-testid="agendamento-pedido-os">O cliente pediu outra data{info.reagendamento_motivo ? `: “${info.reagendamento_motivo}”` : ''} — escolha uma das datas abaixo.</p>}
+        {(info.reagendamentos_cliente ?? 0) > 0 && <p className="text-xs text-muted-foreground">Reagendamentos pedidos pelo cliente: {info.reagendamentos_cliente}</p>}
         {info.aguardando_cliente_desde && <p className="text-xs text-amber-300" data-testid="aguardando-cliente-os">Aguardando o cliente desde {dataHoraBR(info.aguardando_cliente_desde)} — ele responde pelo portal e a OS retoma sozinha.</p>}
         {info.previsao_retorno && <p className="text-xs text-muted-foreground" data-testid="previsao-os">Previsão de retorno: <span className="text-foreground">{dataHoraBR(info.previsao_retorno)}</span></p>}
         {(info.reagendamentos ?? 0) > 0 && <p className="text-xs text-muted-foreground">Agendamentos a pedido do cliente: {info.reagendamentos}</p>}
@@ -53,7 +60,7 @@ export default function PortalInfoOS({ orderId, numero, titulo, prioridadeAtual,
             {info.preferencias.map((p, i) => (
               <li key={i} className="flex flex-wrap items-center gap-2 text-sm text-foreground">
                 {dataBR(p.data)} — {ROTULO_PERIODO[p.periodo] ?? p.periodo}
-                {onAgendar && <button type="button" onClick={() => onAgendar(`${p.data}T${HORA[p.periodo] ?? '09:00'}`)} data-testid="agendar-data-pedida" className="text-xs px-2 py-0.5 rounded border border-primary/40 text-primary hover:bg-primary/10">Agendar nesta data</button>}
+                {onAgendar && <button type="button" onClick={() => onAgendar(`${p.data}T${(p.periodo === 'manha' ? info.janelas?.manha.inicio : p.periodo === 'tarde' ? info.janelas?.tarde.inicio : undefined) ?? HORA_PADRAO[p.periodo] ?? '09:00'}`)} data-testid="agendar-data-pedida" className="text-xs px-2 py-0.5 rounded border border-primary/40 text-primary hover:bg-primary/10">Agendar nesta data</button>}
               </li>
             ))}
           </ul>

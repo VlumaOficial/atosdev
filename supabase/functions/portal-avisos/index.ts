@@ -43,8 +43,8 @@ function moldura(titulo: string, corpoHtml: string, botao: { texto: string; link
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   try {
-    const { order_id, evento, comment_id } = await req.json()
-    if (!order_id || !['aberto', 'agendada', 'em_atendimento', 'resolvido', 'cancelado', 'mensagem', 'pausa'].includes(evento)) return json({ erro: 'Parâmetros inválidos.' }, 400)
+    const { order_id, evento, comment_id, antes_horas } = await req.json()
+    if (!order_id || !['aberto', 'agendada', 'em_atendimento', 'resolvido', 'cancelado', 'mensagem', 'pausa', 'lembrete'].includes(evento)) return json({ erro: 'Parâmetros inválidos.' }, 400)
     const { data: o } = await admin.from('orders').select('id, tenant_id, client_id, number, title, status, solicitante_id, scheduled_at, location_id, pause_motivo_id, previsao_retorno').eq('id', order_id).maybeSingle()
     if (!o?.solicitante_id) return json({ ok: false, motivo: 'sem_solicitante' })
     const [{ data: t }, { data: pessoa }, { data: cli }, { data: pref }, { data: cfgEnvio }] = await Promise.all([
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     if (!pessoa?.email || pessoa.email.endsWith('@anonimizado.invalid')) return json({ ok: false, motivo: 'sem_destinatario' })
 
     // chave do aviso: remarcar a data gera aviso novo
-    const chave = evento === 'agendada' ? `agendada:${o.scheduled_at ?? ''}` : evento === 'mensagem' ? `mensagem:${comment_id ?? ''}` : evento === 'pausa' ? `pausa:${o.previsao_retorno ?? ''}` : evento
+    const chave = evento === 'agendada' ? `agendada:${o.scheduled_at ?? ''}` : evento === 'mensagem' ? `mensagem:${comment_id ?? ''}` : evento === 'pausa' ? `pausa:${o.previsao_retorno ?? ''}` : evento === 'lembrete' ? `lembrete:${o.scheduled_at ?? ''}:${antes_horas ?? ''}` : evento
     const registrar = async (enviado: boolean, motivo?: string, detalhe?: string) => {
       await admin.from('portal_avisos').upsert({ tenant_id: o.tenant_id, order_id: o.id, evento: chave, enviado, motivo: motivo ?? null, detalhe: detalhe ?? null }, { onConflict: 'order_id,evento', ignoreDuplicates: false })
     }
@@ -98,10 +98,18 @@ Deno.serve(async (req) => {
       const motivoTxt = (mp.texto_cliente || mp.nome || 'em pausa') as string
       T.pausa = { assunto: `Seu chamado ${o.number} está em pausa`, titulo: 'Chamado em pausa', texto: `O chamado "${o.title}" (${o.number}) está em pausa: ${motivoTxt}.${o.previsao_retorno ? ` Previsão de retorno: ${quando(o.previsao_retorno)}.` : ''}` }
     }
+    let extraHtml = ''; let extraTexto = ''
+    if (evento === 'lembrete') {
+      // lembrete da visita/atendimento agendado, com Confirmar / Reagendar / Cancelar
+      if (o.status !== 'agendada' || !o.scheduled_at) { await registrar(false, 'sem_agendamento'); return json({ ok: false, motivo: 'sem_agendamento' }) }
+      T.lembrete = { assunto: `Lembrete: atendimento do chamado ${o.number} em ${quando(o.scheduled_at)}`, titulo: 'Lembrete do atendimento', texto: `Lembramos que o atendimento do chamado "${o.title}" (${o.number}) está agendado para ${quando(o.scheduled_at)}. Confirme a sua presença, ou reagende/cancele se precisar.` }
+      extraHtml = `<p style="font-size:13px"><a href="${esc(link)}?acao=reagendar">Reagendar</a> · <a href="${esc(link)}?acao=cancelar">Cancelar</a></p>`
+      extraTexto = `\n\nReagendar: ${link}?acao=reagendar\nCancelar: ${link}?acao=cancelar`
+    }
     const m = T[evento]
-    const texto = `Olá, ${primeiro}!\n\n${m.texto}\n\nAcompanhe: ${link}\n\nVocê recebe este aviso porque aceitou receber comunicações da ${empresa}. Para parar, ajuste as preferências no portal: ${base}/preferencias`
-    const html = moldura(m.titulo, `<p>Olá, <b>${esc(primeiro)}</b>!</p><p>${esc(m.texto)}</p><p style="font-size:13px;color:#6b7280">Cliente: ${esc(cli?.name ?? '')}</p>`,
-      { texto: 'Acompanhar o chamado', link }, `Você recebe este aviso porque aceitou receber comunicações da ${esc(empresa)}. Para parar, <a href="${esc(base)}/preferencias">ajuste as preferências no portal</a>.`)
+    const texto = `Olá, ${primeiro}!\n\n${m.texto}\n\n${evento === 'lembrete' ? 'Confirmar presença' : 'Acompanhe'}: ${evento === 'lembrete' ? link + '?acao=confirmar' : link}${extraTexto}\n\nVocê recebe este aviso porque aceitou receber comunicações da ${empresa}. Para parar, ajuste as preferências no portal: ${base}/preferencias`
+    const html = moldura(m.titulo, `<p>Olá, <b>${esc(primeiro)}</b>!</p><p>${esc(m.texto)}</p><p style="font-size:13px;color:#6b7280">Cliente: ${esc(cli?.name ?? '')}</p>${extraHtml}`,
+      { texto: evento === 'lembrete' ? 'Confirmar presença' : 'Acompanhar o chamado', link: evento === 'lembrete' ? link + '?acao=confirmar' : link }, `Você recebe este aviso porque aceitou receber comunicações da ${esc(empresa)}. Para parar, <a href="${esc(base)}/preferencias">ajuste as preferências no portal</a>.`)
 
     if (RESERVADO(pessoa.email)) { await registrar(false, 'dominio_reservado', `${m.assunto} | ${link}`); return json({ ok: false, motivo: 'dominio_reservado' }) }
     try {

@@ -199,7 +199,7 @@ reset role;
 
 -- ---------- 6. preferência de data e calendário ----------
 select pg_temp.como('U1'); set local role authenticated;
-select pg_temp.deve_falhar('data no passado → recusada', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','visita','categoria_id',%L,'titulo','Visita teste','descricao','Preciso de uma visita técnica','preferencias','[{"data":"2020-01-01","periodo":"manha"}]'::jsonb))$q$, pg_temp.i('A'), pg_temp.i('CV')), 'futuras');
+select pg_temp.deve_falhar('data no passado → recusada', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','visita','categoria_id',%L,'titulo','Visita teste','descricao','Preciso de uma visita técnica','preferencias','[{"data":"2020-01-01","periodo":"manha"}]'::jsonb))$q$, pg_temp.i('A'), pg_temp.i('CV')), 'a partir de');
 select pg_temp.deve_falhar('mais de 3 opções de data → recusado', format($q$select public.portal_abrir_chamado(jsonb_build_object('client_id',%L,'tipo','visita','categoria_id',%L,'titulo','Visita teste','descricao','Preciso de uma visita técnica','preferencias',jsonb_build_array(jsonb_build_object('data',current_date+3),jsonb_build_object('data',current_date+4),jsonb_build_object('data',current_date+5),jsonb_build_object('data',current_date+6))))$q$, pg_temp.i('A'), pg_temp.i('CV')), 'no máximo 3');
 create temp table _v as select public.portal_abrir_chamado(jsonb_build_object('client_id', pg_temp.i('A'), 'tipo', 'visita', 'categoria_id', pg_temp.i('CV'), 'location_id', pg_temp.i('LA'),
   'titulo', 'Visita de avaliação', 'descricao', 'Preciso de uma visita técnica para avaliar', 'preferencias', jsonb_build_array(jsonb_build_object('data', current_date + 10, 'periodo', 'manha'), jsonb_build_object('data', current_date + 11, 'periodo', 'tarde')))) j;
@@ -208,7 +208,7 @@ insert into _id select 'OV', (j->>'id')::uuid from _v;
 select pg_temp.reg('visita: guarda as 2 preferências de data; prioridade da visita é a do tipo (sem SLA)',
   (select jsonb_array_length(preferencia_agendamento) = 2 and priority = 'visita' and prioridade_informada is null from public.orders where id = pg_temp.i('OV')));
 select pg_temp.como('U1'); set local role authenticated;
-select pg_temp.reg('calendário: data passada → "A data precisa ser futura."', public.portal_avisos_data(pg_temp.i('A'), pg_temp.i('LA'), current_date - 1) = 'A data precisa ser futura.');
+select pg_temp.reg('calendário: data antes da antecedência mínima → "Escolha uma data a partir de…"', public.portal_avisos_data(pg_temp.i('A'), pg_temp.i('LA'), current_date - 1) like 'Escolha uma data a partir de %');
 select pg_temp.reg('calendário: um domingo futuro devolve aviso de dia sem expediente',
   (select public.portal_avisos_data(pg_temp.i('A'), pg_temp.i('LA'), d) is not null from (select (current_date + ((7 - extract(dow from current_date)::int) % 7 + 7))::date d) x));
 reset role;

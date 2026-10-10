@@ -10,6 +10,7 @@ import PortalPagina from './PortalPagina'
 import StatusChamado from './StatusChamado'
 import { cn } from '@/lib/utils'
 import AguardandoVoce from './AguardandoVoce'
+import AgendamentoCliente from './AgendamentoCliente'
 
 // Acompanhar o chamado: situação em etapas, dados, fotos e áudio, marcos e contato.
 // Conversa com a empresa (E5a): respostas da empresa e mensagens do cliente, com até 3 fotos. A confirmação da solução chega na E5c.
@@ -98,6 +99,7 @@ function Detalhe({ userId }: { userId: string }) {
           <Calendar size={18} className="text-purple-400 mt-0.5" /><div><p className="text-sm font-medium text-foreground">Atendimento agendado</p><p className="text-sm text-muted-foreground">{dataHoraBR(c.agendado_para)}</p></div>
         </div>
       )}
+      <AgendamentoCliente c={c} onMudou={carregar} />
       {c.tecnico && (
         <p className="text-sm text-muted-foreground mt-3 inline-flex items-center gap-2" data-testid="tecnico"><UserRound size={14} /> Técnico responsável: <span className="text-foreground">{c.tecnico}</span></p>
       )}

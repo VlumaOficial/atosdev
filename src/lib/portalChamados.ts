@@ -33,6 +33,7 @@ export interface DetalheChamado {
   afetados: number; eu_afetado: boolean
   anexos: AnexoChamado[]
   mensagens: MensagemChamado[]; pode_responder: boolean
+  agendamento: AgendamentoChamado | null
   prazos: { nivel: 'previsao' | 'completo'; atendimento: string | null; solucao: string | null; pausado: boolean; situacao: 'no_prazo' | 'fora_do_prazo' | 'pausado' | null } | null
   aguardando_voce: boolean
   pausa: { tipo: 'aciona' | 'comunica'; texto: string; desde?: string | null; previsao?: string | null } | null
@@ -46,6 +47,22 @@ export const ROTULO_EVENTO: Record<string, string> = {
   paused: 'Chamado em pausa', resumed: 'Atendimento retomado',
 }
 export const ROTULO_PRIORIDADE: Record<string, string> = { critico: 'Crítico', alto: 'Alto', baixo: 'Baixo' }
+export interface ConfigAgendamento {
+  antecedencia_horas: number; horizonte_dias: number; data_minima: string; data_maxima: string
+  janelas: { manha: { nome: string; inicio: string; fim: string }; tarde: { nome: string; inicio: string; fim: string } }
+}
+// nomes das janelas como a empresa configurou ("Manhã (08:00–12:00)")
+export function rotulosPeriodo(c?: ConfigAgendamento | null): Record<string, string> {
+  if (!c) return { manha: 'Manhã', tarde: 'Tarde', qualquer: 'Qualquer horário' }
+  return { manha: `${c.janelas.manha.nome} (${c.janelas.manha.inicio}–${c.janelas.manha.fim})`, tarde: `${c.janelas.tarde.nome} (${c.janelas.tarde.inicio}–${c.janelas.tarde.fim})`, qualquer: 'Qualquer horário' }
+}
+export interface AgendamentoChamado {
+  status: 'proposto' | 'confirmado' | 'reagendamento_pedido' | null; para: string | null
+  pedido: { data: string; periodo: string }[] | null; motivo_pedido: string | null; confirmado_em: string | null
+  pode_aceitar: boolean; pode_pedir_outra: boolean; pode_cancelar: boolean; motivo_obrigatorio: boolean
+  reagendamentos_usados: number; reagendamentos_limite: number; reagendar_antecedencia_horas: number; cancelar_antecedencia_horas: number; cliente_reagenda: boolean
+  config: ConfigAgendamento
+}
 export const ROTULO_PERIODO: Record<string, string> = { manha: 'de manhã', tarde: 'à tarde', qualquer: 'qualquer horário' }
 
 export function dataHoraBR(iso?: string | null): string {
