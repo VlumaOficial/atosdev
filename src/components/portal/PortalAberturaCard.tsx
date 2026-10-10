@@ -51,6 +51,7 @@ export default function PortalAberturaCard() {
     return r
   }, [categorias])
   const modoMatriz = tenant?.prioridade_modo === 'matriz'
+  const [msgPrazo, setMsgPrazo] = useState('')
 
   async function salvar() {
     setMsg(null); setSalvando(true)
@@ -90,6 +91,18 @@ export default function PortalAberturaCard() {
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">Deixe o nome em branco para usar o padrão. Pelo menos um tipo precisa ficar ativo.</p>
+        </div>
+
+        <div data-testid="config-transparencia">
+          <p className="text-xs font-medium mb-2">Prazos que o cliente vê</p>
+          <select aria-label="Prazos que o cliente vê" value={tenant?.sla_transparencia ?? 'previsao'} onChange={async e => { setMsgPrazo(''); const { error } = await supabase.rpc('definir_transparencia_sla', { p_nivel: e.target.value }); if (error) setMsgPrazo(error.message); else { await refreshTenant(); setMsgPrazo('Salvo.') } }}
+            className="w-full sm:w-80 px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground" data-testid="select-transparencia">
+            <option value="oculto">Oculto — o cliente não vê prazos</option>
+            <option value="previsao">Previsão (recomendado) — previsão de atendimento e de solução</option>
+            <option value="completo">Completo — previsões + "no prazo / fora do prazo"</option>
+          </select>
+          <p className="text-[11px] text-muted-foreground mt-1">Visita não tem prazo: o cliente vê só "Agendado para…". Dá para abrir exceção por cliente na aba Portal do cliente. Quando um prazo muda, o andamento explica o motivo.</p>
+          {msgPrazo && <p className="text-[11px] text-muted-foreground mt-1" role="status">{msgPrazo}</p>}
         </div>
 
         <div>

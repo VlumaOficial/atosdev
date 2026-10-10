@@ -54,6 +54,7 @@ export interface Tenant {
   portal_abertura?: Record<string, any>
   transferencias_limite?: number
   sla_limite_reagendamentos?: number
+  sla_transparencia?: 'oculto' | 'previsao' | 'completo'
   created_at: string
   updated_at: string
 }

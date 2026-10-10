@@ -86,7 +86,7 @@ export function useOrder(id: string | undefined) {
     if (tipoEvento) {
       const det: Record<string, any> = {}
       if (status === 'agendada') { det.scheduled_at = extra?.scheduled_at ?? null; det.reason = extra?.schedule_reason ?? null; if (extra?.agendado_pelo_cliente) det.a_pedido_do_cliente = true; if (order?.status === 'agendada') det.reagendado = true }
-      if (status === 'pausada') { det.reason = extra?.pause_reason ?? null; if (extra?.previsao_retorno) det.previsao_retorno = extra.previsao_retorno }
+      if (status === 'pausada') { det.reason = extra?.pause_reason ?? null; det.motivo_id = extra?.pause_motivo_id ?? null; if (extra?.previsao_retorno) det.previsao_retorno = extra.previsao_retorno }
       if (status === 'cancelada') det.reason = extra?.cancel_reason ?? null
       if (status === 'concluida') { det.completion_notes = extra?.completion_notes ?? null; det.completed_at = patch.completed_at }
       await registrarEvento(id, tipoEvento, det)

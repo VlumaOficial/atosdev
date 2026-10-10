@@ -33,15 +33,17 @@ export interface DetalheChamado {
   afetados: number; eu_afetado: boolean
   anexos: AnexoChamado[]
   mensagens: MensagemChamado[]; pode_responder: boolean
+  prazos: { nivel: 'previsao' | 'completo'; atendimento: string | null; solucao: string | null; pausado: boolean; situacao: 'no_prazo' | 'fora_do_prazo' | 'pausado' | null } | null
   aguardando_voce: boolean
   pausa: { tipo: 'aciona' | 'comunica'; texto: string; desde?: string | null; previsao?: string | null } | null
-  linha_do_tempo: { evento: string; em: string; para: string | null; detalhe?: { de: string | null; para: string | null; motivo: string | null; assunto: string | null } | null }[]
+  linha_do_tempo: { evento: string; em: string; para: string | null; detalhe?: { de?: string | null; para?: string | null; motivo?: string | null; assunto?: string | null; texto?: string | null; tipo?: string | null; para_sla?: boolean | null; previsao?: string | null; a_pedido_do_cliente?: boolean | null; reagendado?: boolean | null } | null }[]
   contatos: { email?: string; telefone?: string; whatsapp?: string; site?: string } | null
 }
 
 export const ROTULO_EVENTO: Record<string, string> = {
   created: 'Chamado registrado', scheduled: 'Atendimento agendado', started: 'Atendimento iniciado',
   completed: 'Chamado resolvido', cancelled: 'Chamado cancelado', reopened: 'Chamado reaberto', reclassified: 'Chamado reclassificado',
+  paused: 'Chamado em pausa', resumed: 'Atendimento retomado',
 }
 export const ROTULO_PRIORIDADE: Record<string, string> = { critico: 'Crítico', alto: 'Alto', baixo: 'Baixo' }
 export const ROTULO_PERIODO: Record<string, string> = { manha: 'de manhã', tarde: 'à tarde', qualquer: 'qualquer horário' }

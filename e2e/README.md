@@ -39,3 +39,4 @@ falha plantada (um tratador EXCEPTION no bloco externo já deixou checagens vazi
 - `email_unico.mjs`: nenhum caminho cadastra e-mail repetido (equipe interna, portal, caixas diferentes, escrita direta no banco).
 - `portal_tipos.mjs`: tipo de chamado só pela configuração, assunto só com categorias, menu "Portal do cliente".
 - `e5a_ui.mjs`: conversa (resposta ao cliente, nota interna, mensagem do cliente com foto, sino, e-mail) e triagem do N1; `supabase/tests/portal_conversa.sql` (54 verificações).
+- `e5b1_ui.mjs`: motivos de pausa cadastráveis, "Aguardando você", pausa que comunica, previsão, reagendar pausando o SLA e limite; `supabase/tests/pausa_agendamento.sql` (35 verificações).

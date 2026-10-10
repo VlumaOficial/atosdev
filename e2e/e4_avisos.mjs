@@ -1,5 +1,5 @@
 import { SB, anon, T, cred, sql, ok, resumo, token } from './lib.mjs'
-const srk = (await import('fs')).readFileSync('/tmp/atos-scratch/.srk', 'utf8').trim()
+const srk = (await import('fs')).readFileSync((process.env.ATOS_SCRATCH || '/tmp/atos-scratch') + '/.srk', 'utf8').trim()
 const CLI = sql(`select id from clients where name='Cliente Trigger Teste'`)[0].id
 const P = sql(`select user_id from portal_pessoas where email='portal.teste@example.com'`)[0].user_id
 const TERMO = sql(`select id from termos where tenant_id is null and tipo='comunicacao' limit 1`)[0].id

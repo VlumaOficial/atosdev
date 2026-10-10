@@ -78,6 +78,21 @@ function Detalhe({ userId }: { userId: string }) {
         </ol>
       )}
 
+      {c.prazos && c.status !== 'resolvido' && c.status !== 'cancelado' && (
+        <div className="vluma-card p-4 mt-4" data-testid="prazos" data-nivel={c.prazos.nivel}>
+          <p className="text-sm font-medium text-foreground">Previsões</p>
+          <div className="grid grid-cols-2 gap-3 mt-2 text-xs text-muted-foreground">
+            {c.prazos.atendimento && <div data-testid="previsao-atendimento"><p>Previsão de atendimento</p><p className="text-foreground text-sm">{dataHoraBR(c.prazos.atendimento)}</p></div>}
+            {c.prazos.solucao && <div data-testid="previsao-solucao"><p>Previsão de solução</p><p className="text-foreground text-sm">{dataHoraBR(c.prazos.solucao)}</p></div>}
+          </div>
+          {c.prazos.pausado && <p className="text-xs text-muted-foreground mt-2" data-testid="prazo-pausado">O prazo está parado no momento e volta a contar assim que o atendimento seguir.</p>}
+          {c.prazos.situacao && c.prazos.situacao !== 'pausado' && (
+            <p className={cn('text-xs mt-2 font-medium', c.prazos.situacao === 'no_prazo' ? 'text-green-400' : 'text-red-400')} data-testid="situacao-prazo">{c.prazos.situacao === 'no_prazo' ? 'No prazo' : 'Fora do prazo'}</p>
+          )}
+          <p className="text-[11px] text-muted-foreground mt-2">As previsões podem mudar se dependermos de uma resposta sua; o andamento abaixo explica cada mudança.</p>
+        </div>
+      )}
+
       {c.agendado_para && c.status === 'agendado' && (
         <div className="vluma-card p-4 mt-4 flex items-start gap-3 border-purple-500/30" data-testid="agendado-para">
           <Calendar size={18} className="text-purple-400 mt-0.5" /><div><p className="text-sm font-medium text-foreground">Atendimento agendado</p><p className="text-sm text-muted-foreground">{dataHoraBR(c.agendado_para)}</p></div>
@@ -119,20 +134,28 @@ function Detalhe({ userId }: { userId: string }) {
       <div className="mt-5">
         <p className="text-sm font-medium text-foreground mb-2">Andamento</p>
         <ol className="space-y-2" data-testid="linha-do-tempo">
-          {c.linha_do_tempo.map((e, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm" data-evento={e.evento}><span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-              <span>
-                <span className="text-foreground">
-                  {e.evento === 'reclassified'
-                    ? (e.detalhe?.de && e.detalhe?.para && e.detalhe.de !== e.detalhe.para
-                        ? `Prioridade ajustada de ${ROTULO_PRIORIDADE[e.detalhe.de] ?? e.detalhe.de} para ${ROTULO_PRIORIDADE[e.detalhe.para] ?? e.detalhe.para}`
-                        : 'Chamado reclassificado') + (e.detalhe?.assunto ? ` · assunto: ${e.detalhe.assunto}` : '')
-                    : <>{ROTULO_EVENTO[e.evento] ?? e.evento}{e.evento === 'scheduled' && e.para ? ` para ${dataHoraBR(e.para)}` : ''}</>}
-                </span>{' '}
-                <span className="text-xs text-muted-foreground">{dataHoraBR(e.em)}</span>
-                {e.evento === 'reclassified' && e.detalhe?.motivo && <span className="block text-xs text-muted-foreground" data-testid="motivo-reclassificacao">Motivo: {e.detalhe.motivo}</span>}
-              </span></li>
-          ))}
+          {c.linha_do_tempo.map((e, i, todos) => {
+            // "prazo explicado": a retomada de uma pausa que parou o relógio diz quanto tempo ficou parado
+            const pausaAnterior = e.evento === 'resumed' ? [...todos.slice(0, i)].reverse().find(x => x.evento === 'paused') : undefined
+            const explicado = e.evento === 'resumed' && pausaAnterior?.detalhe?.para_sla && c.prazos
+            return (
+              <li key={i} className="flex items-start gap-2 text-sm" data-evento={e.evento}><span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                <span>
+                  <span className="text-foreground">
+                    {e.evento === 'reclassified'
+                      ? (e.detalhe?.de && e.detalhe?.para && e.detalhe.de !== e.detalhe.para
+                          ? `Prioridade ajustada de ${ROTULO_PRIORIDADE[e.detalhe.de] ?? e.detalhe.de} para ${ROTULO_PRIORIDADE[e.detalhe.para] ?? e.detalhe.para}`
+                          : 'Chamado reclassificado') + (e.detalhe?.assunto ? ` · assunto: ${e.detalhe.assunto}` : '')
+                      : e.evento === 'paused' ? `Em pausa: ${e.detalhe?.texto ?? ''}`
+                      : <>{e.evento === 'scheduled' && e.detalhe?.reagendado ? 'Atendimento reagendado' : (ROTULO_EVENTO[e.evento] ?? e.evento)}{e.evento === 'scheduled' && e.para ? ` para ${dataHoraBR(e.para)}` : ''}</>}
+                  </span>{' '}
+                  <span className="text-xs text-muted-foreground">{dataHoraBR(e.em)}</span>
+                  {e.evento === 'reclassified' && e.detalhe?.motivo && <span className="block text-xs text-muted-foreground" data-testid="motivo-reclassificacao">Motivo: {e.detalhe.motivo}</span>}
+                  {e.evento === 'scheduled' && e.detalhe?.a_pedido_do_cliente && c.prazos && <span className="block text-xs text-muted-foreground" data-testid="prazo-explicado">Prazo ajustado: o agendamento a pedido do cliente pausou o prazo até a data combinada.</span>}
+                  {explicado && pausaAnterior && <span className="block text-xs text-muted-foreground" data-testid="prazo-explicado">Prazo ajustado: o prazo ficou parado de {dataHoraBR(pausaAnterior.em)} a {dataHoraBR(e.em)} ({pausaAnterior.detalhe?.texto}).</span>}
+                </span></li>
+            )
+          })}
         </ol>
       </div>
 

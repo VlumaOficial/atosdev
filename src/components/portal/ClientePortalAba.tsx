@@ -11,9 +11,10 @@ export default function ClientePortalAba({ clientId, nomeCliente }: { clientId: 
   const [ativo, setAtivo] = useState<boolean | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
+  const [transp, setTransp] = useState<string>('')
 
   useEffect(() => {
-    supabase.from('clients').select('portal_ativo').eq('id', clientId).single().then(({ data }) => setAtivo(!!data?.portal_ativo))
+    supabase.from('clients').select('portal_ativo, sla_transparencia').eq('id', clientId).single().then(({ data }) => { setAtivo(!!data?.portal_ativo); setTransp((data as any)?.sla_transparencia ?? '') })
   }, [clientId])
 
   async function alternar() {
@@ -43,6 +44,19 @@ export default function ClientePortalAba({ clientId, nomeCliente }: { clientId: 
           <span className={'absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ' + (ativo ? 'left-[22px]' : 'left-0.5')} />
         </button>
       </div>
+      {ativo && (
+        <div className="rounded-md border border-border px-3 py-3" data-testid="transparencia-cliente">
+          <p className="text-sm font-medium text-foreground">Prazos que {nomeCliente} vê</p>
+          <select aria-label="Prazos que este cliente vê" value={transp} data-testid="select-transparencia-cliente"
+            onChange={async e => { setErro(''); const v = e.target.value; const { error } = await supabase.rpc('definir_transparencia_sla', { p_nivel: v || null, p_client: clientId }); if (error) setErro(error.message); else setTransp(v) }}
+            className="mt-2 w-full sm:w-80 px-3 py-2 rounded-md bg-input border border-border text-sm text-foreground">
+            <option value="">Usar o padrão da empresa ({({ oculto: 'oculto', previsao: 'previsão', completo: 'completo' } as Record<string, string>)[tenant?.sla_transparencia ?? 'previsao']})</option>
+            <option value="oculto">Oculto</option>
+            <option value="previsao">Previsão</option>
+            <option value="completo">Completo</option>
+          </select>
+        </div>
+      )}
       {erro && <p className="text-sm text-red-400" role="alert">{erro}</p>}
       {ativo
         ? <GestaoPortalCliente clientId={clientId} />
