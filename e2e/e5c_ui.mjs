@@ -31,14 +31,15 @@ const nova = async (opts = { viewport: { width: 1366, height: 950 } }) => { cons
 const ad = await nova(); await entrar(ad, cred.admin)
 const an = await nova(); await an.goto(PH + '/entrar'); await an.fill('#portal-email', 'e5c.ana@example.com'); await an.fill('#portal-senha', SENHA); await an.click('[data-testid=portal-entrar] button[type=submit]'); await an.waitForTimeout(4500)
 const ver = async id => { await an.goto(PH + '/chamados/' + id); await an.waitForSelector('[data-testid=conversa]', { timeout: 20000 }); await an.waitForTimeout(1500) }
-const desenhar = async page => { const cs = page.locator('[role=dialog] canvas'); const n = await cs.count(); for (let i = 0; i < n; i++) { const bb = await cs.nth(i).boundingBox(); if (!bb) continue; await page.mouse.move(bb.x + 20, bb.y + 20); await page.mouse.down(); await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height - 15, { steps: 6 }); await page.mouse.move(bb.x + bb.width - 20, bb.y + 20, { steps: 6 }); await page.mouse.up() } }
+// o 2º quadro (assinatura do responsável) só aparece depois de carregar o perfil
+const desenhar = async page => { await page.waitForTimeout(3000); const cs = page.locator('[role=dialog] canvas'); const n = await cs.count(); for (let i = 0; i < n; i++) { await cs.nth(i).scrollIntoViewIfNeeded(); const bb = await cs.nth(i).boundingBox(); if (!bb) continue; await page.mouse.move(bb.x + 20, bb.y + 20); await page.mouse.down(); await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height - 15, { steps: 6 }); await page.mouse.move(bb.x + bb.width - 20, bb.y + 20, { steps: 6 }); await page.mouse.up() } }
 
 // ===== A: a equipe conclui com a assinatura do SOLICITANTE =====
 await ad.goto(U + '/os/' + oA.id); await ad.waitForSelector('[data-testid=conversa-os]', { timeout: 20000 }); await ad.waitForTimeout(1500)
 await ad.getByRole('button', { name: 'Concluir', exact: true }).click(); await ad.waitForSelector('[data-testid=quem-assina]', { timeout: 15000 })
 ok((await ad.getByTestId('quem-assina').innerText()).includes('E5C Ana') && await ad.getByTestId('assina-solicitante').isChecked(), 'Concluir: "Quem está assinando?" já vem com o solicitante (E5C Ana)')
 await ad.locator('#relato').fill('Trocamos o roteador e o link voltou a ficar estável.'); await desenhar(ad)
-await ad.getByRole('button', { name: 'Concluir atendimento' }).click(); await ad.waitForTimeout(6000)
+await ad.getByRole('button', { name: 'Concluir atendimento' }).click(); await ad.locator('[role=dialog]').waitFor({ state: 'detached', timeout: 60000 }); await ad.waitForTimeout(2500)
 const a1 = sql(`select status, fechada_em is not null f, fechamento_tipo t, assinou_solicitante a, signer_name from orders where id='${oA.id}'`)[0]
 ok(a1.status === 'concluida' && a1.f && a1.t === 'assinatura' && a1.signer_name === 'E5C Ana', 'banco: concluída e já FECHADA pela assinatura do solicitante (assinou: E5C Ana)', JSON.stringify(a1))
 await ver(oA.id)
@@ -60,7 +61,7 @@ ok(rel && rel.relacionada_a === oA.id, 'banco: o novo chamado nasce "relacionado
 // ===== B: o cliente CONFIRMA a solução =====
 await ad.goto(U + '/os/' + oB.id); await ad.waitForSelector('[data-testid=conversa-os]', { timeout: 20000 }); await ad.waitForTimeout(1500)
 await ad.getByRole('button', { name: 'Concluir', exact: true }).click(); await ad.waitForSelector('#relato', { timeout: 15000 })
-await ad.locator('#relato').fill('Reiniciamos o modem e ajustamos a configuração.'); await ad.getByRole('button', { name: 'Concluir atendimento' }).click(); await ad.waitForTimeout(6000)
+await ad.locator('#relato').fill('Reiniciamos o modem e ajustamos a configuração.'); await ad.waitForTimeout(3000); await ad.getByRole('button', { name: 'Concluir atendimento' }).click(); await ad.locator('[role=dialog]').waitFor({ state: 'detached', timeout: 60000 }); await ad.waitForTimeout(2500)
 const b1 = sql(`select status, fechada_em is null aberto from orders where id='${oB.id}'`)[0]
 ok(b1.status === 'concluida' && b1.aberto, 'concluir sem assinatura do solicitante: a OS aguarda a confirmação do cliente')
 await ad.reload(); await ad.waitForSelector('[data-testid=info-portal]', { timeout: 20000 }); await ad.waitForTimeout(1500)
@@ -70,11 +71,10 @@ ok((await an.getByTestId('resumo-resolucao').innerText()).includes('Reiniciamos 
 ok((await an.getByTestId('fecha-em').innerText()).includes('fechado automaticamente em'), 'avisa a data do fechamento automático')
 ok(await an.getByTestId('baixar-relatorio').waitFor({ timeout: 60000 }).then(() => true).catch(() => false), 'o relatório (PDF) aparece para o cliente (gerado ao concluir)')
 await an.reload(); await an.waitForSelector('[data-testid=baixar-relatorio]', { timeout: 30000 }).catch(() => {})
-const [pop] = await Promise.all([an.context().waitForEvent('page', { timeout: 20000 }).catch(() => null), an.getByTestId('baixar-relatorio').click().catch(() => {})])
-const urlPdf = pop ? pop.url() : ''
-await new Promise(r => setTimeout(r, 2500)); const urlFinal = pop ? pop.url() : urlPdf
-ok(/supabase\.co\/storage\/v1\/object\/sign\//.test(urlFinal), 'o PDF abre por um endereço assinado de curta duração (' + urlFinal.slice(0, 60) + '…)')
-if (urlFinal) { const r = await fetch(urlFinal); ok(r.status === 200 && (r.headers.get('content-type') || '').includes('pdf'), 'e é mesmo um PDF (HTTP ' + r.status + ')') }
+const [resp] = await Promise.all([an.waitForResponse(r => r.url().includes('/functions/v1/portal-relatorio'), { timeout: 30000 }).catch(() => null), an.getByTestId('baixar-relatorio').click().catch(() => {})])
+const corpo = resp ? await resp.json().catch(() => ({})) : {}
+ok(resp && resp.status() === 200 && /\/storage\/v1\/object\/sign\//.test(corpo.url ?? '') && !/path|file_path/.test(JSON.stringify(corpo).replace(/token=[^"&]+/, '')), 'a função devolve só uma URL assinada de curta duração (sem o caminho do arquivo)')
+if (corpo.url) { const r = await fetch(corpo.url); ok(r.status === 200 && (r.headers.get('content-type') || '').includes('pdf'), 'e a URL entrega mesmo um PDF (HTTP ' + r.status + ')') }
 await an.getByTestId('confirmar-solucao').click(); await an.waitForTimeout(3500)
 const b2 = sql(`select fechada_em is not null f, fechamento_tipo t from orders where id='${oB.id}'`)[0]
 ok(b2.f && b2.t === 'confirmada', 'o cliente confirma: fechado ("confirmada")')
@@ -84,7 +84,7 @@ ok((await an.getByTestId('resolucao').innerText()).includes('você confirmou a s
 // ===== C: "não foi resolvido" reabre =====
 await ad.goto(U + '/os/' + oC.id); await ad.waitForSelector('[data-testid=conversa-os]', { timeout: 20000 }); await ad.waitForTimeout(1500)
 await ad.getByRole('button', { name: 'Concluir', exact: true }).click(); await ad.waitForSelector('#relato', { timeout: 15000 })
-await ad.locator('#relato').fill('Trocamos o cabo de rede.'); await ad.getByRole('button', { name: 'Concluir atendimento' }).click(); await ad.waitForTimeout(6000)
+await ad.locator('#relato').fill('Trocamos o cabo de rede.'); await ad.waitForTimeout(3000); await ad.getByRole('button', { name: 'Concluir atendimento' }).click(); await ad.locator('[role=dialog]').waitFor({ state: 'detached', timeout: 60000 }); await ad.waitForTimeout(2500)
 await ver(oC.id)
 await an.getByTestId('nao-resolvido').click(); await an.waitForSelector('[data-testid=form-nao-resolvido]')
 ok(await an.getByTestId('enviar-nao-resolvido').isDisabled(), 'sem o motivo, o botão fica desligado')
@@ -93,8 +93,7 @@ const c1 = sql(`select status, technician_id, reaberturas, fechada_em is null ab
 ok(c1.status === 'em_andamento' && c1.technician_id === tec && c1.reaberturas === 1 && c1.aberto, 'banco: reaberta para o mesmo técnico, 1 reabertura, ainda sem fechamento')
 await an.reload(); await an.waitForSelector('[data-testid=conversa]', { timeout: 20000 }); await an.waitForTimeout(1000)
 ok(await an.getByTestId('reaberto-aviso').count() === 1 && await an.getByTestId('resolucao').count() === 0, 'portal: volta a "Em atendimento" e mostra "reaberto a seu pedido: …"')
-await ad.goto(U + '/os'); await ad.waitForTimeout(2500); await ad.getByTestId('sino').first().click(); await ad.waitForSelector('[data-testid=sino-painel]')
-ok(/NÃO foi resolvido/.test(await ad.locator('[data-testid=sino-painel]').innerText()), 'sino: "o cliente diz que NÃO foi resolvido"')
+ok(sql(`select count(*)::int n from notificacoes where order_id='${oC.id}' and tipo='reabertura_cliente' and user_id='${tec}' and titulo like '%NÃO foi resolvido%'`)[0].n === 1, 'sino do técnico responsável: "o cliente diz que NÃO foi resolvido"')
 await ad.goto(U + '/os/' + oC.id); await ad.waitForSelector('[data-testid=info-portal]', { timeout: 20000 }); await ad.waitForTimeout(1500)
 ok((await ad.getByTestId('reaberturas-os').innerText()).includes('A internet volta mas cai'), 'a ficha mostra o motivo da reabertura')
 

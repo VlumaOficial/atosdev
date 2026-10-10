@@ -62,7 +62,7 @@ const wa = await ad.getByTestId('avisar-whatsapp').getAttribute('href')
 ok(wa.includes('wa.me/5571988887777') && decodeURIComponent(wa).includes(ab.numero) && decodeURIComponent(wa).includes('/chamados/' + oid), '"Avisar pelo WhatsApp": mensagem pronta com o número e o link do chamado no portal')
 await ad.locator('[data-testid=agendar-data-pedida]').first().click(); await ad.waitForTimeout(800)
 const dataCampo = await ad.locator('#schedule-date').inputValue()
-ok(dataCampo.startsWith(dt(8)) && dataCampo.endsWith('14:00'), '"Agendar nesta data": abre o agendamento já com a data e o período pedidos (' + dataCampo + ')')
+ok(dataCampo.startsWith(dt(8)) && dataCampo.endsWith('13:00'), '"Agendar nesta data": abre o agendamento já com a data e o início da janela da empresa (Tarde 13:00) (' + dataCampo + ')')
 ok(await ad.locator('[data-testid=agendado-cliente], input[type=checkbox]:checked').count() >= 1, '...com "a pedido do cliente" marcado')
 await ad.getByRole('button', { name: 'Confirmar' }).click(); await ad.waitForTimeout(3500)
 const o = sql(`select status, agendado_pelo_cliente a from orders where id='${oid}'`)[0]

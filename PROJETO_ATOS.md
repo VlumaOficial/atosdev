@@ -975,6 +975,10 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 | 065_portal_tipos_independentes | o tipo de chamado do portal depende só da configuração da empresa; assunto obrigatório só quando há categorias visíveis para o tipo (portal_abertura_config e portal_abrir_chamado) | OK | Pendente | Sim |
 | 066_portal_conversa_triagem | E5a: comentários com visibilidade (interno/cliente) e autoria do cliente, mensagens do cliente com até 3 fotos, `os_comentar`, `portal_enviar_mensagem`, triagem do N1 (`os_triagem`: confirmar/reclassificar), conversa e reclassificação no portal, aviso por e-mail de nova mensagem — **URL do DEV escrita no gatilho** | OK | Pendente | Sim |
 | 067_pausa_cliente_reagendamento | E5b-1: comportamento dos motivos de pausa (aciona/comunica/interno, texto ao cliente, exige previsão), pausa "Aguardando você" com retomada pela resposta do cliente, previsão de retorno + alerta de vencimento (pg_cron `atos-previsoes-pausa` a cada 15 min), agendar/reagendar a pedido do cliente PAUSA o SLA mantendo o tempo gasto (`sla_agend_*`), limite de agendamentos por chamado — **URL do DEV no gatilho; usa pg_cron** | OK | Pendente | Sim |
+| 068_transparencia_prazo | E5b-2: transparência do prazo (`sla_transparencia` na empresa e exceção por cliente: oculto/previsão/completo), "prazo explicado" no andamento (pausas visíveis, retomadas, agendamento a pedido do cliente) | OK | Pendente | Sim |
+| 069_agendamento_combinado | E5b-3: regras de agendamento da empresa (antecedência, horizonte, janelas, reagendar/cancelar pelo cliente com limites, até 3 lembretes), data "confirmada" × "proposta", `portal_responder_agendamento`, `portal_cancelar_agendamento`, lembretes (pg_cron `atos-lembretes-agendamento`) — **URL do DEV na rotina de lembretes** | OK | Pendente | Sim |
+| 070_cliente_ausente_visita | E5b-4: motivos de cancelamento cadastráveis (sistema: Cancelado pelo cliente, Cliente ausente), visita improdutiva, `relacionada_a`, `os_gerar_chamado` (visita gera Incidente/Requisição ligados), `portal_pedir_nova_visita` | OK | Pendente | Sim |
+| 071_resolvido_fechado | E5c: Resolvido → Fechado (`fechada_em`, confirmar / "não foi resolvido" / fechamento automático por pg_cron `atos-fechar-resolvidos`), assinatura do solicitante como confirmação, novo chamado ligado, crédito de SLA na reabertura, `portal_relatorio_chamado` (PDF); revoga execução das funções-semente da 070 | OK | Pendente | Sim |
 
 ---
 
@@ -1336,9 +1340,9 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 
 ## 🔚 Estado ao encerrar a sessão de 2026-10-10 (RETOMAR POR AQUI)
 
-**Frente atual: Portal de atendimento — Etapa 1.** E1 (fundação e endereços), E2 (catálogo, grupos, Atendente, filas), E3 (clientes no portal, convites, equipes, pedidos de acesso, LGPD), **E4 (abrir e acompanhar chamado)** e **E5a (conversa e triagem)** estão **concluídas e testadas na URL pública**. Próximas: **E5b** e **E5c** (desenho aprovado em 2026-10-10, ver VISAO_ATOS.md), depois E6. *(Texto anterior: "Próxima: E5 (ciclo do chamado), depois E6".)*
+**Frente atual: Portal de atendimento — Etapa 1. A E5 (ciclo do chamado) está COMPLETA (E5a, E5b-1 a E5b-4 e E5c, migrations 066 a 071) e o usuário fará o teste de regressão; a próxima é a E6.** E1 (fundação e endereços), E2 (catálogo, grupos, Atendente, filas), E3 (clientes no portal, convites, equipes, pedidos de acesso, LGPD), **E4 (abrir e acompanhar chamado)** e **E5a (conversa e triagem)** estão **concluídas e testadas na URL pública**. Próximas: **E5b** e **E5c** (desenho aprovado em 2026-10-10, ver VISAO_ATOS.md), depois E6. *(Texto anterior: "Próxima: E5 (ciclo do chamado), depois E6".)*
 
-**Migrations da frente do portal (047–062): todas aplicadas no DEV (vgkiddqahubznlzkxfgb); PRD (zeejmwdyqrbjnkhwtdsu) segue pendente — esperado até a promoção do MVP.** Tabela na seção 6; checklist do PRD acima ("001–062").
+**Migrations da frente do portal (047–071): todas aplicadas no DEV (vgkiddqahubznlzkxfgb); PRD (zeejmwdyqrbjnkhwtdsu) segue pendente — esperado até a promoção do MVP.** Tabela na seção 6; checklist do PRD acima ("001–071").
 
 **Pasta `e2e/` (nova):** roteiros Playwright e de banco usados nos testes, com README (arquivos que precisam existir no scratchpad: `.tk`, `.anon`, `.srk`, `.cred.json`, `foto1.png`, `foto2.png`). Sem segredos reais. Rodam contra a URL pública, nunca `npm run dev`. Também: `supabase/tests/seguranca_isolamento.sql`, `grupos_atendimento.sql` (41), `portal_chamados.sql` (71).
 
@@ -1347,11 +1351,11 @@ Lógica usada em admin + técnico fica em src/components/orders/ (ex.: OrderTime
 ### Pendências abertas ao fechar a sessão de 2026-10-10
 1. **Usuário validar E2, E3 e E4** e confirmar as decisões listadas em cada seção (E2: decisões 1–5; E3; E4: decisões 1–5, além das regras de limite — 10 chamados/hora por pessoa, 5 arquivos ≤10 MB, áudio ≤120 s, "também me afeta" ainda não eleva a prioridade, avisos de e-mail só para aberto/agendado/em atendimento/resolvido/cancelado, termos de uso e privacidade obrigatórios para abrir chamado, WhatsApp automático mostrado como indisponível).
 2. **Anti-robô no navegador real:** a Cloudflare bloqueia clique automático; o usuário precisa concluir o widget uma vez no teste E2E (servidor já provado: sem token → 400, token falso → 400, token de teste válido → aceito). Testar também **e-mail real** (convite, aviso de chamado, pedido de acesso) — os testes usaram só domínios reservados.
-3. **E5 — ciclo do chamado:** Responder ao cliente / Nota interna; confirmação e reclassificação pelo N1 com motivo; matriz de pausa e "Aguardando você" com retomada; Resolvido → Fechado com reabrir e novo chamado ligado; assinatura como confirmação; níveis de transparência; prazo explicado; confirmação da data pedida pelo cliente.
-4. **E6:** painel do Supervisor, acréscimos no painel F7, PWA, auditoria, regressão completa.
+3. **(CONCLUÍDO em 2026-10-10 — texto original mantido)** **E5 — ciclo do chamado:** Responder ao cliente / Nota interna; confirmação e reclassificação pelo N1 com motivo; matriz de pausa e "Aguardando você" com retomada; Resolvido → Fechado com reabrir e novo chamado ligado; assinatura como confirmação; níveis de transparência; prazo explicado; confirmação da data pedida pelo cliente.
+4. **E6 (PRÓXIMA):** painel do Supervisor, acréscimos no painel F7, PWA, auditoria, regressão completa.
 5. **Ordem até o PRD (mantida):** escalas + notificação diária → Conexões de WhatsApp (item 3, antes da F8) → F8 planos/pagamento → painel do Super Admin → segurança essencial + responsividade → limpeza de dados de teste + troca de credenciais → PRD. Depois do PRD: Portal Etapas 2–3, F12 (app nas lojas), F9 (GLPI), F10 completa, F11 (manual).
 6. **Pontos abertos de desenho:** domínio próprio da gestão/técnicos (hoje o mesmo host da plataforma); botão de remover endereço do portal e limpeza de endereços antigos após 90 dias; varredura no servidor de anexos órfãos do `portal-anexos`.
-7. **Antes do PRD:** limites de domínios e uso comercial do plano Vercel (Hobby); URL do DEV escrita nos gatilhos das migrations 030 e 062; migrations 001–067 e republicação das Edge Functions (`portal-endereco`, `portal-acesso`, `portal-avisos`, `criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`); segredos `TURNSTILE_SECRET` e `SITE_URL`.
+7. **Antes do PRD:** limites de domínios e uso comercial do plano Vercel (Hobby); URL do DEV escrita nos gatilhos das migrations 030 e 062; migrations 001–071 e republicação das Edge Functions (`portal-endereco`, `portal-acesso`, `portal-avisos`, `criar-tecnico`, `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os`); segredos `TURNSTILE_SECRET` e `SITE_URL`.
 8. **Só no FIM do MVP:** limpar dados de teste (OS-0018 em diante, grupos Central N1 / Redes N2 / Campo Interior, usuários `atendente.teste` e `portal.teste`, resíduos de e-mails `e3.*`/`e4.*`) e **trocar credenciais**: token do Supabase, `cfut_` da Cloudflare, `vcp_` da Vercel, segredo do Turnstile, senhas de teste, PAT do GitHub, senha do Zoho, chave do LocationIQ.
 
 ---
@@ -2381,6 +2385,47 @@ Desenho aprovado em 2026-10-10 (VISAO_ATOS.md, E5). **Resta da E5b:** transparê
 - **Testes na URL pública:** `supabase/tests/pausa_agendamento.sql` (**35** verificações, validado com falhas plantadas) e `e2e/e5b1_ui.mjs` (**39** verificações: motivos cadastráveis, pausa aciona/comunica/interno, resposta do cliente retoma, e-mail, técnico no app, reagendar, limite).
 - **Decisões a confirmar:** o crédito usa horas úteis do calendário da unidade; vale só para incidente e requisição; o limite padrão é 3 agendamentos a pedido do cliente por chamado; a previsão vencida alerta o técnico responsável e os coordenadores do grupo (sem eles, admin e gestor).
 
+### Portal — Etapa 1 · E5b partes 2 a 4 e E5c (2026-10-10) — CONCLUÍDAS E TESTADAS · **E5 COMPLETA**
+Pedido do usuário: "vamos concluir e depois realizo um teste regressivo". Desenho aprovado em VISAO_ATOS.md (E5 e retornos de 2026-10-10).
+
+**E5b-2 · Transparência do prazo e "prazo explicado" (migration 068)**
+- Por empresa, o admin escolhe o que o cliente vê dos prazos (Configurações › Abertura de chamados › "Prazos que o cliente vê"): **Oculto**, **Previsão** (padrão: previsão de atendimento e de solução em data/hora) ou **Completo** (+ "No prazo / Fora do prazo"). **Exceção por cliente** na aba Portal do cliente. Visita nunca mostra prazo.
+- **Prazo explicado:** o andamento mostra as pausas que o cliente pode ver (aciona/comunica, nunca a interna e nunca o texto interno), a retomada ("o prazo ficou parado de … a …") e o agendamento a pedido do cliente. Testes: `transparencia_prazo.sql` (20), `e5b2a_ui.mjs` (17).
+
+**E5b-3 · Agendamento combinado (migration 069)**
+- **Regras da empresa** (Configurações › Agendamento de visitas e atendimentos): antecedência mínima (padrão **48 h**), horizonte (60 dias), janelas **Manhã/Tarde** com nome e horário, se o cliente pode reagendar (até N horas antes, máx. N vezes, motivo obrigatório ou não), se pode cancelar (até N horas antes) e **até 3 lembretes** (N horas antes). O servidor valida as datas pedidas e a tela de abrir mostra a regra e só deixa escolher dentro dela.
+- **Data "confirmada" × "proposta":** agendar numa das datas pedidas (ou "a pedido do cliente") = confirmado; numa data que o cliente não pediu = **proposta** (o cliente vê Aceitar / Pedir outra data). O cliente também **reagenda** um confirmado, **confirma presença** e **cancela**, nos limites; "Agendar nesta data" usa o início da janela da empresa. A equipe é avisada no sino.
+- **Lembretes** por e-mail (rotina de 15 em 15 min) com Confirmar / Reagendar / Cancelar (links `?acao=`). Testes: `agendamento_combinado.sql` (53), `e5b3_ui.mjs` (26).
+
+**E5b-4 · Cliente ausente, motivos de cancelamento e visita que gera chamado (migration 070)**
+- **Motivos de cancelamento cadastráveis** (Catálogo e SLA › Motivos de cancelamento); do sistema: "Cancelado pelo cliente" e "Cliente ausente" (sempre visita improdutiva); cancelar uma OS passa a escolher um motivo da lista.
+- **"Cliente ausente"** no app do técnico: registra a **hora** e a **posição** (como prova, no evento); as **fotos do local ficam nas Evidências** (o aviso sugere tirá-las antes de confirmar). A OS fica Cancelada como visita improdutiva; o cliente vê "Visita não realizada: cliente ausente" (e recebe e-mail) e **pede nova visita** (nova Visita ligada à anterior; uma de cada vez).
+- **Visita gera chamado:** botão "Gerar chamado a partir da visita" (equipe e técnico responsável) cria um Incidente ou Requisição **ligados** ("relacionada a"), com o mesmo cliente, unidade e solicitante, que entra na triagem do N1. Orçamento continua no backlog. Testes: `cliente_ausente_visita.sql` (36), `e5b4_ui.mjs` (25).
+- **Achado de segurança (roteiro de isolamento):** a função-semente dos motivos de cancelamento ficou executável por qualquer usuário; corrigido na 071 (revoga). Foi o roteiro `seguranca_isolamento.sql` que acusou.
+
+**E5c · Resolvido → Fechado (migration 071)**
+- **Concluída = "Resolvido"** no portal, com o resumo do que foi feito, o **relatório em PDF** (função nova `portal-relatorio`, URL assinada de 5 minutos) e **Confirmar solução / Não foi resolvido**. Confirmar fecha; **sem resposta em N dias úteis (padrão 3, configurável; 0 desliga)** o chamado fecha sozinho (rotina de 30 em 30 min).
+- **"Não foi resolvido"** (motivo obrigatório) **reabre** a OS para o mesmo grupo/técnico, avisa o responsável, conta a reabertura e **o tempo entre resolvido e reaberto não conta no SLA** (crédito em horas úteis). **Depois de Fechado não reabre**: o cliente abre um **novo chamado relacionado** (banner "relacionado a OS-…"). A equipe ainda pode reabrir (limpa o fechamento).
+- **Assinatura do solicitante em campo = confirmação:** ao concluir uma OS do portal, a tela de assinatura pergunta **"Quem está assinando?"** (o solicitante, padrão, ou outra pessoa); se foi o solicitante, o chamado **já nasce Fechado**. OS abertas pela equipe não mudam.
+- As OS já concluídas antes da 071 foram marcadas como fechadas (não ficam "aguardando confirmação"). Testes: `resolvido_fechado.sql` (30, falhas plantadas detectadas), `e5c_ui.mjs` (28, incluindo assinatura desenhada, PDF e reabertura).
+
+**Lições dos testes:** a conclusão com assinatura leva ~10 s (espera pelo fechamento do modal, não por tempo fixo); o 2º quadro de assinatura só aparece depois de carregar o perfil; o Chromium sem tela baixa o PDF em vez de abri-lo (conferir a resposta da função); comandos do mesmo `SELECT` não enxergam o que a rotina grava (usar comandos separados); "amanhã" é data válida com antecedência de 48 h. **Regressão final (2026-10-10): 9 roteiros de SQL com 0 falhas e todos os roteiros de tela OK**; os 3 pontos que falharam eram de teste (espera fixa do portal, horário "Agendar nesta data" que agora usa o início da janela da empresa, e script auxiliar do antirrobô, agora versionado em `e2e/com_antirobo_de_teste.sh`).
+
+**Decisões do PO/Engenheiro a confirmar (resumo):** crédito de SLA em horas úteis do calendário; limite padrão de 3 agendamentos a pedido do cliente por chamado e de 2 reagendamentos pelo portal; janelas padrão Manhã 08–12 / Tarde 13–18 e antecedência de 48 h; lembretes padrão 48 h e 24 h; fechamento automático em 3 dias úteis; "Cliente ausente" guarda hora e posição (foto nas Evidências); cancelar pelo portal vale para qualquer chamado ainda não iniciado; o e-mail de lembrete só sai na janela (1 h de tolerância).
+
+### Roteiro de teste manual da E5 (para o teste de regressão do usuário)
+Use **https://atosdev.vluma.com.br** (equipe) e **https://atendimento.infoxtec.dev.vluma.com.br** (cliente, em janela anônima). Conta de cliente: a que você criou pelo convite (ou convide outra em Clientes › Portal). Marque o que não funcionar e me diga o número do passo.
+1. **Conversa:** abra um chamado do portal na OS; "Responder ao cliente" e "Nota interna". No portal, a resposta aparece e a nota não. Responda como cliente, com foto.
+2. **Triagem:** na OS, "Reclassificar" com motivo (e mudando o assunto); o cliente vê "Prioridade ajustada… Motivo…".
+3. **Pausa:** pause com "Aguardando o cliente" (escreve a mensagem) → o cliente vê "Aguardando você" no início, na lista e no chamado; ao responder, a OS volta sozinha para Em andamento. Pause com "Aguardando peça ou material" (previsão) → o cliente vê "Em pausa… previsão". Em Catálogo e SLA › Motivos de pausa, cadastre um motivo novo.
+4. **Prazos:** em Configurações › Abertura de chamados, troque entre Oculto / Previsão / Completo e veja no portal; abra uma exceção por cliente.
+5. **Agendamento:** em Configurações › Agendamento, mude a antecedência e as janelas; no portal, abra uma Visita e confira o calendário. Agende numa data que o cliente não pediu (proposta) e teste Aceitar / Pedir outra data / Reagendar / Cancelar. Confira os lembretes por e-mail (use um e-mail real).
+6. **Reagendar com SLA:** em uma OS agendada use "Reagendar" "a pedido do cliente" e confira o prazo na ficha do SLA.
+7. **Cliente ausente:** no app do técnico, "Cliente ausente" numa visita (permita a localização); o cliente vê "Visita não realizada" e "Pedir nova visita". **Gerar chamado** a partir de uma visita.
+8. **Cancelar:** cancele uma OS e escolha o motivo; cadastre um motivo novo em Catálogo e SLA › Motivos de cancelamento.
+9. **Resolvido → Fechado:** conclua uma OS do portal **sem** assinar o solicitante → o cliente vê "Resolvido" (resumo e PDF), confirma ou diz "Não foi resolvido". Conclua outra assinando como o **solicitante** → já nasce Fechado. Num chamado fechado, "Abrir novo chamado relacionado".
+10. **Celular:** repita o início do portal e um chamado no celular (sem rolagem para o lado).
+
 ### Ação adiada para o FIM do desenvolvimento (decisão do usuário, 2026-09-25 — sem urgência)
 - **Limpeza dos dados de teste do DEV**: checklists "Teste Volume 1–60",
   "Teste Concluído Antigo", "Teste Semanal", "Teste Dia Util", "Teste
@@ -2402,7 +2447,7 @@ sessão, nunca no git).
 
 ### Checklist da promoção para PRD (zeejmwdyqrbjnkhwtdsu)
 - **Auth do PRD (Management API):** `disable_signup = true`, `site_url` = domínio do PRD, `uri_allow_list` com o domínio do PRD e `https://*.vluma.com.br/**` (portal) — sem isso, a falha corrigida na 048 continua aberta no PRD
-- Aplicar migrations 001–067 em ordem (**062, 066 e 067: trocar a URL do projeto nos gatilhos**; a 067 agenda `atos-previsoes-pausa` no pg_cron — conferir `select * from cron.job`) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
+- Aplicar migrations 001–071 em ordem (**062, 066, 067 e 069: trocar a URL do projeto nos gatilhos e na rotina de lembretes**; as migrations 067, 069 e 071 agendam no pg_cron `atos-previsoes-pausa`, `atos-lembretes-agendamento` e `atos-fechar-resolvidos` — conferir `select * from cron.job`) (depois, rodar `supabase/tests/seguranca_isolamento.sql` no PRD com uma pessoa de teste do portal; `grupos_atendimento.sql` precisa da massa de teste do DEV e não roda no PRD) (045 agenda `atos-alertas-sla`; 046 faz backfill dos tempos das OS concluídas). Publicar de novo a função
   `gerar-relatorio-os` (v10: tipo/categoria/SLA no PDF). **038 instala o pg_cron e agenda
   `atos-gerar-ocorrencias`** — conferir `select * from cron.job` no PRD. Depois da 036, rodar
   `supabase/scripts/ajustar_cidade_ibge.py <ref PRD> --aplicar` (código
@@ -2412,6 +2457,7 @@ sessão, nunca no git).
   gatilho `fn_orders_relatorio_ao_concluir` tem a URL do projeto DEV
   (`vgkiddqahubznlzkxfgb`) escrita — trocar pelo ref do PRD
 - **Portal — endereços (PRD):** (a) publicar `portal-endereco` (verify_jwt true) e definir seus 5 segredos (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`) com o projeto da Vercel do PRD; (b) `portal_plataforma.dominio_base = 'vluma.com.br'` (no DEV é `dev.vluma.com.br`); (c) adicionar `atos.vluma.com.br` ao projeto da Vercel e a `VITE_PAINEL_HOSTS`, se mudar; (d) conferir os limites de domínios/uso comercial do plano Vercel (ver "Vercel — plano atual"); (e) links permitidos de recuperação de senha no Auth
+- **Portal — E5c:** publicar a função nova **`portal-relatorio`** (verify_jwt true; assina a URL do PDF do relatório com a chave de serviço, depois de o banco conferir o acesso) e republicar `portal-avisos` (eventos mensagem, pausa, lembrete, cancelado improdutivo)
 - **Portal — chamados (E4):** publicar `portal-avisos` (verify_jwt true; é chamada pelo banco com a chave de serviço do Vault); o bucket `portal-anexos` nasce na migration 061; conferir que o segredo `atos_service_role_key` existe no Vault do PRD
 - **Portal — acesso (E3):** publicar `portal-acesso` (verify_jwt true); segredo `SITE_URL` com o domínio do PRD; **anti-robô:** criar o widget do Turnstile na Cloudflare (nomes de host: o domínio base da plataforma), salvar a chave pública no Super Admin e o segredo `TURNSTILE_SECRET` na função
 - **Funções alteradas na E2:** republicar `criar-tecnico` (aceita o perfil; ignora usuário inativo), `geocodificar`, `enviar-relatorio`, `gerar-relatorio-os` e `portal-endereco` (ignoram usuário inativo)

@@ -40,3 +40,5 @@ falha plantada (um tratador EXCEPTION no bloco externo já deixou checagens vazi
 - `portal_tipos.mjs`: tipo de chamado só pela configuração, assunto só com categorias, menu "Portal do cliente".
 - `e5a_ui.mjs`: conversa (resposta ao cliente, nota interna, mensagem do cliente com foto, sino, e-mail) e triagem do N1; `supabase/tests/portal_conversa.sql` (54 verificações).
 - `e5b1_ui.mjs`: motivos de pausa cadastráveis, "Aguardando você", pausa que comunica, previsão, reagendar pausando o SLA e limite; `supabase/tests/pausa_agendamento.sql` (35 verificações).
+- `e5b2a_ui.mjs`, `e5b3_ui.mjs`, `e5b4_ui.mjs`, `e5c_ui.mjs`: transparência do prazo; agendamento combinado e lembretes; cliente ausente, motivos de cancelamento e visita que gera chamado; Resolvido → Fechado (com assinatura desenhada e PDF). SQL: `transparencia_prazo.sql`, `agendamento_combinado.sql`, `cliente_ausente_visita.sql`, `resolvido_fechado.sql`.
+- Regressão completa: SQL (9 roteiros) + todos os `.mjs` + `e3_*` com a chave de teste do antirrobô (restaurando a real).
